@@ -1,0 +1,395 @@
+"""Collecteurs d'offres. Chaque collecteur renvoie une liste de dicts "offre brute".
+
+Uniquement la bibliothèque standard (urllib) pour que l'installation soit triviale.
+"""
+import gzip
+import html
+import json
+import random
+import re
+import ssl
+import time
+import urllib.error
+import urllib.parse
+import urllib.request
+import zlib
+
+UA = ("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+      "(KHTML, like Gecko) Chrome/129.0.0.0 Safari/537.36")
+
+
+class RateLimited(Exception):
+    pass
+
+
+class SourceError(Exception):
+    pass
+
+
+def _ssl_context():
+    try:
+        import certifi  # présent si "pip install certifi" (recommandé sur Mac)
+        return ssl.create_default_context(cafile=certifi.where())
+    except Exception:
+        return ssl.create_default_context()
+
+
+_CTX = _ssl_context()
+
+
+def http(url, method="GET", data=None, headers=None, timeout=25):
+    """Renvoie (status, texte). Lève RateLimited sur 429/999, SourceError sur erreur réseau."""
+    h = {
+        "User-Agent": UA,
+        "Accept-Language": "fr-FR,fr;q=0.9,en;q=0.8",
+        "Accept-Encoding": "gzip, deflate",
+        "Accept": "*/*",
+    }
+    if headers:
+        h.update(headers)
+    body = None
+    if data is not None:
+        body = json.dumps(data).encode("utf-8") if not isinstance(data, (bytes, str)) else (
+            data.encode("utf-8") if isinstance(data, str) else data)
+        h.setdefault("Content-Type", "application/json")
+    req = urllib.request.Request(url, data=body, headers=h, method=method)
+    try:
+        with urllib.request.urlopen(req, timeout=timeout, context=_CTX) as r:
+            raw = r.read()
+            enc = (r.headers.get("Content-Encoding") or "").lower()
+            status = r.status
+    except urllib.error.HTTPError as e:
+        if e.code in (429, 999):
+            raise RateLimited("HTTP %d sur %s" % (e.code, urllib.parse.urlparse(url).netloc))
+        try:
+            raw = e.read()
+            enc = (e.headers.get("Content-Encoding") or "").lower()
+        except Exception:
+            raw, enc = b"", ""
+        status = e.code
+    except Exception as e:  # DNS, timeout, SSL...
+        raise SourceError("%s : %s" % (urllib.parse.urlparse(url).netloc, e))
+    if enc == "gzip" or raw[:2] == b"\x1f\x8b":
+        try:
+            raw = gzip.decompress(raw)
+        except Exception:
+            pass
+    elif enc == "deflate":
+        try:
+            raw = zlib.decompress(raw)
+        except Exception:
+            try:
+                raw = zlib.decompress(raw, -zlib.MAX_WBITS)
+            except Exception:
+                pass
+    return status, raw.decode("utf-8", errors="replace")
+
+
+def _text(fragment):
+    if fragment is None:
+        return ""
+    t = re.sub(r"<!--.*?-->", " ", fragment, flags=re.S)
+    t = re.sub(r"<[^>]+>", " ", t)
+    return re.sub(r"\s+", " ", html.unescape(t)).strip()
+
+
+def _first(pattern, s, flags=re.S):
+    m = re.search(pattern, s, flags)
+    return m.group(1) if m else None
+
+
+def _pause(a, b):
+    time.sleep(random.uniform(a, b))
+
+
+# =====================================================================
+# LinkedIn (offres publiques, sans connexion)
+# =====================================================================
+LI_SEARCH = "https://www.linkedin.com/jobs-guest/jobs/api/seeMoreJobPostings/search"
+LI_DETAIL = "https://www.linkedin.com/jobs-guest/jobs/api/jobPosting/%s"
+
+
+def parse_linkedin_search(page):
+    jobs = []
+    # Un bloc par carte. On découpe sur <li pour rester robuste aux variantes de classes.
+    for chunk in re.split(r"<li[\s>]", page)[1:]:
+        jid = _first(r'urn:li:jobPosting:(\d+)', chunk) or _first(r'/jobs/view/[^"?]*?-(\d{6,})(?:[/?"])', chunk) \
+            or _first(r'/jobs/view/(\d{6,})', chunk)
+        if not jid:
+            continue
+        title = _text(_first(r'class="[^"]*base-search-card__title[^"]*"[^>]*>(.*?)</h3>', chunk)) \
+            or _text(_first(r'<span class="sr-only">(.*?)</span>', chunk))
+        company = _text(_first(r'class="[^"]*base-search-card__subtitle[^"]*"[^>]*>(.*?)</h4>', chunk))
+        location = _text(_first(r'class="[^"]*job-search-card__location[^"]*"[^>]*>(.*?)</span>', chunk))
+        posted = _first(r'<time[^>]*datetime="([^"]+)"', chunk) or ""
+        href = _first(r'class="[^"]*base-card__full-link[^"]*"[^>]*href="([^"]+)"', chunk) \
+            or _first(r'href="(https://[a-z]{0,3}\.?linkedin\.com/jobs/view/[^"]+)"', chunk)
+        url = "https://www.linkedin.com/jobs/view/%s/" % jid
+        if not title:
+            continue
+        jobs.append(dict(source="LinkedIn", ext_id=jid, title=title, company=company,
+                         location=location, url=url, apply_url=None, posted=posted,
+                         raw_href=html.unescape(href) if href else None))
+    return jobs
+
+
+def parse_linkedin_detail(page):
+    """Renvoie dict(apply_url, description, employment_type)."""
+    apply_url = None
+    raw = _first(r'id="applyUrl"[^>]*>\s*<!--\s*"(.*?)"\s*-->', page)
+    if raw:
+        raw = html.unescape(raw)
+        q = urllib.parse.parse_qs(urllib.parse.urlparse(raw).query)
+        if q.get("url"):
+            apply_url = q["url"][0]
+        elif raw.startswith("http"):
+            apply_url = raw
+    desc = _text(_first(r'class="[^"]*show-more-less-html__markup[^"]*"[^>]*>(.*?)</div>', page)) \
+        or _text(_first(r'class="[^"]*description__text[^"]*"[^>]*>(.*?)</section>', page))
+    crit = re.findall(r'class="[^"]*description__job-criteria-text[^"]*"[^>]*>(.*?)</span>', page, re.S)
+    employment = " | ".join(_text(c) for c in crit)
+    return dict(apply_url=apply_url, description=desc, employment_type=employment)
+
+
+def linkedin_search(query, location, past_seconds=604800, start=0):
+    params = {
+        "keywords": query,
+        "location": location,
+        "f_TPR": "r%d" % past_seconds,
+        "sortBy": "DD",
+        "start": str(start),
+    }
+    url = LI_SEARCH + "?" + urllib.parse.urlencode(params)
+    status, page = http(url, headers={"Accept": "text/html"})
+    if status == 400 and start > 0:
+        return []  # plus de pages
+    if status != 200:
+        raise SourceError("LinkedIn HTTP %d" % status)
+    return parse_linkedin_search(page)
+
+
+def linkedin_detail(job_id):
+    status, page = http(LI_DETAIL % job_id, headers={"Accept": "text/html"})
+    if status != 200:
+        raise SourceError("LinkedIn détail HTTP %d" % status)
+    return parse_linkedin_detail(page)
+
+
+def collect_linkedin(cfg, log):
+    out, errors = {}, []
+    queries = cfg["linkedin"]["queries"]
+    for i, q in enumerate(queries):
+        try:
+            for page_idx in range(cfg["linkedin"].get("pages_per_query", 1)):
+                res = linkedin_search(q, cfg["linkedin"]["location"], cfg["linkedin"]["past_seconds"],
+                                      start=25 * page_idx)
+                for j in res:
+                    out[j["ext_id"]] = j
+                if len(res) < 10:
+                    break
+                _pause(2, 4)
+        except RateLimited:
+            raise
+        except SourceError as e:
+            errors.append("« %s » : %s" % (q, e))
+        if i < len(queries) - 1:
+            _pause(*cfg["linkedin"]["pause_between_queries"])
+    if errors and not out:
+        raise SourceError("; ".join(errors[:3]))
+    if errors:
+        log("LinkedIn : %d requête(s) en erreur : %s" % (len(errors), "; ".join(errors[:2])))
+    return list(out.values())
+
+
+# =====================================================================
+# Welcome to the Jungle (Algolia public utilisé par leur site)
+# =====================================================================
+WTTJ_HOME = "https://www.welcometothejungle.com/fr/jobs"
+# Clé publique de recherche (lecture seule) utilisée par le site ; réextraite de la page si elle change.
+WTTJ_DEFAULT_APP = "CSEKHVMS53"
+WTTJ_DEFAULT_KEY = "4bd8f6215d0cc52b26430765769e65a0"
+WTTJ_INDEXES = ["wk_cms_jobs_production", "wttj_jobs_production_fr", "wttj_jobs_production"]
+_wttj_state = {}
+
+
+def wttj_keys_from_page():
+    """Essaie de lire la clé courante dans la page du site. Renvoie dict ou None."""
+    try:
+        status, page = http(WTTJ_HOME, headers={"Accept": "text/html"})
+    except (SourceError, RateLimited):
+        return None
+    if status != 200:
+        return None
+    app = _first(r'ALGOLIA_APPLICATION_ID\\?"?\s*[:=]\s*\\?"([A-Z0-9]{6,})', page)
+    key = _first(r'ALGOLIA_API_KEY(?:_CLIENT)?\\?"?\s*[:=]\s*\\?"([a-f0-9]{24,})', page)
+    if not key:
+        return None
+    return dict(app=app or WTTJ_DEFAULT_APP, key=key)
+
+
+def _wttj_office(h):
+    offices = h.get("offices")
+    if not offices and isinstance(h.get("office"), dict):
+        offices = [h["office"]]
+    return offices or []
+
+
+def parse_wttj_hits(hits):
+    jobs = []
+    for h in hits:
+        org = h.get("organization") or {}
+        slug, org_slug = h.get("slug"), org.get("slug")
+        if not slug or not org_slug:
+            continue
+        offices = _wttj_office(h)
+        loc = ", ".join(sorted({(o.get("city") or "") for o in offices if o.get("city")})) or ""
+        country = {(o.get("country_code") or "").upper() for o in offices if o.get("country_code")}
+        if country and "FR" not in country:
+            loc = loc + " (hors France)"
+        ct = h.get("contract_type") or ""
+        names = h.get("contract_type_names") or {}
+        if isinstance(names, dict):
+            ct = " ".join(x for x in [ct, names.get("fr") or "", names.get("en") or ""] if x)
+        jobs.append(dict(
+            source="Welcome to the Jungle", ext_id=str(h.get("reference") or h.get("objectID") or slug),
+            title=h.get("name") or "", company=org.get("name") or "", location=loc,
+            url="https://www.welcometothejungle.com/fr/companies/%s/jobs/%s" % (org_slug, slug),
+            apply_url=None, posted=str(h.get("published_at") or "")[:10],
+            employment_type=ct.replace("_", " "),
+        ))
+    return jobs
+
+
+def wttj_query(query, app, key, index, filters):
+    params = {"query": query, "hitsPerPage": "50", "page": "0"}
+    if filters:
+        params["filters"] = filters
+    url = "https://%s-dsn.algolia.net/1/indexes/*/queries" % app.lower()
+    body = json.dumps({"requests": [{"indexName": index, "params": urllib.parse.urlencode(params)}]})
+    return http(url, method="POST", data=body, headers={
+        "X-Algolia-Application-Id": app, "X-Algolia-API-Key": key,
+        "Referer": "https://www.welcometothejungle.com/", "Origin": "https://www.welcometothejungle.com",
+        "Content-Type": "application/x-www-form-urlencoded", "Accept": "application/json"})
+
+
+FILTER_CHOICES = [
+    "website.reference:wttj_fr AND contract_type:internship",
+    "contract_type:internship",
+    "website.reference:wttj_fr",
+    "",
+]
+
+
+def _wttj_configs():
+    keys = [dict(app=WTTJ_DEFAULT_APP, key=WTTJ_DEFAULT_KEY)]
+    page_keys = wttj_keys_from_page()
+    if page_keys and page_keys["key"] != WTTJ_DEFAULT_KEY:
+        keys.insert(0, page_keys)
+    for k in keys:
+        for idx in WTTJ_INDEXES:
+            for flt in FILTER_CHOICES:
+                yield k["app"], k["key"], idx, flt
+
+
+def _wttj_find_config(probe_query):
+    """Trouve une combinaison clé/index/filtre qui répond et renvoie des offres."""
+    last = "aucune réponse"
+    fallback = None
+    for app, key, idx, flt in _wttj_configs():
+        status, txt = wttj_query(probe_query, app, key, idx, flt)
+        if status != 200:
+            last = "HTTP %d sur %s (%s)" % (status, idx, txt[:80].replace("\n", " "))
+            continue
+        hits = (json.loads(txt).get("results") or [{}])[0].get("hits", [])
+        if hits and parse_wttj_hits(hits):
+            return dict(app=app, key=key, index=idx, filters=flt)
+        if fallback is None:
+            fallback = dict(app=app, key=key, index=idx, filters=flt)
+    if fallback:
+        return fallback
+    raise SourceError("recherche WTTJ inaccessible : " + last)
+
+
+def collect_wttj(cfg, log):
+    queries = cfg["wttj"]["queries"]
+    if not _wttj_state:
+        _wttj_state.update(_wttj_find_config(queries[0] if queries else "stage"))
+    out = {}
+    for i, q in enumerate(queries):
+        s = _wttj_state
+        status, txt = wttj_query(q, s["app"], s["key"], s["index"], s["filters"])
+        if status in (400, 401, 403, 404):
+            _wttj_state.clear()
+            _wttj_state.update(_wttj_find_config(q))  # clé ou index changés : on recherche à nouveau
+            s = _wttj_state
+            status, txt = wttj_query(q, s["app"], s["key"], s["index"], s["filters"])
+        if status != 200:
+            raise SourceError("WTTJ HTTP %d : %s" % (status, txt[:150]))
+        hits = (json.loads(txt).get("results") or [{}])[0].get("hits", [])
+        for j in parse_wttj_hits(hits):
+            out[j["ext_id"]] = j
+        if i < len(queries) - 1:
+            _pause(0.5, 1.5)
+    return list(out.values())
+# =====================================================================
+# Workday (API JSON publique utilisée par les sites carrières Workday)
+# =====================================================================
+def parse_workday(data, host, site):
+    jobs = []
+    for p in data.get("jobPostings", []) or []:
+        path = p.get("externalPath")
+        if not path:
+            continue
+        ref = (p.get("bulletFields") or [path])[0]
+        jobs.append(dict(
+            source="Site carrière", ext_id="%s:%s" % (host.split(".")[0], ref),
+            title=p.get("title") or "", company=None, location=p.get("locationsText") or "",
+            url="https://%s/%s%s" % (host, site, path), apply_url="https://%s/%s%s" % (host, site, path),
+            posted=p.get("postedOn") or "", wd_path=path,
+        ))
+    return jobs
+
+
+def workday_detail_locations(host, tenant, site, path):
+    status, txt = http("https://%s/wday/cxs/%s/%s%s" % (host, tenant, site, path),
+                       headers={"Accept": "application/json"})
+    if status != 200:
+        return ""
+    info = json.loads(txt).get("jobPostingInfo", {})
+    locs = [info.get("location") or ""] + list(info.get("additionalLocations") or [])
+    return ", ".join(l for l in locs if l)
+
+
+def collect_workday(cfg, log):
+    out, errors = [], []
+    for t in cfg["workday"]["tenants"]:
+        if not t.get("enabled", True):
+            continue
+        host, tenant, site, company = t["host"], t["tenant"], t["site"], t["company"]
+        try:
+            seen = {}
+            for q in cfg["workday"]["queries"]:
+                status, txt = http("https://%s/wday/cxs/%s/%s/jobs" % (host, tenant, site), method="POST",
+                                   data={"appliedFacets": {}, "limit": 20, "offset": 0, "searchText": q},
+                                   headers={"Accept": "application/json"})
+                if status != 200:
+                    raise SourceError("HTTP %d" % status)
+                for j in parse_workday(json.loads(txt), host, site):
+                    j["company"] = company
+                    seen[j["ext_id"]] = j
+                _pause(0.5, 1.5)
+            for j in seen.values():
+                # "3 Locations" : on va chercher la liste exacte
+                if re.search(r"\d+\s+(locations|sites|lieux)", j["location"], re.I):
+                    try:
+                        j["location"] = workday_detail_locations(host, tenant, site, j["wd_path"]) or j["location"]
+                    except Exception:
+                        pass
+                out.append(j)
+        except RateLimited:
+            errors.append("%s : limité (429)" % company)
+        except (SourceError, ValueError) as e:
+            errors.append("%s : %s" % (company, e))
+    if errors:
+        log("Workday : " + "; ".join(errors))
+    return out, errors

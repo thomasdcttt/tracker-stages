@@ -1,0 +1,88 @@
+{
+  "interval_minutes": 10,
+  "linkedin": {
+    "enabled": true,
+    "location": "Paris, Île-de-France, France",
+    "past_seconds": 604800,
+    "pages_per_query": 1,
+    "pause_between_queries": [
+      2,
+      5
+    ],
+    "detail_limit_per_cycle": 25,
+    "queries": [
+      "stage M&A",
+      "stage fusions acquisitions",
+      "stage banque d'affaires",
+      "investment banking intern",
+      "off-cycle internship",
+      "stage private equity",
+      "stage capital investissement",
+      "stage venture capital",
+      "stage sales trading",
+      "stage salle des marchés",
+      "stage trading",
+      "global markets internship"
+    ]
+  },
+  "wttj": {
+    "enabled": true,
+    "queries": [
+      "M&A",
+      "fusions acquisitions",
+      "banque d'affaires",
+      "corporate finance",
+      "private equity",
+      "capital investissement",
+      "LBO",
+      "venture capital",
+      "sales trading",
+      "trading",
+      "marchés financiers"
+    ]
+  },
+  "workday": {
+    "enabled": true,
+    "queries": [
+      "intern Paris",
+      "stage Paris",
+      "off-cycle"
+    ],
+    "tenants": [
+      {
+        "company": "Barclays",
+        "host": "barclays.wd3.myworkdayjobs.com",
+        "tenant": "barclays",
+        "site": "External_Career_Site_Barclays",
+        "enabled": true
+      },
+      {
+        "company": "Deutsche Bank",
+        "host": "db.wd3.myworkdayjobs.com",
+        "tenant": "db",
+        "site": "DBWebsite",
+        "enabled": true
+      },
+      {
+        "company": "Citi",
+        "host": "citi.wd5.myworkdayjobs.com",
+        "tenant": "citi",
+        "site": "2",
+        "enabled": true
+      }
+    ]
+  },
+  "filters": {
+    "extra_include": [],
+    "extra_exclude": [],
+    "include_summer": true
+  },
+  "notifications": {
+    "max_individual": 5,
+    "open_dashboard_on_start": true
+  },
+  "cloud": {
+    "ntfy_topic": "stages-paris-d15cb32c5a",
+    "dashboard_url": ""
+  }
+}
