@@ -89,6 +89,7 @@ DEFAULT_CONFIG = {
         ],
     },
     "filters": {
+        "max_age_days": 30,
         "extra_include": [],
         "extra_exclude": [],
         "include_summer": True,
@@ -146,6 +147,17 @@ def load_config():
             sys.exit("config.json invalide (ligne %d) : %s\nCorrige le fichier ou supprime-le pour le régénérer."
                      % (e.lineno, e.msg))
     return _merge(DEFAULT_CONFIG, user)
+
+
+def too_old(posted, cfg):
+    """Vrai si la date de publication (AAAA-MM-JJ) dépasse filters.max_age_days."""
+    if not posted:
+        return False
+    try:
+        d = datetime.strptime(posted[:10], "%Y-%m-%d")
+    except ValueError:
+        return False
+    return (datetime.now() - d).days > int(cfg["filters"].get("max_age_days", 30))
 
 
 # ----------------------------------------------------------------------------- collecte
@@ -243,6 +255,9 @@ class Tracker:
                 j["uid"] = "%s:%s" % (j["source"], j["ext_id"])
                 if self.store.known(j["uid"]):
                     continue
+                if too_old(j.get("posted"), self.cfg):
+                    self.store.add_rejected(j["uid"], "publiée il y a trop longtemps")
+                    continue
                 r = self._classify(j)
                 if j["source"] == "LinkedIn" and (r["ok"] or r["intern"] == "unknown"):
                     # On va chercher le lien carrière (et confirmer le stage si besoin)
@@ -315,7 +330,15 @@ class Tracker:
 
 # ----------------------------------------------------------------------------- modes
 def write_dashboard(store, cfg, next_run=None):
-    offers = store.offers()
+    offers = []
+    for o in store.offers():
+        if too_old(o.get("posted"), cfg) or not filters.is_paris(o.get("location"), o["title"]):
+            continue
+        cat, _ = filters.categorize(o["title"])  # applique aussi les corrections de filtre aux offres déjà vues
+        if cat is None and o["category"] != "Autre (mot-clé perso)":
+            continue
+        o["category"] = cat or o["category"]
+        offers.append(o)
     for o in offers:
         o["others"] = store.other_links(o["uid"])
     dashboard.write(DASH_PATH, offers, store.sources(), next_run, cfg["interval_minutes"])
@@ -389,6 +412,8 @@ def main():
         notify.NTFY_TOPIC = topic
         SEND = notify.ntfy
         os.makedirs(os.path.join(HERE, "docs"), exist_ok=True)
+        # Publie la page telle quelle sur GitHub Pages, sans passer par Jekyll
+        open(os.path.join(HERE, "docs", ".nojekyll"), "a").close()
         DASH_PATH = os.path.join(HERE, "docs", "index.html")
         url = cfg["cloud"]["dashboard_url"]
         repo = os.environ.get("GITHUB_REPOSITORY", "")

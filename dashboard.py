@@ -52,7 +52,7 @@ label.ap{font-size:12.5px;color:var(--mute);display:flex;gap:5px;align-items:cen
 <div class="sub" id="upd"></div></div><div class="stats" id="stats"></div></header>
 <div class="bar" id="cats"></div>
 <div class="bar"><input type="search" id="q" placeholder="Filtrer (entreprise, poste…)">
-<button class="chip" id="f24">Nouvelles 24 h</button><button class="chip" id="fap">Masquer postulées</button>
+<button class="chip" id="f24">Publiées &lt; 48 h</button><button class="chip" id="fap">Masquer postulées</button>
 <button class="chip" id="fsum">Masquer summer</button></div>
 <div class="list" id="list"></div>
 <div class="src" id="src"></div>
@@ -66,6 +66,12 @@ function load(k,d){try{return JSON.parse(localStorage.getItem(k))??d}catch(e){re
 function save(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}
 let applied = load("applied",{}), st = load("filters",{cat:"Toutes",q:"",f24:false,fap:false,fsum:false});
 const esc = s => String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const DAY=86400;
+function pubTs(o){if(o.posted&&/^\d{4}-\d{2}-\d{2}/.test(o.posted)){return Date.parse(o.posted.slice(0,10)+"T12:00:00")/1000}return o.first_seen}
+function isFresh(o){return Date.now()/1000-pubTs(o)<2*DAY}
+function pubLabel(o){if(!o.posted)return "";const d=Math.floor((Date.now()/1000-pubTs(o)+DAY/2)/DAY);
+  return d<=0?"Publiée aujourd'hui":d===1?"Publiée hier":"Publiée il y a "+d+" j"}
+OFFERS.sort((a,b)=>pubTs(b)-pubTs(a)||b.first_seen-a.first_seen);
 const fmt = ts => new Date(ts*1000).toLocaleString("fr-FR",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"});
 function ago(ts){const m=Math.round((Date.now()/1000-ts)/60);if(m<60)return "il y a "+m+" min";
 const h=Math.round(m/60);if(h<48)return "il y a "+h+" h";return "il y a "+Math.round(h/24)+" j"}
@@ -77,27 +83,27 @@ function render(){
     b.onclick=()=>{st[id]=!st[id];save("filters",st);render()}});
   const q=document.getElementById("q");q.value=st.q;q.oninput=()=>{st.q=q.value;save("filters",st);render()};
   const now=Date.now()/1000, ql=st.q.toLowerCase();
-  const rows=OFFERS.filter(o=>(st.cat==="Toutes"||o.category===st.cat)&&(!st.f24||now-o.first_seen<86400)
+  const rows=OFFERS.filter(o=>(st.cat==="Toutes"||o.category===st.cat)&&(!st.f24||isFresh(o))
     &&(!st.fap||!applied[o.uid])&&(!st.fsum||!o.summer)
     &&(!ql||(o.title+" "+o.company+" "+o.location+" "+o.source).toLowerCase().includes(ql)));
   const L=document.getElementById("list");
   if(!rows.length){L.innerHTML=`<div class="empty">${OFFERS.length?"Aucune offre avec ces filtres.":"Aucune offre pour l'instant. Le tracker cherche en continu, tu seras notifié dès qu'une offre apparaît."}</div>`}
   else L.innerHTML=rows.map(o=>{
-    const isNew=now-o.first_seen<86400, link=o.apply_url||o.url;
+    const isNew=isFresh(o), link=o.apply_url||o.url;
     const others=(o.others||[]).map(x=>`<a class="lnk" href="${esc(x.apply_url||x.url)}" target="_blank" rel="noopener">${esc(x.source)}</a>`).join(" ");
     return `<div class="row ${applied[o.uid]?"applied":""}"><div>
       <div><span class="co">${esc(o.company||"—")}</span> · <span class="t">${esc(o.title)}</span></div>
       <div class="meta"><span class="tag ${CATS[o.category]||"c-x"}">${esc(o.category)}</span>
       ${o.summer?'<span class="tag c-x">Summer</span>':""}
       ${isNew?'<span class="new">NOUVEAU</span>':""}<span>${esc(o.location||"Paris")}</span>
-      <span>Détectée ${ago(o.first_seen)} (${fmt(o.first_seen)})</span>${o.posted?`<span>Publiée : ${esc(o.posted)}</span>`:""}
+      ${o.posted?`<span><b>${pubLabel(o)}</b> (${esc(o.posted.slice(0,10))})</span>`:""}<span>Détectée ${ago(o.first_seen)}</span>
       <span>via ${esc(o.source)}</span></div></div>
       <div class="act"><a class="btn" href="${esc(link)}" target="_blank" rel="noopener">${o.apply_url&&o.apply_url!==o.url?"Postuler (site carrière)":"Voir et postuler"}</a>
       ${o.apply_url&&o.apply_url!==o.url?`<a class="lnk" href="${esc(o.url)}" target="_blank" rel="noopener">Offre ${esc(o.source)}</a>`:""}${others}
       <label class="ap"><input type="checkbox" data-u="${esc(o.uid)}" ${applied[o.uid]?"checked":""}>Postulé</label></div></div>`}).join("");
   L.querySelectorAll("input[type=checkbox]").forEach(c=>c.onchange=()=>{if(c.checked)applied[c.dataset.u]=Date.now();else delete applied[c.dataset.u];save("applied",applied);render()});
-  const n24=OFFERS.filter(o=>now-o.first_seen<86400).length, nap=OFFERS.filter(o=>applied[o.uid]).length;
-  document.getElementById("stats").innerHTML=`<span><b>${OFFERS.length}</b> offres</span><span><b>${n24}</b> nouvelles (24 h)</span><span><b>${nap}</b> postulées</span>`;
+  const n24=OFFERS.filter(isFresh).length, nap=OFFERS.filter(o=>applied[o.uid]).length;
+  document.getElementById("stats").innerHTML=`<span><b>${OFFERS.length}</b> offres</span><span><b>${n24}</b> publiées depuis 48 h</span><span><b>${nap}</b> postulées</span>`;
   document.getElementById("upd").textContent="Mis à jour "+fmt(GEN)+(NEXT?" · prochaine recherche vers "+new Date(NEXT*1000).toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit"}):"")+" · la page se recharge seule";
   document.getElementById("src").innerHTML="<b>Sources</b>"+(SOURCES.length?SOURCES.map(s=>`<div><span class="dot" style="background:var(${s.ok?"--ok":"--err"})"></span>${esc(s.name)} · ${esc(s.message)} · ${fmt(s.last_run)}</div>`).join(""):"<div>Première recherche en cours…</div>");
 }

@@ -86,15 +86,14 @@ CAT_PATTERNS = {
         r"sales trading", r"sales and trading", r"sales traders?", r"traders?", r"trading",
         r"global markets?", r"markets", r"capital markets", r"marches de capitaux", r"marches financiers",
         r"salle des? marches?", r"fixed income", r"ficc", r"equities", r"equity derivatives",
-        r"derivatives", r"derives", r"fx", r"forex", r"rates", r"commodit(?:y|ies)",
-        r"matieres premieres", r"vendeur", r"vendeuse", r"institutional sales", r"cross asset",
+        r"derivatives", r"derives", r"fx", r"forex", r"rates", r"institutional sales", r"cross asset",
         r"obligataire", r"primary bonds", r"syndicate", r"syndication",
     ],
 }
 CAT_RX = {k: _rx(v) for k, v in CAT_PATTERNS.items()}
 
 # "Sales" seul : accepté seulement avec un contexte marchés
-SALES_RX = _rx([r"sales", r"vente"])
+SALES_RX = _rx([r"sales", r"vente", r"vendeur", r"vendeuse"])
 MARKET_CTX = _rx([
     r"markets?", r"marches?", r"trading", r"fixed income", r"ficc", r"equit(?:y|ies)", r"actions",
     r"derivatives?", r"derives", r"fx", r"forex", r"change", r"rates", r"taux", r"credit",
@@ -122,12 +121,15 @@ ROLE_EXCLUDE = _rx([
     r"wealth", r"patrimoine", r"gestion de patrimoine", r"private bank", r"banque privee",
     r"retail", r"reseau", r"agence", r"conseiller clientele", r"actuar\w*", r"model\w*", r"valuation control",
     r"product control", r"tax", r"fiscal\w*", r"strategy consulting",
-    r"esg analyst", r"esg",
+    r"esg analyst", r"esg", r"trade finance", r"financement du commerce", r"commerce international",
+    r"financement export", r"credit documentaire", r"trade services",
 ])
 # Exceptions : ne pas exclure ces formulations utiles
 ROLE_EXCLUDE_EXCEPTIONS = re.compile(
     r"(?<![a-z0-9])(?:structured products sales|sales structured products|"
-    r"credit sales|equity research sales|capital risques?|capital risk)(?![a-z0-9])"
+    r"credit sales|equity research sales|capital risques?|capital risk|"
+    r"sales (?:and )?trading (?:and )?structur\w*|trading (?:and )?structur\w*|sales (?:and )?structur\w*|"
+    r"structur\w* (?:and )?(?:sales|trading)\w*)(?![a-z0-9])"
 )
 
 

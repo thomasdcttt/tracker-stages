@@ -98,6 +98,28 @@ def _first(pattern, s, flags=re.S):
     return m.group(1) if m else None
 
 
+def norm_posted(value, today=None):
+    """Convertit une date de publication (ISO, "Posted 3 Days Ago", "Il y a 2 jours"...) en AAAA-MM-JJ."""
+    import datetime as _dt
+    today = today or _dt.date.today()
+    v = (value or "").strip()
+    m = re.match(r"(\d{4}-\d{2}-\d{2})", v)
+    if m:
+        return m.group(1)
+    low = v.lower()
+    if re.search(r"today|aujourd|just|heure|hour|minute", low):
+        return today.isoformat()
+    if re.search(r"yesterday|hier", low):
+        return (today - _dt.timedelta(days=1)).isoformat()
+    m = re.search(r"(\d+)\s*\+?\s*(day|jour|week|semaine|month|mois)", low)
+    if m:
+        n = int(m.group(1)) + (1 if "+" in low else 0)
+        unit = m.group(2)
+        days = n * (7 if unit in ("week", "semaine") else 30 if unit in ("month", "mois") else 1)
+        return (today - _dt.timedelta(days=days)).isoformat()
+    return ""
+
+
 def _pause(a, b):
     time.sleep(random.uniform(a, b))
 
@@ -121,7 +143,7 @@ def parse_linkedin_search(page):
             or _text(_first(r'<span class="sr-only">(.*?)</span>', chunk))
         company = _text(_first(r'class="[^"]*base-search-card__subtitle[^"]*"[^>]*>(.*?)</h4>', chunk))
         location = _text(_first(r'class="[^"]*job-search-card__location[^"]*"[^>]*>(.*?)</span>', chunk))
-        posted = _first(r'<time[^>]*datetime="([^"]+)"', chunk) or ""
+        posted = norm_posted(_first(r'<time[^>]*datetime="([^"]+)"', chunk) or "")
         href = _first(r'class="[^"]*base-card__full-link[^"]*"[^>]*href="([^"]+)"', chunk) \
             or _first(r'href="(https://[a-z]{0,3}\.?linkedin\.com/jobs/view/[^"]+)"', chunk)
         url = "https://www.linkedin.com/jobs/view/%s/" % jid
@@ -345,7 +367,7 @@ def parse_workday(data, host, site):
             source="Site carrière", ext_id="%s:%s" % (host.split(".")[0], ref),
             title=p.get("title") or "", company=None, location=p.get("locationsText") or "",
             url="https://%s/%s%s" % (host, site, path), apply_url="https://%s/%s%s" % (host, site, path),
-            posted=p.get("postedOn") or "", wd_path=path,
+            posted=norm_posted(p.get("postedOn")), wd_path=path,
         ))
     return jobs
 
