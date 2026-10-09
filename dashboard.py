@@ -109,7 +109,8 @@ function render(){
   document.getElementById("src").innerHTML="<b>Sources</b>"+(SOURCES.length?SOURCES.map(s=>`<div><span class="dot" style="background:var(${s.ok?"--ok":"--err"})"></span>${esc(s.name)} · ${esc(s.message)} · ${fmt(s.last_run)}</div>`).join(""):"<div>Première recherche en cours…</div>");
 }
 render();
-setTimeout(()=>location.reload(),120000);
+// Recharge sans le cache du navigateur (GitHub Pages garde les pages 10 min en cache)
+setTimeout(()=>{location.replace(location.pathname+"?t="+Date.now())},120000);
 </script></body></html>"""
 
 
