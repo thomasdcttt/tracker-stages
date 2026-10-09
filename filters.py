@@ -69,7 +69,9 @@ CAT_PATTERNS = {
         r"ecm", r"dcm", r"equity capital markets", r"debt capital markets",
         r"leveraged finance", r"levfin", r"acquisition finance", r"financements? d acquisition",
         r"debt advisory", r"conseil en financement", r"restructuring", r"restructuration financiere",
-        r"corporate advisory", r"financial advisory", r"coverage", r"origination",
+        r"corporate advisory", r"financial advisory", r"coverage", r"origination", r"global advisory",
+        r"sovereign advisory", r"financial sponsors?", r"sponsors coverage", r"fig",
+        r"financial institutions? group", r"advisory (?:and )?(?:mna|m a)",
     ],
     "Private Equity": [
         r"private equity", r"capital investissement", r"capital developpement", r"capital transmission",

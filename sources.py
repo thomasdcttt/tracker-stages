@@ -415,3 +415,180 @@ def collect_workday(cfg, log):
     if errors:
         log("Workday : " + "; ".join(errors))
     return out, errors
+
+
+# =====================================================================
+# Sites carrières supplémentaires (un collecteur par type de site)
+# =====================================================================
+def _job(company, ext, title, location, url, posted=""):
+    return dict(source="Site carrière", ext_id="%s:%s" % (company, ext), title=title, company=company,
+                location=location or "", url=url, apply_url=url, posted=norm_posted(posted))
+
+
+def collect_workday_site(s):
+    """Un site Workday isolé (même API que collect_workday)."""
+    host, tenant, site = s["host"], s["tenant"], s["site"]
+    seen = {}
+    for q in s.get("queries", ["intern Paris", "stage Paris", "off-cycle"]):
+        status, txt = http("https://%s/wday/cxs/%s/%s/jobs" % (host, tenant, site), method="POST",
+                           data={"appliedFacets": {}, "limit": 20, "offset": 0, "searchText": q},
+                           headers={"Accept": "application/json"})
+        if status != 200:
+            raise SourceError("HTTP %d" % status)
+        for j in parse_workday(json.loads(txt), host, site):
+            if re.search(r"\d+\s+(locations|sites|lieux)", j["location"], re.I):
+                try:
+                    j["location"] = workday_detail_locations(host, tenant, site, j["wd_path"]) or j["location"]
+                except Exception:
+                    pass
+            seen[j["ext_id"]] = _job(s["company"], j["ext_id"], j["title"], j["location"], j["url"], j["posted"])
+        _pause(0.5, 1.5)
+    return list(seen.values())
+
+
+def parse_oracle(data, host, site_url):
+    jobs = []
+    for item in data.get("items", []) or []:
+        for r in item.get("requisitionList", []) or []:
+            rid = r.get("Id")
+            if not rid:
+                continue
+            locs = [r.get("PrimaryLocation") or ""] + [
+                (x.get("Name") or "") for x in (r.get("secondaryLocations") or []) if isinstance(x, dict)]
+            jobs.append(dict(id=str(rid), title=r.get("Title") or "", location=", ".join(l for l in locs if l),
+                             posted=r.get("PostedDate") or "",
+                             url="https://%s/hcmUI/CandidateExperience/en/sites/%s/job/%s" % (host, site_url, rid)))
+    return jobs
+
+
+def _oracle_query(host, site_number, keyword):
+    finder = "findReqs;siteNumber=%s,keyword=\"%s\",limit=25,sortBy=POSTING_DATES_DESC" % (site_number, keyword)
+    url = ("https://%s/hcmRestApi/resources/latest/recruitingCEJobRequisitions?onlyData=true"
+           "&expand=requisitionList.secondaryLocations&finder=%s" % (host, urllib.parse.quote(finder, safe=";=,")))
+    return http(url, headers={"Accept": "application/json"})
+
+
+_oracle_site_numbers = {}
+
+
+def collect_oracle_site(s):
+    """Oracle Recruiting Cloud (JP Morgan, Lazard...)."""
+    host, site_url = s["host"], s["site"]
+    site_number = _oracle_site_numbers.get(host) or s.get("site_number") or site_url
+    out = {}
+    for q in s.get("queries", ["intern Paris", "internship Paris", "stage Paris", "off-cycle"]):
+        status, txt = _oracle_query(host, site_number, q)
+        if status != 200 and host not in _oracle_site_numbers:
+            # Le numéro de site interne (CX_xxx) diffère du nom dans l'URL : on le lit dans la page
+            st, page = http("https://%s/hcmUI/CandidateExperience/en/sites/%s/" % (host, site_url),
+                            headers={"Accept": "text/html"})
+            found = _first(r'siteNumber\W{0,6}(CX_\d+)', page) if st == 200 else None
+            if not found:
+                raise SourceError("HTTP %d (numéro de site introuvable)" % status)
+            _oracle_site_numbers[host] = site_number = found
+            status, txt = _oracle_query(host, site_number, q)
+        if status != 200:
+            raise SourceError("HTTP %d" % status)
+        for j in parse_oracle(json.loads(txt), host, site_url):
+            out[j["id"]] = _job(s["company"], j["id"], j["title"], j["location"], j["url"], j["posted"])
+        _pause(0.5, 1.5)
+    return list(out.values())
+
+
+def parse_eightfold(data, host, domain):
+    jobs = []
+    for p in data.get("positions", []) or []:
+        pid = p.get("id")
+        if pid is None:
+            continue
+        locs = p.get("locations") or [p.get("location") or ""]
+        ts = p.get("t_create") or p.get("t_update")
+        posted = ""
+        if isinstance(ts, (int, float)) and ts > 0:
+            import datetime as _dt
+            posted = _dt.datetime.utcfromtimestamp(ts).strftime("%Y-%m-%d")
+        url = p.get("canonicalPositionUrl") or "https://%s/careers?pid=%s&domain=%s" % (host, pid, domain)
+        jobs.append(dict(id=str(pid), title=p.get("name") or "", location=", ".join(l for l in locs if l),
+                         posted=posted, url=url))
+    return jobs
+
+
+def collect_eightfold_site(s):
+    """Eightfold (HSBC, Morgan Stanley...)."""
+    host, domain = s["host"], s["domain"]
+    out = {}
+    for q in s.get("queries", ["intern", "internship", "stage", "off-cycle"]):
+        params = {"domain": domain, "start": "0", "num": "50", "location": "Paris", "query": q,
+                  "sort_by": "timestamp"}
+        status, txt = http("https://%s/api/apply/v2/jobs?%s" % (host, urllib.parse.urlencode(params)),
+                           headers={"Accept": "application/json"})
+        if status != 200:
+            raise SourceError("HTTP %d" % status)
+        for j in parse_eightfold(json.loads(txt), host, domain):
+            out[j["id"]] = _job(s["company"], j["id"], j["title"], j["location"], j["url"], j["posted"])
+        _pause(0.5, 1.5)
+    return list(out.values())
+
+
+PARIS_HINT = re.compile(r"(?<![A-Za-z])(Paris|PARIS|La D[ée]fense|Puteaux|Courbevoie|Neuilly|Levallois|"
+                        r"Boulogne|Montrouge|Saint-Denis|Nanterre|[ÎI]le-de-France)(?![A-Za-z])")
+
+
+def parse_html_listing(page, base_url, link_regex):
+    """Lit une page d'offres classique : liens d'offres + lieu indiqué dans le bloc de chaque offre.
+
+    Le bloc d'une offre va de son premier lien jusqu'au premier lien suivant qui pointe ailleurs
+    (autre offre, pagination, filtre...), pour ne pas attribuer à une offre le lieu de sa voisine.
+    """
+    rx = re.compile(link_regex)
+    all_links = []
+    for m in re.finditer(r'<a\b[^>]*?href="([^"]+)"[^>]*>(.*?)</a>', page, re.S | re.I):
+        raw = html.unescape(m.group(1))
+        all_links.append((m.start(), urllib.parse.urljoin(base_url, raw), _text(m.group(2)), bool(rx.search(raw))))
+    texts, firsts = {}, []
+    for pos, href, txt, is_job in all_links:
+        if not is_job:
+            continue
+        if href not in texts:
+            firsts.append((pos, href))
+            texts[href] = txt
+        elif len(txt) > len(texts[href]):
+            texts[href] = txt
+    jobs = []
+    for pos, href in firsts:
+        end = pos + 1500
+        for p2, h2, _, _ in all_links:
+            if p2 > pos and h2 != href:
+                end = min(end, p2)
+                break
+        block = _text(page[pos:end])
+        title = texts[href]
+        if len(title) < 6:  # lien sans texte (image) : titre tiré de l'adresse
+            slug = urllib.parse.urlparse(href).path.rstrip("/").split("/")[-1]
+            title = re.sub(r"[-_]+", " ", re.sub(r"\.(aspx|html?)$", "", slug)).strip()
+        m = PARIS_HINT.search(block)
+        jobs.append(dict(href=href, title=title, location=m.group(1) if m else "", block=block[:400]))
+    return jobs
+
+
+def collect_html_site(s):
+    out = {}
+    urls = s["urls"] if "urls" in s else [s["url"]]
+    for u in urls:
+        status, page = http(u, headers={"Accept": "text/html"})
+        if status != 200:
+            raise SourceError("HTTP %d" % status)
+        for j in parse_html_listing(page, u, s["link_regex"]):
+            out[j["href"]] = _job(s["company"], j["href"], j["title"], j["location"], j["href"])
+        _pause(0.5, 1.5)
+    if not out:
+        raise SourceError("aucune offre lisible sur la page (site modifié ou chargé en JavaScript)")
+    return list(out.values())
+
+
+SITE_COLLECTORS = {
+    "workday": collect_workday_site,
+    "oracle": collect_oracle_site,
+    "eightfold": collect_eightfold_site,
+    "html": collect_html_site,
+}

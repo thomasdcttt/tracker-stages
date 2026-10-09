@@ -88,6 +88,34 @@ DEFAULT_CONFIG = {
              "site": "2", "enabled": True},
         ],
     },
+    # Sites carrières surveillés directement (en plus de LinkedIn). Types : workday, oracle, eightfold, html.
+    "sites": [
+        {"company": "J.P. Morgan", "type": "oracle", "host": "jpmc.fa.oraclecloud.com", "site": "CX_1001"},
+        {"company": "Lazard", "type": "oracle", "host": "icbpjb.fa.ocs.oraclecloud.com",
+         "site": "LazardProfessionalCareers"},
+        {"company": "Morgan Stanley", "type": "eightfold", "host": "morganstanley.eightfold.ai",
+         "domain": "morganstanley.com"},
+        {"company": "HSBC", "type": "eightfold", "host": "portal.careers.hsbc.com", "domain": "hsbc.com"},
+        {"company": "Ardian", "type": "workday", "host": "ardian.wd103.myworkdayjobs.com", "tenant": "ardian",
+         "site": "ArdianCareers"},
+        {"company": "Rothschild & Co", "type": "html",
+         "url": "https://www.rothschildandco.com/en/careers/students-and-graduates/opportunities/",
+         "link_regex": r"/careers/students-and-graduates/opportunities/[^/?#]+/?$"},
+        {"company": "BNP Paribas", "type": "html",
+         "urls": ["https://group.bnpparibas/en/careers/all-job-offers/trainee-internship",
+                  "https://group.bnpparibas/en/careers/all-job-offers/trainee-internship?page=1",
+                  "https://group.bnpparibas/en/careers/all-job-offers/trainee-internship?page=2"],
+         "link_regex": r"/careers/job-offer/[^/?#]+"},
+        {"company": "Crédit Agricole CIB", "type": "html",
+         "url": "https://jobs.ca-cib.com/offre-de-emploi/liste-toutes-offres.aspx?all=1&mode=layer",
+         "link_regex": r"/offre-de-emploi/emploi-[^\"?#]+_\d+\.aspx"},
+        {"company": "Evercore", "type": "html",
+         "url": "https://evercore.tal.net/vx/lang-en-GB/mobile-0/channel-1/appcentre-ext/brand-6/candidate/jobboard/vacancy/2/adv/",
+         "link_regex": r"/candidate/so/pm/\d+/pl/\d+/opp/\d+"},
+        {"company": "Bank of America", "type": "html",
+         "url": "https://bankcampuscareers.tal.net/vx/lang-en-GB/mobile-0/brand-4/xf-6f0048376f93/candidate/jobboard/vacancy/2/adv/",
+         "link_regex": r"/candidate/so/pm/\d+/pl/\d+/opp/\d+"},
+    ],
     "filters": {
         "max_age_days": 60,
         "extra_include": [],
@@ -192,6 +220,14 @@ class Tracker:
 
     def _run_source(self, name, fn):
         now = time.time()
+        if name not in self.backoff:
+            try:
+                self.backoff[name] = float(self.store.get_meta("backoff:" + name, 0))
+                bl = float(self.store.get_meta("backoff_len:" + name, 0))
+                if bl:
+                    self.backoff_len[name] = bl
+            except ValueError:
+                pass
         if self.backoff.get(name, 0) > now:
             mins = int((self.backoff[name] - now) / 60) + 1
             self.store.set_source(name, False, "En pause %d min (limitation du site)" % mins)
@@ -231,6 +267,12 @@ class Tracker:
         if c["workday"]["enabled"] and c["workday"]["tenants"]:
             batches.append(("Sites carrières Workday",
                             self._run_source("Sites carrières Workday", lambda: sources.collect_workday(c, log))))
+        for site in c.get("sites") or []:
+            fn = sources.SITE_COLLECTORS.get(site.get("type"))
+            if not fn or not site.get("enabled", True):
+                continue
+            name = "Site · %s" % site["company"]
+            batches.append((name, self._run_source(name, lambda site=site, fn=fn: fn(site))))
         return batches
 
     def _accept(self, j, r, seed, new_list):
