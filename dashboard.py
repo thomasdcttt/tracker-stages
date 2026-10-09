@@ -16,9 +16,9 @@ PAGE = r"""<!doctype html>
 <title>Stages Paris · Tracker</title>
 <style>
 :root{--bg:#f6f5f2;--card:#fff;--ink:#1c1c1a;--mute:#6b6a65;--line:#e4e2dc;--acc:#1f4fd1;--acc-ink:#fff;
---ibd:#7a3cc4;--pe:#0f7a5c;--vc:#c2570c;--st:#1f4fd1;--new:#d11f4f;--ok:#0f7a5c;--err:#b42318}
+--ibd:#7a3cc4;--pe:#0f7a5c;--vc:#c2570c;--st:#1f4fd1;--am:#0e7490;--co:#a16207;--new:#d11f4f;--ok:#0f7a5c;--err:#b42318}
 @media (prefers-color-scheme:dark){:root:not([data-theme=light]){--bg:#141413;--card:#1e1e1c;--ink:#ecebe6;
---mute:#9b9a94;--line:#33322f;--acc:#7c9cff;--acc-ink:#0d0d0c;--ibd:#b98cf0;--pe:#4cc79f;--vc:#f29a52;--st:#7c9cff;
+--mute:#9b9a94;--line:#33322f;--acc:#7c9cff;--acc-ink:#0d0d0c;--ibd:#b98cf0;--pe:#4cc79f;--vc:#f29a52;--st:#7c9cff;--am:#5ccfe6;--co:#e8c25a;
 --new:#ff6b8f;--ok:#4cc79f;--err:#ff7a6b}}
 *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);
 font:15px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
@@ -37,7 +37,7 @@ border:1px solid var(--line);border-radius:12px;padding:12px 14px}
 .row.applied{opacity:.5}.t{font-weight:600}.co{font-weight:600;color:var(--mute)}
 .meta{display:flex;flex-wrap:wrap;gap:6px 12px;color:var(--mute);font-size:12.5px;margin-top:3px}
 .tag{font-size:11.5px;font-weight:600;padding:2px 8px;border-radius:999px;border:1px solid currentColor}
-.c-ibd{color:var(--ibd)}.c-pe{color:var(--pe)}.c-vc{color:var(--vc)}.c-st{color:var(--st)}.c-x{color:var(--mute)}
+.c-ibd{color:var(--ibd)}.c-pe{color:var(--pe)}.c-vc{color:var(--vc)}.c-st{color:var(--st)}.c-am{color:var(--am)}.c-co{color:var(--co)}.c-x{color:var(--mute)}
 .new{color:var(--new);font-weight:700}
 .act{display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:flex-end}
 a.btn{background:var(--acc);color:var(--acc-ink);text-decoration:none;padding:7px 14px;border-radius:9px;
@@ -48,7 +48,7 @@ label.ap{font-size:12.5px;color:var(--mute);display:flex;gap:5px;align-items:cen
 .empty{padding:40px;text-align:center;color:var(--mute);background:var(--card);border-radius:12px;border:1px dashed var(--line)}
 @media (max-width:640px){.row{grid-template-columns:1fr}.act{justify-content:flex-start}}
 </style></head><body><div class="wrap">
-<header><div><h1>Stages Paris · IBD &amp; Sales &amp; Trading</h1>
+<header><div><h1>Stages Paris · IBD, Marchés, AM &amp; Commodities</h1>
 <div class="sub" id="upd"></div></div><div class="stats" id="stats"></div></header>
 <div class="bar" id="cats"></div>
 <div class="bar"><input type="search" id="q" placeholder="Filtrer (entreprise, poste…)">
@@ -61,7 +61,7 @@ label.ap{font-size:12.5px;color:var(--mute);display:flex;gap:5px;align-items:cen
 const OFFERS = __OFFERS__;
 const SOURCES = __SOURCES__;
 const GEN = __GEN__, NEXT = __NEXT__;
-const CATS = {"M&A / IBD":"c-ibd","Private Equity":"c-pe","Venture Capital":"c-vc","Sales & Trading":"c-st"};
+const CATS = {"M&A / IBD":"c-ibd","Private Equity":"c-pe","Venture Capital":"c-vc","Sales & Trading":"c-st","Asset Management":"c-am","Commodities":"c-co"};
 function load(k,d){try{return JSON.parse(localStorage.getItem(k))??d}catch(e){return d}}
 function save(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}
 let applied = load("applied",{}), st = load("filters",{cat:"Toutes",q:"",f24:false,fap:false,fsum:false});

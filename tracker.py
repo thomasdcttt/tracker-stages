@@ -67,6 +67,14 @@ DEFAULT_CONFIG = {
             "stage salle des marchés",
             "stage trading",
             "global markets internship",
+            "stage asset management",
+            "stage gestion de portefeuille",
+            "stage assistant gérant",
+            "portfolio management internship",
+            "stage commodities",
+            "stage matières premières",
+            "energy trading internship",
+            "stage marchés de l'énergie",
         ],
     },
     "wttj": {
@@ -74,6 +82,8 @@ DEFAULT_CONFIG = {
         "queries": [
             "M&A", "fusions acquisitions", "banque d'affaires", "corporate finance", "private equity",
             "capital investissement", "LBO", "venture capital", "sales trading", "trading", "marchés financiers",
+            "asset management", "gestion d'actifs", "gestion de portefeuille", "commodities", "matières premières",
+            "énergie trading",
         ],
     },
     "workday": {

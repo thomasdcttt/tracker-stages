@@ -84,6 +84,13 @@ CAT_PATTERNS = {
         r"venture capital", r"venture", r"capital risque", r"vc", r"corporate venture",
         r"seed fund", r"start ?up investing",
     ],
+    "Asset Management": [
+        r"asset management", r"gestion d actifs", r"portfolio manag\w*", r"gestion de portefeuilles?",
+        r"gerant", r"gerante", r"gerants", r"fund manag\w*", r"multi ?assets?", r"allocation d actifs",
+        r"asset allocation", r"investment specialist", r"product specialist", r"buy ?side", r"hedge funds?",
+        r"gestion (?:actions|obligataire|taux|diversifiee|credit|collective|alternative|multi ?gestion)",
+        r"analyste gestion", r"gestion d investissements?", r"investment management",
+    ],
     "Sales & Trading": [
         r"sales trading", r"sales and trading", r"sales traders?", r"traders?", r"trading",
         r"global markets?", r"markets", r"capital markets", r"marches de capitaux", r"marches financiers",
@@ -168,15 +175,53 @@ def intern_status(title, description="", employment_type=""):
     return "unknown"
 
 
+# Commodities : tout poste lié aux matières premières (trading, analyse de marché, origination,
+# opérations, trade finance, affrètement...), seules les fonctions support restent exclues.
+COMMO_RX = _rx([
+    r"commodit(?:y|ies)", r"matieres? premieres?", r"energy trading", r"energy markets?",
+    r"marches? de l energie", r"marches? de l electricite", r"marches? du gaz", r"power trading",
+    r"power markets?", r"gas trading", r"gas markets?", r"lng", r"gnl", r"oil", r"petrole", r"petroliers?",
+    r"crude", r"metals?", r"metaux", r"softs", r"agri commodit\w*", r"freight", r"affretement",
+    r"chartering", r"bunkers?", r"carbon trading", r"marches? (?:du )?carbone", r"emissions trading",
+    r"energy (?:origination|analyst|trader)", r"trading (?:d )?energie", r"negoce",
+])
+COMMO_HARD_EXCLUDE = _rx([
+    r"it", r"developer", r"developpeur", r"developpeuse", r"engineer", r"engineering", r"ingenieur",
+    r"ingenieure", r"data", r"software", r"devops", r"cyber\w*", r"juriste", r"legal", r"avocat", r"lawyer",
+    r"rh", r"hr", r"human resources", r"ressources humaines", r"recrutement", r"recruitment", r"talent",
+    r"marketing", r"communication", r"comptable", r"comptabilite", r"accounting", r"accountant", r"audit",
+    r"auditeur", r"compliance", r"conformite", r"kyc", r"aml", r"quant", r"quants", r"quantitative?",
+    r"structuring", r"structureur", r"maintenance", r"hse", r"securite", r"safety", r"achats?",
+    r"procurement", r"acheteur", r"acheteuse", r"assistant", r"assistante", r"office manager",
+    r"controle de gestion", r"controller", r"tax", r"fiscal\w*", r"retail", r"station",
+])
+IBD_STRICT = _rx([r"mna", r"fusions?", r"mergers?", r"investment banking", r"ibd", r"banque d affaires",
+                  r"corporate finance", r"private equity", r"capital investissement", r"lbo", r"buy ?out",
+                  r"venture capital", r"capital risque", r"vc", r"ecm", r"dcm", r"leveraged finance"])
+# Assistant gérant : métier de gestion d'actifs, pas un poste d'assistanat
+AM_ASSISTANT_OK = re.compile(r"(?<![a-z0-9])assistante? (?:de |du |au |aux )?(?:gerants?|gerantes?|portfolio manag\w*|fund manag\w*)(?![a-z0-9])")
+
+
 def categorize(title):
     """Renvoie (categorie, raison_exclusion). categorie=None si hors périmètre."""
     t = normalize(title)
+    if COMMO_RX.search(t):
+        m = COMMO_HARD_EXCLUDE.search(t)
+        if m:
+            return None, "métier exclu (%s)" % m.group(0).strip()
+        # "M&A Oil & Gas" reste du M&A ; "origination" ou "coverage" seuls restent des Commodities
+        if IBD_STRICT.search(t):
+            for cat in ("Private Equity", "Venture Capital", "M&A / IBD"):
+                if CAT_RX[cat].search(t):
+                    return cat, None
+        return "Commodities", None
+    t = AM_ASSISTANT_OK.sub(" gerant ", t)
     t_for_excl = ROLE_EXCLUDE_EXCEPTIONS.sub(" ", t)
     m = ROLE_EXCLUDE.search(t_for_excl)
     if m:
         return None, "métier exclu (%s)" % m.group(0).strip()
     # Ordre : PE et VC avant M&A (un "stage investissement PE" ne doit pas finir en IBD)
-    for cat in ("Private Equity", "Venture Capital", "M&A / IBD", "Sales & Trading"):
+    for cat in ("Private Equity", "Venture Capital", "Asset Management", "M&A / IBD", "Sales & Trading"):
         if CAT_RX[cat].search(t):
             # "private equity" contient "equity" : géré car S&T vérifié après PE
             return cat, None
