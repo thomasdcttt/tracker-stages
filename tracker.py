@@ -103,19 +103,12 @@ DEFAULT_CONFIG = {
         {"company": "J.P. Morgan", "type": "oracle", "host": "jpmc.fa.oraclecloud.com", "site": "CX_1001"},
         {"company": "Lazard", "type": "oracle", "host": "icbpjb.fa.ocs.oraclecloud.com",
          "site": "LazardProfessionalCareers"},
-        {"company": "Morgan Stanley", "type": "eightfold", "host": "morganstanley.eightfold.ai",
-         "domain": "morganstanley.com"},
         {"company": "HSBC", "type": "eightfold", "host": "portal.careers.hsbc.com", "domain": "hsbc.com"},
         {"company": "Ardian", "type": "workday", "host": "ardian.wd103.myworkdayjobs.com", "tenant": "ardian",
          "site": "ArdianCareers"},
         {"company": "Rothschild & Co", "type": "html",
          "url": "https://www.rothschildandco.com/en/careers/students-and-graduates/opportunities/",
          "link_regex": r"/careers/students-and-graduates/opportunities/[^/?#]+/?$"},
-        {"company": "BNP Paribas", "type": "html",
-         "urls": ["https://group.bnpparibas/en/careers/all-job-offers/trainee-internship",
-                  "https://group.bnpparibas/en/careers/all-job-offers/trainee-internship?page=1",
-                  "https://group.bnpparibas/en/careers/all-job-offers/trainee-internship?page=2"],
-         "link_regex": r"/careers/job-offer/[^/?#]+"},
         {"company": "Crédit Agricole CIB", "type": "html",
          "url": "https://jobs.ca-cib.com/offre-de-emploi/liste-toutes-offres.aspx?all=1&mode=layer",
          "link_regex": r"/offre-de-emploi/emploi-[^\"?#]+_\d+\.aspx"},
@@ -131,19 +124,10 @@ DEFAULT_CONFIG = {
                   "https://jobs.totalenergies.com/en_US/careers/SearchJobs/intern",
                   "https://jobs.totalenergies.com/fr_FR/careers/SearchJobs"],
          "link_regex": r"/careers/JobDetail/[^/\"]+/\d+"},
-        {"company": "Engie", "type": "html",
-         "urls": ["https://jobs.engie.com/search/?q=stage&locationsearch=Paris",
-                  "https://jobs.engie.com/search/?q=intern&locationsearch=Paris",
-                  "https://jobs.engie.com/search/?q=trading&locationsearch=Paris"],
-         "link_regex": r"/job/[^/\"]+/\d+-[a-z]{2}_[A-Z]{2}"},
         {"company": "BlackRock", "type": "html",
          "urls": ["https://careers.blackrock.com/search-jobs/intern/Paris",
                   "https://careers.blackrock.com/category/students-and-graduates-jobs/45831/9022304/1"],
          "link_regex": r"/job/[^/\"]+/[^/\"]+/45831/\d+"},
-        {"company": "Macquarie", "type": "html",
-         "urls": ["https://recruitment.macquarie.com/en_US/careers/SearchJobs/intern",
-                  "https://recruitment.macquarie.com/en_US/careers/SearchJobs/internship"],
-         "link_regex": r"/careers/JobDetail/[^/\"]+/\d+"},
         {"company": "Comgest", "type": "html", "default_location": "Paris",
          "url": "https://www.comgest.com/en/about-us/our-people/careers/internship-offers"},
         {"company": "Blackstone", "type": "workday", "host": "blackstone.wd1.myworkdayjobs.com",
@@ -317,6 +301,22 @@ class Tracker:
                 self.store.set_source(name, False, "Erreur : %s" % str(e)[:200])
         return []
 
+    def _run_site(self, site, fn):
+        """Lance un site en réutilisant l'adresse corrigée trouvée lors d'un passage précédent."""
+        s = dict(site)
+        key = "found:" + site["company"]
+        try:
+            found = json.loads(self.store.get_meta(key, "{}") or "{}")
+        except ValueError:
+            found = {}
+        if found.get("site_ref") == [site.get("host"), site.get("site")]:
+            s.update(_host=found["host"], _site=found["site"], _discovered=True)
+        res = fn(s)
+        if s.get("_discovered") and s.get("_host"):
+            self.store.set_meta(key, json.dumps({"site_ref": [site.get("host"), site.get("site")],
+                                                 "host": s["_host"], "site": s["_site"]}))
+        return res
+
     def collect(self):
         c = self.cfg
         batches = []
@@ -333,7 +333,7 @@ class Tracker:
             if not fn or not site.get("enabled", True):
                 continue
             name = "Site · %s" % site["company"]
-            batches.append((name, self._run_source(name, lambda site=site, fn=fn: fn(site))))
+            batches.append((name, self._run_source(name, lambda site=site, fn=fn: self._run_site(site, fn))))
         return batches
 
     def _accept(self, j, r, seed, new_list):
@@ -439,6 +439,8 @@ def write_dashboard(store, cfg, next_run=None):
         # Dates textuelles ("Posted 30+ Days Ago"...) : converties par rapport au jour de détection
         o["posted"] = sources.norm_posted(raw, datetime.fromtimestamp(o["first_seen"]).date())
         o["posted_plus"] = "+" in raw
+        o["title"] = sources._text(o["title"])  # corrige les titres déjà enregistrés avec &amp;
+        o["company"] = sources._text(o.get("company") or "")
         if too_old(o.get("posted"), cfg) or not filters.is_paris(o.get("location"), o["title"]):
             continue
         cat, _ = filters.categorize(o["title"])  # applique aussi les corrections de filtre aux offres déjà vues
@@ -448,7 +450,10 @@ def write_dashboard(store, cfg, next_run=None):
         offers.append(o)
     for o in offers:
         o["others"] = store.other_links(o["uid"])
-    dashboard.write(DASH_PATH, offers, store.sources(), next_run, cfg["interval_minutes"])
+    active = {"LinkedIn", "Welcome to the Jungle", "Sites carrières Workday"} | {
+        "Site · %s" % x["company"] for x in cfg.get("sites") or [] if x.get("enabled", True)}
+    dashboard.write(DASH_PATH, offers, [x for x in store.sources() if x["name"] in active], next_run,
+                    cfg["interval_minutes"])
 
 
 def run_check(cfg):

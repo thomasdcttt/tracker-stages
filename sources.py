@@ -90,7 +90,12 @@ def _text(fragment):
         return ""
     t = re.sub(r"<!--.*?-->", " ", fragment, flags=re.S)
     t = re.sub(r"<[^>]+>", " ", t)
-    return re.sub(r"\s+", " ", html.unescape(t)).strip()
+    for _ in range(3):  # certains sites échappent deux fois (&amp;amp;)
+        u = html.unescape(t)
+        if u == t:
+            break
+        t = u
+    return re.sub(r"\s+", " ", t).strip()
 
 
 def _first(pattern, s, flags=re.S):
@@ -425,14 +430,48 @@ def _job(company, ext, title, location, url, posted=""):
                 location=location or "", url=url, apply_url=url, posted=norm_posted(posted))
 
 
+def _wd_search(host, tenant, site, q):
+    return http("https://%s/wday/cxs/%s/%s/jobs" % (host, tenant, site), method="POST",
+                data={"appliedFacets": {}, "limit": 20, "offset": 0, "searchText": q},
+                headers={"Accept": "application/json"})
+
+
+def _wd_discover(s):
+    """Le nom du site Workday ou le serveur (wd1, wd3...) a changé : on essaie les variantes usuelles."""
+    tenant = s["tenant"]
+    base = s["host"].split(".")[0]
+    hosts = [s["host"]] + ["%s.%s.myworkdayjobs.com" % (base, w) for w in ("wd1", "wd3", "wd5", "wd103", "wd12")
+                           if "%s.%s.myworkdayjobs.com" % (base, w) != s["host"]]
+    cap = tenant[:1].upper() + tenant[1:]
+    sites = [s["site"]] + [x for x in (
+        "External", "Careers", "External_Careers", "ExternalCareers", "careers", cap, tenant.upper(),
+        cap + "_Careers", cap + "Careers", tenant.upper() + "_Careers", cap + "_External", "Campus",
+        "EarlyCareers", "Early_Careers", "Students", "University") if x != s["site"]]
+    tried = 0
+    for host in hosts:
+        for site in sites:
+            tried += 1
+            try:
+                status, _ = _wd_search(host, tenant, site, "intern")
+            except SourceError:
+                break  # serveur inexistant : on passe au suivant
+            if status == 200:
+                return host, site
+            if status == 404 and site == sites[0]:
+                break  # ce serveur ne connaît pas l'entreprise
+    raise SourceError("site Workday introuvable (%d variantes testées)" % tried)
+
+
 def collect_workday_site(s):
-    """Un site Workday isolé (même API que collect_workday)."""
-    host, tenant, site = s["host"], s["tenant"], s["site"]
+    """Un site Workday isolé. Si l'adresse configurée ne répond pas, la bonne est recherchée et mémorisée."""
+    host, tenant, site = s.get("_host") or s["host"], s["tenant"], s.get("_site") or s["site"]
     seen = {}
     for q in s.get("queries", ["intern Paris", "stage Paris", "off-cycle"]):
-        status, txt = http("https://%s/wday/cxs/%s/%s/jobs" % (host, tenant, site), method="POST",
-                           data={"appliedFacets": {}, "limit": 20, "offset": 0, "searchText": q},
-                           headers={"Accept": "application/json"})
+        status, txt = _wd_search(host, tenant, site, q)
+        if status in (404, 422) and not s.get("_discovered"):
+            host, site = _wd_discover(s)
+            s["_host"], s["_site"], s["_discovered"] = host, site, True
+            status, txt = _wd_search(host, tenant, site, q)
         if status != 200:
             raise SourceError("HTTP %d" % status)
         for j in parse_workday(json.loads(txt), host, site):
