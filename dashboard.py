@@ -70,6 +70,7 @@ const DAY=86400;
 function pubTs(o){if(o.posted&&/^\d{4}-\d{2}-\d{2}/.test(o.posted)){return Date.parse(o.posted.slice(0,10)+"T12:00:00")/1000}return o.first_seen}
 function isFresh(o){return Date.now()/1000-pubTs(o)<2*DAY}
 function pubLabel(o){if(!o.posted)return "";const d=Math.floor((Date.now()/1000-pubTs(o)+DAY/2)/DAY);
+  if(o.posted_plus)return "Publiée il y a plus de "+(d-1)+" j";
   return d<=0?"Publiée aujourd'hui":d===1?"Publiée hier":"Publiée il y a "+d+" j"}
 OFFERS.sort((a,b)=>pubTs(b)-pubTs(a)||b.first_seen-a.first_seen);
 const fmt = ts => new Date(ts*1000).toLocaleString("fr-FR",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"});

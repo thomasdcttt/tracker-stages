@@ -89,7 +89,7 @@ DEFAULT_CONFIG = {
         ],
     },
     "filters": {
-        "max_age_days": 30,
+        "max_age_days": 60,
         "extra_include": [],
         "extra_exclude": [],
         "include_summer": True,
@@ -332,6 +332,10 @@ class Tracker:
 def write_dashboard(store, cfg, next_run=None):
     offers = []
     for o in store.offers():
+        raw = o.get("posted") or ""
+        # Dates textuelles ("Posted 30+ Days Ago"...) : converties par rapport au jour de détection
+        o["posted"] = sources.norm_posted(raw, datetime.fromtimestamp(o["first_seen"]).date())
+        o["posted_plus"] = "+" in raw
         if too_old(o.get("posted"), cfg) or not filters.is_paris(o.get("location"), o["title"]):
             continue
         cat, _ = filters.categorize(o["title"])  # applique aussi les corrections de filtre aux offres déjà vues
