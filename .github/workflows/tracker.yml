@@ -29,4 +29,7 @@ jobs:
           git config user.email "tracker-bot@users.noreply.github.com"
           git add data/offres.db docs
           git diff --cached --quiet || git commit -m "Mise a jour des offres"
-          git push
+          for i in 1 2 3; do
+            git pull --rebase -X theirs origin main && git push && break
+            sleep 5
+          done
