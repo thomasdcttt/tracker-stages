@@ -106,7 +106,7 @@ function render(){
   const n24=OFFERS.filter(isFresh).length, nap=OFFERS.filter(o=>applied[o.uid]).length;
   document.getElementById("stats").innerHTML=`<span><b>${OFFERS.length}</b> offres</span><span><b>${n24}</b> publiées depuis 48 h</span><span><b>${nap}</b> postulées</span>`;
   document.getElementById("upd").textContent="Mis à jour "+fmt(GEN)+(NEXT?" · prochaine recherche vers "+new Date(NEXT*1000).toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit"}):"")+" · la page se recharge seule";
-  document.getElementById("src").innerHTML="<b>Sources</b>"+(SOURCES.length?SOURCES.map(s=>`<div><span class="dot" style="background:var(${s.ok?"--ok":"--err"})"></span>${esc(s.name)} · ${esc(s.message)} · ${fmt(s.last_run)}</div>`).join(""):"<div>Première recherche en cours…</div>");
+  document.getElementById("src").innerHTML="<b>Sources</b>"+(SOURCES.length?SOURCES.slice().sort((a,b)=>b.ok-a.ok).map(s=>`<div><span class="dot" style="background:var(${s.ok?"--ok":/Non lisible/.test(s.message)?"--mute":"--err"})"></span>${esc(s.name)} · ${esc(s.message)} · ${fmt(s.last_run)}</div>`).join(""):"<div>Première recherche en cours…</div>");
 }
 render();
 // Recharge sans le cache du navigateur (GitHub Pages garde les pages 10 min en cache)

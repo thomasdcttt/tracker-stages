@@ -122,6 +122,42 @@ DEFAULT_CONFIG = {
         {"company": "Evercore", "type": "html",
          "url": "https://evercore.tal.net/vx/lang-en-GB/mobile-0/channel-1/appcentre-ext/brand-6/candidate/jobboard/vacancy/2/adv/",
          "link_regex": r"/candidate/so/pm/\d+/pl/\d+/opp/\d+"},
+        {"company": "Amundi", "type": "html",
+         "urls": ["https://jobs.amundi.com/job/list-of-all-jobs.aspx?all=1&mode=layer",
+                  "https://jobs.amundi.com/offre-de-emploi/liste-toutes-offres.aspx?all=1&mode=layer"],
+         "link_regex": r"/(?:job|offre-de-emploi)/(?:job|emploi)-[^\"?#]+_\d+\.aspx"},
+        {"company": "TotalEnergies", "type": "html",
+         "urls": ["https://jobs.totalenergies.com/fr_FR/careers/SearchJobs/stage",
+                  "https://jobs.totalenergies.com/en_US/careers/SearchJobs/intern",
+                  "https://jobs.totalenergies.com/fr_FR/careers/SearchJobs"],
+         "link_regex": r"/careers/JobDetail/[^/\"]+/\d+"},
+        {"company": "Engie", "type": "html",
+         "urls": ["https://jobs.engie.com/search/?q=stage&locationsearch=Paris",
+                  "https://jobs.engie.com/search/?q=intern&locationsearch=Paris",
+                  "https://jobs.engie.com/search/?q=trading&locationsearch=Paris"],
+         "link_regex": r"/job/[^/\"]+/\d+-[a-z]{2}_[A-Z]{2}"},
+        {"company": "BlackRock", "type": "html",
+         "urls": ["https://careers.blackrock.com/search-jobs/intern/Paris",
+                  "https://careers.blackrock.com/category/students-and-graduates-jobs/45831/9022304/1"],
+         "link_regex": r"/job/[^/\"]+/[^/\"]+/45831/\d+"},
+        {"company": "Macquarie", "type": "html",
+         "urls": ["https://recruitment.macquarie.com/en_US/careers/SearchJobs/intern",
+                  "https://recruitment.macquarie.com/en_US/careers/SearchJobs/internship"],
+         "link_regex": r"/careers/JobDetail/[^/\"]+/\d+"},
+        {"company": "Comgest", "type": "html", "default_location": "Paris",
+         "url": "https://www.comgest.com/en/about-us/our-people/careers/internship-offers"},
+        {"company": "Blackstone", "type": "workday", "host": "blackstone.wd1.myworkdayjobs.com",
+         "tenant": "blackstone", "site": "Blackstone_Careers"},
+        {"company": "KKR", "type": "workday", "host": "kkr.wd1.myworkdayjobs.com", "tenant": "kkr",
+         "site": "KKR_Careers"},
+        {"company": "Fidelity International", "type": "workday", "host": "fil.wd3.myworkdayjobs.com",
+         "tenant": "fil", "site": "FidelityInternational"},
+        {"company": "Nomura", "type": "workday", "host": "nomura.wd3.myworkdayjobs.com", "tenant": "nomura",
+         "site": "nomura_campus"},
+        {"company": "Houlihan Lokey", "type": "workday", "host": "hl.wd1.myworkdayjobs.com", "tenant": "hl",
+         "site": "Campus"},
+        {"company": "Jefferies", "type": "workday", "host": "jefferies.wd5.myworkdayjobs.com",
+         "tenant": "jefferies", "site": "JefferiesCareers"},
         {"company": "Bank of America", "type": "html",
          "url": "https://bankcampuscareers.tal.net/vx/lang-en-GB/mobile-0/brand-4/xf-6f0048376f93/candidate/jobboard/vacancy/2/adv/",
          "link_regex": r"/candidate/so/pm/\d+/pl/\d+/opp/\d+"},
@@ -240,6 +276,8 @@ class Tracker:
                 pass
         if self.backoff.get(name, 0) > now:
             mins = int((self.backoff[name] - now) / 60) + 1
+            if int(self.store.get_meta("fails:" + name, 0) or 0) >= 6:
+                return []  # le message "non lisible" reste affiché tel quel
             self.store.set_source(name, False, "En pause %d min (limitation du site)" % mins)
             return []
         try:
@@ -249,6 +287,8 @@ class Tracker:
                 res, errs = res
             if self.backoff_len.pop(name, None):
                 self._save_backoff(name)
+            if self.store.get_meta("fails:" + name, "0") != "0":
+                self.store.set_meta("fails:" + name, 0)
             msg = "OK : %d offres analysées" % len(res)
             if errs:
                 msg += " · erreurs : " + "; ".join(errs)
@@ -262,8 +302,19 @@ class Tracker:
             log("%s : limité par le site (%s), pause de %d min" % (name, e, d // 60))
             self.store.set_source(name, False, "Limité par le site, pause %d min" % (d // 60))
         except Exception as e:
-            log("%s : ERREUR %s" % (name, e))
-            self.store.set_source(name, False, "Erreur : %s" % str(e)[:200])
+            fails = int(self.store.get_meta("fails:" + name, 0) or 0) + 1
+            self.store.set_meta("fails:" + name, fails)
+            if name.startswith("Site · ") and fails >= 6:
+                # Site illisible de façon durable : on ne réessaie qu'une fois par jour
+                self.backoff[name] = now + 86400
+                self.backoff_len[name] = 86400
+                self._save_backoff(name)
+                log("%s : illisible après %d essais, nouvel essai dans 24 h (%s)" % (name, fails, e))
+                self.store.set_source(name, False, "Non lisible automatiquement (couvert par LinkedIn). "
+                                      "Nouvel essai dans 24 h. Détail : %s" % str(e)[:120])
+            else:
+                log("%s : ERREUR %s" % (name, e))
+                self.store.set_source(name, False, "Erreur : %s" % str(e)[:200])
         return []
 
     def collect(self):

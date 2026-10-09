@@ -572,17 +572,30 @@ def parse_html_listing(page, base_url, link_regex):
 
 
 def collect_html_site(s):
-    out = {}
+    """Page d'offres HTML. Options : link_regex (adresse des offres) ou text_regex (texte du lien),
+    default_location (lieu supposé si le bloc n'en indique pas, pour les entreprises basées à Paris)."""
+    out, errors = {}, []
     urls = s["urls"] if "urls" in s else [s["url"]]
     for u in urls:
-        status, page = http(u, headers={"Accept": "text/html"})
+        try:
+            status, page = http(u, headers={"Accept": "text/html"})
+        except SourceError as e:
+            errors.append(str(e))
+            continue
         if status != 200:
-            raise SourceError("HTTP %d" % status)
-        for j in parse_html_listing(page, u, s["link_regex"]):
-            out[j["href"]] = _job(s["company"], j["href"], j["title"], j["location"], j["href"])
+            errors.append("HTTP %d" % status)
+            continue
+        if s.get("link_regex"):
+            found = parse_html_listing(page, u, s["link_regex"])
+        else:
+            trx = re.compile(s.get("text_regex", r"(?i)\b(stage|stagiaire|intern|internship|off.?cycle)\b"))
+            found = [j for j in parse_html_listing(page, u, r".") if trx.search(j["title"])]
+        for j in found:
+            loc = j["location"] or s.get("default_location", "")
+            out[j["href"]] = _job(s["company"], j["href"], j["title"], loc, j["href"])
         _pause(0.5, 1.5)
     if not out:
-        raise SourceError("aucune offre lisible sur la page (site modifié ou chargé en JavaScript)")
+        raise SourceError("aucune offre lisible (%s)" % ("; ".join(errors[:2]) or "page chargée en JavaScript ou modifiée"))
     return list(out.values())
 
 
