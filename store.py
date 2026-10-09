@@ -23,6 +23,11 @@ class Store:
         self.db = sqlite3.connect(path)
         self.db.row_factory = sqlite3.Row
         self.db.executescript(SCHEMA)
+        # Colonnes ajoutées après coup (bases existantes mises à niveau sans perte)
+        cols = {r["name"] for r in self.db.execute("PRAGMA table_info(offers)")}
+        for col, decl in (("closed", "INTEGER DEFAULT 0"), ("closed_at", "REAL"), ("last_checked", "REAL")):
+            if col not in cols:
+                self.db.execute("ALTER TABLE offers ADD COLUMN %s %s" % (col, decl))
         self.db.commit()
 
     # --- méta ---
@@ -71,6 +76,27 @@ class Store:
     def prune(self, days=45):
         self.db.execute("DELETE FROM rejected WHERE ts < ?", (time.time() - days * 86400,))
         self.db.commit()
+
+    def offers_to_check(self, limit, min_age_hours=20):
+        """Offres ouvertes à revérifier (jamais vérifiées d'abord, puis les plus anciennes)."""
+        cutoff = time.time() - min_age_hours * 3600
+        return [dict(r) for r in self.db.execute(
+            "SELECT * FROM offers WHERE duplicate_of IS NULL AND COALESCE(closed,0)=0 "
+            "AND COALESCE(last_checked, first_seen) < ? ORDER BY COALESCE(last_checked, 0) LIMIT ?",
+            (cutoff, limit))]
+
+    def set_checked(self, uid, closed):
+        if closed:
+            self.db.execute("UPDATE offers SET last_checked=?, closed=1, closed_at=? WHERE uid=?",
+                            (time.time(), time.time(), uid))
+        else:
+            self.db.execute("UPDATE offers SET last_checked=? WHERE uid=?", (time.time(), uid))
+        self.db.commit()
+
+    def recent_notified(self, since):
+        return [dict(r) for r in self.db.execute(
+            "SELECT * FROM offers WHERE duplicate_of IS NULL AND notified=1 AND first_seen>=? "
+            "ORDER BY first_seen DESC", (since,))]
 
     def offers(self):
         return [dict(r) for r in self.db.execute(

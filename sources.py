@@ -644,3 +644,54 @@ SITE_COLLECTORS = {
     "eightfold": collect_eightfold_site,
     "html": collect_html_site,
 }
+
+
+# =====================================================================
+# Offres fermées : vérification ponctuelle de chaque offre
+# =====================================================================
+CLOSED_MARKERS = re.compile(
+    r"no longer accepting applications|n[’']accepte plus de candidatures|candidatures (?:sont )?(?:closes|clôturées|fermées)"
+    r"|this job is no longer available|job (?:posting )?(?:has )?expired|offre (?:n[’']est plus|plus) disponible"
+    r"|cette offre (?:a expiré|est expirée|n[’']est plus en ligne)|position (?:has been )?filled"
+    r"|this position is no longer|the job you are looking for is no longer", re.I)
+
+
+def check_open(offer):
+    """True = toujours ouverte, False = fermée, None = impossible à savoir (on réessaiera)."""
+    url = offer.get("url") or ""
+    try:
+        if offer.get("source") == "LinkedIn" or "linkedin.com/jobs/view/" in url:
+            jid = offer.get("ext_id") or _first(r"/jobs/view/(\d+)", url)
+            status, page = http(LI_DETAIL % jid, headers={"Accept": "text/html"})
+            if status in (404, 410):
+                return False
+            if status != 200:
+                return None
+            if re.search(r'class="[^"]*closed-job', page) or CLOSED_MARKERS.search(page[:300000]):
+                return False
+            return True
+        m = re.match(r"https://([^/]+\.myworkdayjobs\.com)/([^/]+)(/job/.+)$", url)
+        if m:
+            host, site, path = m.groups()
+            status, txt = http("https://%s/wday/cxs/%s/%s%s" % (host, host.split(".")[0], site, path),
+                               headers={"Accept": "application/json"})
+            if status in (404, 410):
+                return False
+            if status != 200:
+                return None
+            try:
+                return bool(json.loads(txt).get("jobPostingInfo"))
+            except ValueError:
+                return None
+        if "/hcmUI/CandidateExperience/" in url:
+            return None  # pages construites en JavaScript : pas de vérification fiable
+        status, page = http(url, headers={"Accept": "text/html"})
+        if status in (404, 410):
+            return False
+        if status != 200:
+            return None
+        return not CLOSED_MARKERS.search(page[:300000])
+    except RateLimited:
+        raise
+    except Exception:
+        return None

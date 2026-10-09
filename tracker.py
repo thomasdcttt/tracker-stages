@@ -13,6 +13,7 @@ import copy
 import json
 import os
 import random
+import re
 import sys
 import time
 import traceback
@@ -43,6 +44,7 @@ DATA = os.path.join(HERE, "data")
 CONFIG_PATH = os.path.join(HERE, "config.json")
 DB_PATH = os.path.join(DATA, "offres.db")
 DASH_PATH = os.path.join(DATA, "tableau_de_bord.html")
+PRIORITY_PATH = os.path.join(DATA, "prioritaires.json")
 LOG_PATH = os.path.join(DATA, "tracker.log")
 
 DEFAULT_CONFIG = {
@@ -155,7 +157,12 @@ DEFAULT_CONFIG = {
     "notifications": {
         "max_individual": 5,
         "open_dashboard_on_start": True,
+        "digest_hour": 8,
     },
+    # Entreprises prioritaires par défaut (modifiables depuis le site, enregistrées dans data/prioritaires.json)
+    "priority_companies": ["Morgan Stanley", "Goldman Sachs", "J.P. Morgan", "Lazard", "Rothschild",
+                           "BNP Paribas", "Bank of America", "Société Générale"],
+    "closed_checks_per_run": 20,
     "cloud": {
         "ntfy_topic": "",
         "dashboard_url": "",
@@ -216,6 +223,37 @@ def too_old(posted, cfg):
     except ValueError:
         return False
     return (datetime.now() - d).days > int(cfg["filters"].get("max_age_days", 30))
+
+
+def _compact(s):
+    return re.sub(r"[^a-z0-9]", "", filters.normalize(s))
+
+
+def priority_list(cfg):
+    """Liste des entreprises prioritaires : celle du site si elle existe, sinon celle de config.json."""
+    try:
+        with open(PRIORITY_PATH, encoding="utf-8") as f:
+            data = json.load(f)
+        lst = data.get("companies") if isinstance(data, dict) else data
+        if isinstance(lst, list):
+            return [str(x) for x in lst if str(x).strip()]
+    except (OSError, ValueError):
+        pass
+    return list(cfg.get("priority_companies") or [])
+
+
+def is_priority(company, plist):
+    c = _compact(company)
+    return bool(c) and any(len(_compact(p)) >= 2 and _compact(p) in c for p in plist)
+
+
+def paris_now():
+    try:
+        from zoneinfo import ZoneInfo
+        return datetime.now(ZoneInfo("Europe/Paris"))
+    except Exception:  # pas de base de fuseaux : heure d'été de Paris
+        from datetime import timedelta, timezone
+        return datetime.now(timezone(timedelta(hours=2)))
 
 
 # ----------------------------------------------------------------------------- collecte
@@ -415,20 +453,89 @@ class Tracker:
         return new_list, seeded_now
 
     def notify_new(self, new_list):
-        mx = self.cfg["notifications"]["max_individual"]
+        """Offres prioritaires : toujours une notification urgente chacune. Les autres : une par offre,
+        ou une seule notification groupée au-delà de max_individual."""
         if not new_list:
             return
-        if len(new_list) <= mx:
-            for j in new_list:
-                SEND(
-                    "%s · %s" % (j.get("company") or "Nouvelle offre", j["category"]),
-                    "%s\n%s · %s" % (j["title"], j.get("location") or "Paris", j["source"]),
-                    j.get("apply_url") or j["url"])
+        plist = priority_list(self.cfg)
+        prio = [j for j in new_list if is_priority(j.get("company"), plist)]
+        rest = [j for j in new_list if not is_priority(j.get("company"), plist)]
+        for j in prio:
+            _send(SEND, "⭐ %s · %s" % (j.get("company") or "Entreprise prioritaire", j["category"]),
+                  "%s\n%s · %s" % (j["title"], j.get("location") or "Paris", j["source"]),
+                  j.get("apply_url") or j["url"], priority=5, tags=["star"])
+            time.sleep(1)
+        mx = self.cfg["notifications"]["max_individual"]
+        if len(rest) <= mx:
+            for j in rest:
+                _send(SEND, "%s · %s" % (j.get("company") or "Nouvelle offre", j["category"]),
+                      "%s\n%s · %s" % (j["title"], j.get("location") or "Paris", j["source"]),
+                      j.get("apply_url") or j["url"])
                 time.sleep(1)
         else:
-            SEND("%d nouvelles offres de stage à Paris" % len(new_list),
-                 ", ".join(sorted({j.get("company") or "?" for j in new_list}))[:200],
-                 dash_link(), button="Voir le tableau")
+            _send(SEND, "%d nouvelles offres de stage à Paris" % len(rest),
+                  ", ".join(sorted({j.get("company") or "?" for j in rest}))[:200],
+                  dash_link(), button="Voir le tableau")
+
+    def check_closed(self):
+        """Revérifie quelques offres par passage et marque celles qui ont été retirées."""
+        n_closed, li_budget = 0, 8
+        for o in self.store.offers_to_check(int(self.cfg.get("closed_checks_per_run", 20))):
+            is_li = o["source"] == "LinkedIn"
+            if is_li:
+                if li_budget <= 0 or self.backoff.get("LinkedIn", 0) > time.time():
+                    continue
+                li_budget -= 1
+            try:
+                res = sources.check_open(o)
+            except sources.RateLimited:
+                if is_li:
+                    li_budget = 0
+                continue
+            if res is None:
+                continue
+            self.store.set_checked(o["uid"], closed=not res)
+            if not res:
+                n_closed += 1
+                log("  ✖ fermée : %s · %s" % (o.get("company"), o["title"]))
+            time.sleep(random.uniform(0.5, 1.5) if not is_li else random.uniform(1.5, 3))
+        return n_closed
+
+    def maybe_digest(self, now=None):
+        """Récapitulatif quotidien (8 h, heure de Paris) des nouvelles offres des dernières 24 h."""
+        now = now or paris_now()
+        hour = int(self.cfg["notifications"].get("digest_hour", 8))
+        today = now.strftime("%Y-%m-%d")
+        if now.hour < hour or self.store.get_meta("digest_date") == today:
+            return False
+        self.store.set_meta("digest_date", today)
+        recent = [o for o in self.store.recent_notified(time.time() - 86400) if not o.get("closed")]
+        if not recent:
+            _send(SEND, "Récap du matin", "Aucune nouvelle offre dans tes critères ces dernières 24 h.",
+                  dash_link(), button="Voir le tableau", priority=2, tags=["sunrise"])
+            return True
+        counts = {}
+        for o in recent:
+            counts[o["category"]] = counts.get(o["category"], 0) + 1
+        plist = priority_list(self.cfg)
+        top = sorted(recent, key=lambda o: (not is_priority(o.get("company"), plist), -o["first_seen"]))[:5]
+        lines = [" · ".join("%s %d" % (k, v) for k, v in sorted(counts.items(), key=lambda x: -x[1]))]
+        lines += ["%s%s · %s" % ("⭐ " if is_priority(o.get("company"), plist) else "", o.get("company"), o["title"])
+                  for o in top]
+        if len(recent) > 5:
+            lines.append("… et %d autres" % (len(recent) - 5))
+        _send(SEND, "Récap du matin · %d nouvelle%s offre%s" % (len(recent), "s" if len(recent) > 1 else "",
+                                                               "s" if len(recent) > 1 else ""),
+              "\n".join(lines), dash_link(), button="Voir le tableau", priority=3, tags=["sunrise"])
+        return True
+
+
+def _send(fn, title, message, url=None, button="Postuler", priority=4, tags=None):
+    """Appelle la fonction de notification avec les options qu'elle accepte (ntfy en a plus que le bureau)."""
+    try:
+        return fn(title, message, url, button=button, priority=priority, tags=tags)
+    except TypeError:
+        return fn(title, message, url, button=button)
 
 
 # ----------------------------------------------------------------------------- modes
@@ -448,12 +555,30 @@ def write_dashboard(store, cfg, next_run=None):
             continue
         o["category"] = cat or o["category"]
         offers.append(o)
+    keep = ("uid", "company", "title", "category", "location", "url", "apply_url", "posted", "posted_plus",
+            "first_seen", "source", "summer", "closed", "closed_at")
+    rows = []
     for o in offers:
-        o["others"] = store.other_links(o["uid"])
+        r = {k: o.get(k) for k in keep}
+        r["closed"] = bool(o.get("closed"))
+        r["summer"] = bool(o.get("summer"))
+        others = store.other_links(o["uid"])
+        if others:
+            r["others"] = [{"source": x["source"], "url": x.get("apply_url") or x["url"]} for x in others]
+        rows.append(r)
     active = {"LinkedIn", "Welcome to the Jungle", "Sites carrières Workday"} | {
         "Site · %s" % x["company"] for x in cfg.get("sites") or [] if x.get("enabled", True)}
-    dashboard.write(DASH_PATH, offers, [x for x in store.sources() if x["name"] in active], next_run,
-                    cfg["interval_minutes"])
+    repo = os.environ.get("GITHUB_REPOSITORY", "")
+    payload = {
+        "generated": time.time(),
+        "next_run": next_run,
+        "interval": cfg["interval_minutes"],
+        "offers": rows,
+        "sources": [x for x in store.sources() if x["name"] in active],
+        "priority": priority_list(cfg),
+        "repo": repo if "/" in repo else None,
+    }
+    dashboard.write(DASH_PATH, payload)
 
 
 def run_check(cfg):
@@ -567,6 +692,8 @@ def main():
             f.write(str(os.getpid()))
 
     store = Store(DB_PATH)
+    if store.get_meta("ready_sent") is None and store.offers():
+        store.set_meta("ready_sent", "1")  # tracker déjà démarré auparavant : pas de nouveau "Tracker prêt"
     tracker = Tracker(cfg, store)
     write_dashboard(store, cfg)
     log("Tracker démarré · notifications : %s · tableau de bord : %s" % (notify.backend_name(), DASH_PATH))
@@ -582,9 +709,18 @@ def main():
                 n = len(store.offers())
                 log("Premier passage pour %s : offres existantes ajoutées sans notification (%d au total)."
                     % (", ".join(seeded), n))
-                SEND("Tracker prêt", "%d offres déjà en ligne sont dans le tableau de bord. "
-                     "Tu seras notifié de chaque nouvelle offre." % n, dash_link(), button="Voir le tableau")
+                if store.get_meta("ready_sent") is None:  # une seule fois, pas à chaque nouvelle source
+                    store.set_meta("ready_sent", "1")
+                    _send(SEND, "Tracker prêt", "%d offres déjà en ligne sont dans le tableau de bord. "
+                          "Tu seras notifié de chaque nouvelle offre." % n, dash_link(), button="Voir le tableau")
             tracker.notify_new(new_list)
+            try:
+                closed = tracker.check_closed()
+                if closed:
+                    log("%d offre(s) fermée(s) détectée(s)." % closed)
+                tracker.maybe_digest()
+            except Exception:
+                log("Vérification des offres fermées / récap : erreur\n" + traceback.format_exc())
             log("Passage terminé : %d nouvelle(s) offre(s) en %ds." % (len(new_list), time.time() - start))
         except KeyboardInterrupt:
             raise

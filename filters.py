@@ -120,7 +120,7 @@ ROLE_EXCLUDE = _rx([
     r"trade support", r"trading support", r"support", r"it", r"developer", r"developpeur",
     r"developpeuse", r"engineer", r"engineering", r"ingenieur", r"ingenieure", r"data",
     r"software", r"devops", r"cyber", r"cybersecurity", r"juriste", r"legal", r"avocat",
-    r"lawyer", r"rh", r"hr", r"human resources", r"ressources humaines", r"recrutement",
+    r"lawyer", r"droit", r"juridique", r"law", r"rh", r"hr", r"human resources", r"ressources humaines", r"recrutement",
     r"recruitment", r"talent", r"marketing", r"communication", r"comptable", r"comptabilite",
     r"accounting", r"accountant", r"controle de gestion", r"controller", r"controleur", r"kyc",
     r"aml", r"lcb ft", r"product owner", r"project manager", r"chef de projet", r"moa", r"pmo",
