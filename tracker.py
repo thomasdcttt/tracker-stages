@@ -58,7 +58,7 @@ DEFAULT_CONFIG = {
         "pages_per_query": 1,
         "pause_between_queries": [2, 4],
         "pause_between_pages": [1.5, 3],
-        "detail_limit_per_cycle": 25,
+        "detail_limit_per_cycle": 30,
         # Balayage de TOUS les stages publiés à Paris (filtre LinkedIn « Stage »), à chaque passage
         "sweep_all": True,
         "sweep_all_seconds": 7200,
@@ -161,129 +161,64 @@ DEFAULT_CONFIG = {
     },
     # Sites carrières surveillés directement (en plus de LinkedIn). Types : workday, oracle, eightfold, html.
     "sites": [
-        # ---- France (et sites mondiaux qui publient aussi Genève / Singapour)
         {"company": "J.P. Morgan", "type": "oracle", "host": "jpmc.fa.oraclecloud.com", "site": "CX_1001"},
-        {"company": "Lazard", "type": "oracle", "host": "icbpjb.fa.ocs.oraclecloud.com",
-         "site": "LazardProfessionalCareers"},
-        {"company": "Lazard", "label": "Lazard (étudiants)", "type": "oracle", "host": "icbpjb.fa.ocs.oraclecloud.com",
-         "site": "LazardStudentCareers"},
+        {"company": "Lazard", "type": "oracle", "host": "icbpjb.fa.ocs.oraclecloud.com", "site": "LazardProfessionalCareers"},
+        {"company": "Lazard", "label": "Lazard (étudiants)", "type": "oracle", "host": "icbpjb.fa.ocs.oraclecloud.com", "site": "LazardStudentCareers"},
         {"company": "HSBC", "type": "eightfold", "host": "portal.careers.hsbc.com", "domain": "hsbc.com"},
-        {"company": "HSBC", "label": "HSBC (early careers)", "type": "html",
-         "url": "https://mycareer.hsbc.com/en_GB/external/SearchJobs/?listFilterMode=1&jobRecordsPerPage=50",
-         "link_regex": r"/en_GB/external/PipelineDetail/[^/\"]+/\d+"},
-        {"company": "Ardian", "type": "workday", "host": "ardian.wd103.myworkdayjobs.com", "tenant": "ardian",
-         "site": "ArdianCareers"},
-        {"company": "Rothschild & Co", "type": "html",
-         "urls": ["https://www.rothschildandco.com/en/careers/students-and-graduates/opportunities/",
-                  "https://www.rothschildandco.com/en/careers/students-and-graduates/opportunities/?page=2",
-                  "https://www.rothschildandco.com/en/careers/students-and-graduates/opportunities/?taxonomy_1156=739"],
-         "link_regex": r"/careers/students-and-graduates/opportunities/[^/?#]+/?$"},
-        {"company": "Rothschild & Co", "label": "Rothschild & Co (Workday)", "type": "workday",
-         "host": "rothschildandco.wd3.myworkdayjobs.com", "tenant": "rothschildandco", "site": "Rothschildandco_Lateral"},
-        {"company": "Crédit Agricole CIB", "type": "html",
-         "url": "https://jobs.ca-cib.com/offre-de-emploi/liste-toutes-offres.aspx?all=1&mode=layer",
-         "link_regex": r"/offre-de-emploi/emploi-[^\"?#]+_\d+\.aspx"},
-        {"company": "Evercore", "type": "html",
-         "url": "https://evercore.tal.net/vx/lang-en-GB/mobile-0/channel-1/appcentre-ext/brand-6/candidate/jobboard/vacancy/2/adv/",
-         "link_regex": r"/candidate/so/pm/\d+/pl/\d+/opp/\d+"},
-        {"company": "Amundi", "type": "html",
-         "urls": ["https://jobs.amundi.com/job/list-of-all-jobs.aspx?all=1&mode=layer",
-                  "https://jobs.amundi.com/offre-de-emploi/liste-toutes-offres.aspx?all=1&mode=layer"],
-         "link_regex": r"/(?:job|offre-de-emploi)/(?:job|emploi)-[^\"?#]+_\d+\.aspx"},
-        {"company": "TotalEnergies", "type": "html",
-         "urls": ["https://jobs.totalenergies.com/fr_FR/careers/SearchJobs/stage",
-                  "https://jobs.totalenergies.com/en_US/careers/SearchJobs/intern",
-                  "https://jobs.totalenergies.com/fr_FR/careers/SearchJobs",
-                  "https://jobs.totalenergies.com/en_US/careers/SearchJobs/Singapore?listFilterMode=1&jobRecordsPerPage=20"],
-         "link_regex": r"/careers/JobDetail/[^/\"]+/\d+"},
-        {"company": "BlackRock", "type": "html",
-         "urls": ["https://careers.blackrock.com/search-jobs/intern/Paris",
-                  "https://careers.blackrock.com/category/students-and-graduates-jobs/45831/9022304/1"],
-         "link_regex": r"/job/[^/\"]+/[^/\"]+/45831/\d+"},
-        {"company": "Comgest", "type": "html", "default_location": "Paris",
-         "url": "https://www.comgest.com/en/about-us/our-people/careers/internship-offers"},
-        {"company": "Blackstone", "type": "workday", "host": "blackstone.wd1.myworkdayjobs.com",
-         "tenant": "blackstone", "site": "Blackstone_Careers"},
-        {"company": "KKR", "type": "workday", "host": "kkr.wd1.myworkdayjobs.com", "tenant": "kkr",
-         "site": "KKR_Careers"},
-        {"company": "Fidelity International", "type": "workday", "host": "fil.wd3.myworkdayjobs.com",
-         "tenant": "fil", "site": "FidelityInternational"},
-        {"company": "Nomura", "type": "html",
-         "urls": ["https://careers.nomura.com/Nomura/search/?q=intern", "https://careers.nomura.com/Nomura/search/?q=internship",
-                  "https://careers.nomura.com/Nomura/search/?q=summer", "https://careers.nomura.com/Nomura/search/?q=off-cycle"],
-         "link_regex": r"/Nomura/job/[^\"]+/\d+/"},
-        {"company": "Houlihan Lokey", "type": "workday", "host": "hl.wd1.myworkdayjobs.com", "tenant": "hl",
-         "site": "Campus"},
-        {"company": "Jefferies", "type": "workday", "host": "jefferies.wd5.myworkdayjobs.com",
-         "tenant": "jefferies", "site": "JefferiesCareers"},
-        {"company": "Bank of America", "type": "html",
-         "url": "https://bankcampuscareers.tal.net/vx/lang-en-GB/mobile-0/brand-4/xf-6f0048376f93/candidate/jobboard/vacancy/2/adv/",
-         "link_regex": r"/candidate/so/pm/\d+/pl/\d+/opp/\d+"},
+        {"company": "HSBC", "label": "HSBC (early careers)", "type": "html", "url": "https://mycareer.hsbc.com/en_GB/external/SearchJobs/?listFilterMode=1&jobRecordsPerPage=50", "link_regex": "/en_GB/external/PipelineDetail/[^/\\\"]+/\\d+"},
+        {"company": "Ardian", "type": "workday", "host": "ardian.wd103.myworkdayjobs.com", "tenant": "ardian", "site": "ArdianCareers"},
+        {"company": "Rothschild & Co", "type": "html", "urls": ["https://www.rothschildandco.com/en/careers/students-and-graduates/opportunities/", "https://www.rothschildandco.com/en/careers/students-and-graduates/opportunities/?page=2", "https://www.rothschildandco.com/en/careers/students-and-graduates/opportunities/?taxonomy_1156=739"], "link_regex": "/careers/students-and-graduates/opportunities/[^/?#]+/?$"},
+        {"company": "Rothschild & Co", "label": "Rothschild & Co (Workday)", "type": "workday", "host": "rothschildandco.wd3.myworkdayjobs.com", "tenant": "rothschildandco", "site": "Rothschildandco_Lateral"},
+        {"company": "Crédit Agricole CIB", "type": "html", "url": "https://jobs.ca-cib.com/offre-de-emploi/liste-toutes-offres.aspx?all=1&mode=layer", "link_regex": "/offre-de-emploi/emploi-[^\\\"?#]+_\\d+\\.aspx"},
+        {"company": "Evercore", "type": "html", "url": "https://evercore.tal.net/vx/lang-en-GB/mobile-0/channel-1/appcentre-ext/brand-6/candidate/jobboard/vacancy/2/adv/", "link_regex": "/candidate/so/pm/\\d+/pl/\\d+/opp/\\d+"},
+        {"company": "Amundi", "type": "html", "urls": ["https://jobs.amundi.com/job/list-of-all-jobs.aspx?all=1&mode=layer", "https://jobs.amundi.com/offre-de-emploi/liste-toutes-offres.aspx?all=1&mode=layer"], "link_regex": "/(?:job|offre-de-emploi)/(?:job|emploi)-[^\\\"?#]+_\\d+\\.aspx"},
+        {"company": "TotalEnergies", "type": "html", "urls": ["https://jobs.totalenergies.com/fr_FR/careers/SearchJobs/stage", "https://jobs.totalenergies.com/en_US/careers/SearchJobs/intern", "https://jobs.totalenergies.com/fr_FR/careers/SearchJobs", "https://jobs.totalenergies.com/en_US/careers/SearchJobs/Singapore?listFilterMode=1&jobRecordsPerPage=20"], "link_regex": "/careers/JobDetail/[^/\\\"]+/\\d+"},
+        {"company": "BlackRock", "type": "html", "urls": ["https://careers.blackrock.com/category/students-and-graduates-jobs/45831/9022304/1", "https://careers.blackrock.com/location/singapore-jobs/45831/1880251/4", "https://careers.blackrock.com/location/france-jobs/45831/3017382/2"], "link_regex": "/job/[^/\\\"]+/[^/\\\"]+/45831/\\d+"},
+        {"company": "Comgest", "type": "html", "default_location": "Paris", "url": "https://www.comgest.com/en/about-us/our-people/careers/internship-offers"},
+        {"company": "Blackstone", "label": "Blackstone (campus)", "type": "workday", "host": "blackstone.wd1.myworkdayjobs.com", "tenant": "blackstone", "site": "Blackstone_Campus_Careers"},
+        {"company": "Fidelity International", "label": "Fidelity International (early careers)", "type": "html", "url": "https://fidelityinternational.tal.net/vx/lang-en-GB/mobile-0/brand-5/candidate/jobboard/vacancy/1/adv/", "link_regex": "/candidate/so/pm/\\d+/pl/\\d+/opp/\\d+"},
+        {"company": "Houlihan Lokey", "type": "workday", "host": "hl.wd1.myworkdayjobs.com", "tenant": "hl", "site": "Campus"},
+        {"company": "Jefferies", "type": "html", "url": "https://jefferies.tal.net/vx/lang-en-GB/mobile-0/appcentre-ext/brand-4/xf-016c915b0a67/candidate/jobboard/vacancy/2/adv/", "link_regex": "/candidate/so/pm/\\d+/pl/\\d+/opp/\\d+"},
+        {"company": "Bank of America", "type": "html", "url": "https://bankcampuscareers.tal.net/vx/lang-en-GB/mobile-0/brand-4/xf-6f0048376f93/candidate/jobboard/vacancy/2/adv/", "link_regex": "/candidate/so/pm/\\d+/pl/\\d+/opp/\\d+"},
         {"company": "Goldman Sachs", "type": "oracle", "host": "hdpc.fa.us2.oraclecloud.com", "site": "LateralHiring"},
-        {"company": "Macquarie", "type": "html",
-         "urls": ["https://recruitment.macquarie.com/en_US/careers/SearchJobs/?listFilterMode=1&jobRecordsPerPage=100&jobOffset=%d" % k
-                  for k in range(0, 600, 100)],
-         "link_regex": r"/en_US/careers/JobDetail/[^/\"]+/\d+"},
-        # ---- Commodities (Genève, Zoug, Singapour)
-        {"company": "Trafigura", "type": "workday", "host": "trafigura.wd3.myworkdayjobs.com", "tenant": "trafigura",
-         "site": "TrafiguraCareerSite"},
-        {"company": "Gunvor", "type": "workday", "host": "gunvor.wd3.myworkdayjobs.com", "tenant": "gunvor",
-         "site": "Gunvor_Careers"},
-        {"company": "Glencore", "type": "workday", "host": "glencorecorp.wd3.myworkdayjobs.com", "tenant": "glencorecorp",
-         "site": "External"},
-        {"company": "Shell", "type": "workday", "host": "shell.wd3.myworkdayjobs.com", "tenant": "shell",
-         "site": "ShellCareers"},
-        {"company": "Vitol", "type": "smartrecruiters", "company_id": "Vitol"},
-        {"company": "Louis Dreyfus Company", "type": "smartrecruiters", "company_id": "LouisDreyfusCompany"},
-        {"company": "Cargill", "type": "html",
-         "urls": ["https://careers.cargill.com/en/search-jobs/Geneva",
-                  "https://careers.cargill.com/en/location/singapore-jobs/23251/1880251-7535954-1880252/4"],
-         "link_regex": r"/en/job/[^/\"]+/[^/\"]+/23251/\d+"},
-        {"company": "COFCO International", "type": "html", "default_location": "Genève, Suisse",
-         "url": "https://careers.cofcointernational.com/search/?q=&locationsearch=Geneva",
-         "link_regex": r"/job/[^/\"]+/\d+/"},
-        {"company": "Bunge", "type": "html",
-         "urls": ["https://jobs.bunge.com/search/?q=&locationsearch=Geneva", "https://jobs.bunge.com/search/?q=&locationsearch=Singapore"],
-         "link_regex": r"/job/[^\"]+/\d+/"},
-        {"company": "Axpo", "type": "html", "default_location": "Baden, Switzerland",
-         "urls": ["https://careers.axpo.com/jobs", "https://careers.axpo.com/jobs?query=intern",
-                  "https://careers.axpo.com/jobs?query=praktikum"],
-         "link_regex": r"/jobs/\d+-[a-z0-9-]+"},
-        {"company": "SGX Group", "type": "html", "url": "https://careers.sgx.com/search/?q=intern",
-         "link_regex": r"/job/[^\"]+/\d+/"},
-        # ---- Suisse : banques, gérants, private markets
-        {"company": "Julius Baer", "type": "workday", "host": "juliusbaer.wd3.myworkdayjobs.com", "tenant": "juliusbaer",
-         "site": "External"},
+        {"company": "Macquarie", "label": "Macquarie (graduates & interns)", "type": "html", "urls": ["https://recruitment.macquarie.com/en_US/careers/SearchJobs/?7959=%5B421070%2C421069%5D&7959_format=14495&listFilterMode=1&jobRecordsPerPage=9&jobOffset=0", "https://recruitment.macquarie.com/en_US/careers/SearchJobs/?7959=%5B421070%2C421069%5D&7959_format=14495&listFilterMode=1&jobRecordsPerPage=9&jobOffset=9", "https://recruitment.macquarie.com/en_US/careers/SearchJobs/?7959=%5B421070%2C421069%5D&7959_format=14495&listFilterMode=1&jobRecordsPerPage=9&jobOffset=18", "https://recruitment.macquarie.com/en_US/careers/SearchJobs/?7959=%5B421070%2C421069%5D&7959_format=14495&listFilterMode=1&jobRecordsPerPage=9&jobOffset=27"], "link_regex": "JobDetail\\?jobId=\\d+"},
+        {"company": "Trafigura", "type": "workday", "host": "trafigura.wd3.myworkdayjobs.com", "tenant": "trafigura", "site": "TrafiguraCareerSite"},
+        {"company": "Gunvor", "type": "workday", "host": "gunvor.wd3.myworkdayjobs.com", "tenant": "gunvor", "site": "Gunvor_Careers"},
+        {"company": "Glencore", "type": "workday", "host": "glencorecorp.wd3.myworkdayjobs.com", "tenant": "glencorecorp", "site": "External"},
+        {"company": "Shell", "type": "workday", "host": "shell.wd3.myworkdayjobs.com", "tenant": "shell", "site": "ShellCareers"},
+        {"company": "Cargill", "type": "html", "urls": ["https://careers.cargill.com/en/location/switzerland-jobs/23251/2658434/2", "https://careers.cargill.com/en/location/singapore-jobs/23251/1880251-7535954-1880252/4"], "link_regex": "/en/job/[^/\\\"]+/[^/\\\"]+/23251/\\d+"},
+        {"company": "COFCO International", "type": "html", "default_location": "Genève, Suisse", "url": "https://careers.cofcointernational.com/search/?q=&locationsearch=Geneva", "link_regex": "/job/[^/\\\"]+/\\d+/"},
+        {"company": "Bunge", "type": "html", "urls": ["https://jobs.bunge.com/search/?q=&locationsearch=Geneva", "https://jobs.bunge.com/search/?q=&locationsearch=Singapore"], "link_regex": "/job/[^\\\"]+/\\d+/"},
+        {"company": "Axpo", "type": "html", "default_location": "Baden, Switzerland", "urls": ["https://careers.axpo.com/jobs", "https://careers.axpo.com/jobs?query=intern", "https://careers.axpo.com/jobs?query=praktikum"], "link_regex": "/jobs/\\d+-[a-z0-9-]+"},
+        {"company": "SGX Group", "type": "html", "url": "https://careers.sgx.com/search/?q=intern", "link_regex": "/job/[^\\\"]+/\\d+/"},
+        {"company": "Julius Baer", "type": "workday", "host": "juliusbaer.wd3.myworkdayjobs.com", "tenant": "juliusbaer", "site": "External"},
         {"company": "UBP", "type": "oracle", "host": "iaadtu.fa.ocs.oraclecloud.eu", "site": "CX_1"},
-        {"company": "Mirabaud", "type": "smartrecruiters", "company_id": "MirabaudCieSA"},
-        {"company": "Citi", "label": "Citi (Suisse et Singapour)", "type": "html",
-         "urls": ["https://jobs.citi.com/location/switzerland-jobs/287/2658434/2",
-                  "https://jobs.citi.com/location/singapore-jobs/287/1880251/4"],
-         "link_regex": r"/job/[^/\"]+/[^/\"]+/287/\d+"},
-        {"company": "Partners Group", "type": "html", "url": "https://jobs.partnersgroup.com/search/?q=intern",
-         "link_regex": r"/job/[^/\"]+/\d+/"},
-        {"company": "Swiss Re", "type": "html", "url": "https://careers.swissre.com/search/?q=intern",
-         "link_regex": r"/job/[^/\"]+/\d+/"},
-        {"company": "Vontobel", "type": "html", "default_location": "Zurich, Switzerland",
-         "url": "https://www.vontobel.com/en/about-vontobel/careers/open-positions/",
-         "link_regex": r"/careers/open-positions/\d+-[a-z0-9-]+/?"},
-        {"company": "LGT", "type": "html",
-         "urls": ["https://www.lgt.com/ch-en/career/jobs"] +
-                 ["https://www.lgt.com/ch-en/career/jobs/48662!jobSearch?pageNum=%d" % k for k in range(1, 6)],
-         "link_regex": r"/career/jobs/[a-z0-9-]+-\d+"},
-        # ---- Singapour : banques, fonds souverains, gérants, private equity
+        {"company": "Citi", "label": "Citi (Suisse et Singapour)", "type": "html", "urls": ["https://jobs.citi.com/location/switzerland-jobs/287/2658434/2", "https://jobs.citi.com/location/singapore-jobs/287/1880251/4"], "link_regex": "/job/[^/\\\"]+/[^/\\\"]+/287/\\d+"},
+        {"company": "Partners Group", "type": "html", "url": "https://jobs.partnersgroup.com/search/?q=intern", "link_regex": "/job/[^/\\\"]+/\\d+/"},
+        {"company": "Swiss Re", "type": "html", "url": "https://careers.swissre.com/search/?q=intern", "link_regex": "/job/[^/\\\"]+/\\d+/"},
+        {"company": "Vontobel", "type": "html", "default_location": "Zurich, Switzerland", "url": "https://www.vontobel.com/en/about-vontobel/careers/open-positions/", "link_regex": "/careers/open-positions/\\d+-[a-z0-9-]+/?"},
+        {"company": "LGT", "type": "html", "urls": ["https://www.lgt.com/ch-en/career/jobs", "https://www.lgt.com/ch-en/career/jobs/48662!jobSearch?pageNum=1", "https://www.lgt.com/ch-en/career/jobs/48662!jobSearch?pageNum=2", "https://www.lgt.com/ch-en/career/jobs/48662!jobSearch?pageNum=3", "https://www.lgt.com/ch-en/career/jobs/48662!jobSearch?pageNum=4", "https://www.lgt.com/ch-en/career/jobs/48662!jobSearch?pageNum=5"], "link_regex": "/career/jobs/[a-z0-9-]+-\\d+"},
         {"company": "DBS", "type": "workday", "host": "dbs.wd3.myworkdayjobs.com", "tenant": "dbs", "site": "DBS_Careers"},
-        {"company": "Temasek", "type": "html", "url": "https://jobs.temasek.com.sg/search/?q=intern",
-         "link_regex": r"/job/[^\"]+/\d+/"},
-        {"company": "GIC", "type": "html", "url": "https://careers.gic.com.sg/search/?q=intern",
-         "link_regex": r"/job/[^\"]+/\d+/?"},
-        {"company": "Eastspring Investments", "type": "workday", "host": "prudential.wd3.myworkdayjobs.com",
-         "tenant": "prudential", "site": "prudential_eastspring"},
+        {"company": "Temasek", "type": "html", "url": "https://jobs.temasek.com.sg/search/?q=intern", "link_regex": "/job/[^\\\"]+/\\d+/"},
+        {"company": "GIC", "type": "html", "url": "https://careers.gic.com.sg/search/?q=intern", "link_regex": "/job/[^\\\"]+/\\d+/?"},
+        {"company": "Eastspring Investments", "type": "workday", "host": "prudential.wd3.myworkdayjobs.com", "tenant": "prudential", "site": "prudential_eastspring"},
         {"company": "Schroders", "type": "oracle", "host": "ekbq.fa.em2.oraclecloud.com", "site": "CX_2"},
-        {"company": "Brookfield", "type": "workday", "host": "brookfield.wd5.myworkdayjobs.com", "tenant": "brookfield",
-         "site": "brookfield"},
-        {"company": "Bain Capital", "type": "workday", "host": "baincapital.wd1.myworkdayjobs.com", "tenant": "baincapital",
-         "site": "External_Public"},
+        {"company": "Brookfield", "type": "workday", "host": "brookfield.wd5.myworkdayjobs.com", "tenant": "brookfield", "site": "brookfield"},
+        {"company": "Bain Capital", "type": "workday", "host": "baincapital.wd1.myworkdayjobs.com", "tenant": "baincapital", "site": "External_Public"},
+        {"company": "Lombard Odier", "type": "workday", "host": "lombardodier.wd3.myworkdayjobs.com", "tenant": "lombardodier", "site": "Lombard_Odier_Careers"},
+        {"company": "Edmond de Rothschild", "type": "oracle", "host": "evht.fa.ocs.oraclecloud.eu", "site": "CX_7001", "site_number": "CX_7001"},
+        {"company": "EFG International", "type": "oracle", "host": "fa-eqai-saasfaprod1.fa.ocs.oraclecloud.com", "site": "CX_1001", "site_number": "CX_1001"},
+        {"company": "Garda Capital Partners", "type": "greenhouse", "board": "gardacp"},
+        {"company": "Engelhart", "type": "greenhouse", "board": "engelhart"},
+        {"company": "Kepler Cheuvreux", "type": "html", "url": "https://keplercheuvreux.teamtailor.com/jobs", "link_regex": "/jobs/\\d+-[a-z0-9-]+"},
+        {"company": "DWS", "type": "workday", "host": "db.wd3.myworkdayjobs.com", "tenant": "db", "site": "DWSWebsite"},
+        {"company": "ING", "label": "ING (France)", "type": "workday", "host": "ing.wd3.myworkdayjobs.com", "tenant": "ing", "site": "ICSFRADIR"},
+        {"company": "ING", "label": "ING (global)", "type": "workday", "host": "ing.wd3.myworkdayjobs.com", "tenant": "ing", "site": "ICSGBLCOR"},
+        {"company": "Point72", "type": "greenhouse", "board": "point72"},
+        {"company": "Capital Group", "type": "workday", "host": "capgroup.wd1.myworkdayjobs.com", "tenant": "capgroup", "site": "capitalgroupcareers"},
+        {"company": "MUFG", "type": "workday", "host": "mufgub.wd3.myworkdayjobs.com", "tenant": "mufgub", "site": "MUFG-Careers"},
+        {"company": "SMBC", "label": "SMBC (Asie)", "type": "html", "default_location": "Singapore", "urls": ["https://careerasia.smbc.co.jp/SMBC/search/?q=&locationsearch=Singapore&startrow=0", "https://careerasia.smbc.co.jp/SMBC/search/?q=&locationsearch=Singapore&startrow=25", "https://careerasia.smbc.co.jp/SMBC/search/?q=&locationsearch=Singapore&startrow=50", "https://careerasia.smbc.co.jp/SMBC/search/?q=&locationsearch=Singapore&startrow=75", "https://careerasia.smbc.co.jp/SMBC/search/?q=&locationsearch=Singapore&startrow=100", "https://careerasia.smbc.co.jp/SMBC/search/?q=&locationsearch=Singapore&startrow=125"], "link_regex": "/SMBC/job/[^\\\"]+/\\d+/"},
+        {"company": "Castleton Commodities", "type": "workday", "host": "osv-cci.wd1.myworkdayjobs.com", "tenant": "osv-cci", "site": "CCICareers"},
     ],
     # Portail officiel de l'emploi à Singapour (offres « Internship/Attachment »)
     "mcf": {
@@ -309,7 +244,10 @@ DEFAULT_CONFIG = {
     "priority_companies": ["Morgan Stanley", "Goldman Sachs", "J.P. Morgan", "Lazard", "Rothschild",
                            "BNP Paribas", "Bank of America", "Société Générale"],
     "closed_checks_per_run": 20,
-    "parallel_sources": 6,  # sites interrogés en même temps (un seul fil par site web)
+    "parallel_sources": 6,
+    "description_checks_per_run": 40,  # descriptions lues avant de notifier (offres hors LinkedIn)
+    "verify_checks_per_run": 30,       # offres déjà affichées recontrôlées par passage (hors LinkedIn)
+    "verify_linkedin_per_run": 8,      # idem pour LinkedIn  # sites interrogés en même temps (un seul fil par site web)
     "cloud": {
         "ntfy_topic": "",
         "dashboard_url": "",
@@ -450,6 +388,23 @@ class Tracker:
             self.store.set_meta("filter_version", cur)
             if n:
                 log("Règles de filtrage mises à jour : %d offres écartées seront réexaminées." % n)
+            self.refilter_offers()
+
+    def refilter_offers(self):
+        """Les offres déjà retenues repassent dans le filtre (par l'intitulé) ; celles qui n'y répondent plus sont
+        retirées du tableau et rangées dans les offres écartées. Leur description sera aussi recontrôlée."""
+        removed = 0
+        for o in self.store.offers():
+            if o.get("closed"):
+                continue
+            r = self._classify(o)
+            if r["region"] is None or r["category"] is None or r["intern"] == "no":
+                removed += self.store.exclude_offer(o["uid"], r["reason"] or "hors périmètre")
+        self.store.db.execute("UPDATE offers SET desc_checked=0")
+        self.store.db.commit()
+        if removed:
+            log("Nouvelles règles : %d offre(s) déjà affichée(s) retirée(s) du tableau." % removed)
+        return removed
 
     def _save_backoff(self, name):
         self.store.set_meta("backoff:" + name, self.backoff.get(name, 0))
@@ -459,7 +414,7 @@ class Tracker:
         f = self.cfg["filters"]
         r = filters.classify(j["title"], j.get("location", ""), description,
                              employment_type or j.get("employment_type", ""),
-                             f.get("extra_include"), f.get("extra_exclude"))
+                             f.get("extra_include"), f.get("extra_exclude"), company=j.get("company") or "")
         # include_summer ne concerne que la France : en Suisse et à Singapour, summer et off-cycle sont gardés
         if r["ok"] and r["summer"] and not f.get("include_summer", True) and r.get("region") == "France":
             r["ok"], r["reason"] = False, "summer exclu (config)"
@@ -663,7 +618,7 @@ class Tracker:
     def cycle(self):
         new_list, seeded_now = [], []
         details_budget = self.cfg["linkedin"]["detail_limit_per_cycle"]
-        detail_queue = []
+        detail_queue, desc_queue = [], []
         for name, jobs in self.collect():
             seed = self.store.get_meta("seeded:" + name) is None
             for j in jobs:
@@ -677,12 +632,17 @@ class Tracker:
                 if j["source"] == "LinkedIn" and (r["ok"] or r["intern"] == "unknown"):
                     # On va chercher le lien carrière (et confirmer le stage si besoin)
                     detail_queue.append((0 if r["ok"] else 1, j, r, seed))
-                elif r["ok"]:
-                    self._accept(j, r, seed, new_list)
+                elif r["ok"] and seed:
+                    self._accept(j, r, seed, new_list)  # premier passage silencieux : description contrôlée ensuite
+                elif r["ok"] or r["intern"] == "unknown":
+                    # Avant de notifier : description lue (allemand/mandarin exigé ? vraiment un stage ?)
+                    desc_queue.append((0 if r["ok"] else 1, j, r, seed))
                 else:
                     self.store.add_rejected(j["uid"], r["reason"] or "?", j)
             if seed and jobs:
                 seeded_now.append(name)
+
+        self._check_descriptions(desc_queue, new_list)
 
         # Offres LinkedIn retenues d'abord, puis celles à confirmer
         detail_queue.sort(key=lambda x: x[0])
@@ -700,6 +660,7 @@ class Tracker:
                 r2 = self._classify(j, d["description"], d["employment_type"])
                 if prio == 0 and r2["intern"] == "no" and filters.INTERN_TITLE.search(filters.normalize(j["title"])):
                     r2 = r  # le titre dit "stage" : on garde la décision initiale
+                j["desc_checked"] = 1
                 if r2["ok"]:
                     self._accept(j, r2, seed, new_list)
                 else:
@@ -725,6 +686,87 @@ class Tracker:
             self.store.set_meta("seeded:" + name, "1")
         self.store.prune()
         return new_list, seeded_now
+
+    @staticmethod
+    def _desc_employment(d):
+        """Type de contrat utilisable : celui de LinkedIn / MyCareersFuture toujours, ailleurs seulement s'il dit "stage"
+        (certains sites marquent "Full time" des stages à plein temps)."""
+        emp = d.get("employment_type") or ""
+        if d.get("trusted") or re.search(r"(?i)intern|stage|praktik|attachment", emp):
+            return emp
+        return ""
+
+    def _check_descriptions(self, queue, new_list):
+        """Offres hors LinkedIn : lecture de la description avant de notifier, dans la limite d'un budget par passage.
+        Au-delà : une offre déjà sûre est retenue (contrôlée au passage suivant), une offre à confirmer attend."""
+        budget = int(self.cfg.get("description_checks_per_run", 40))
+        queue.sort(key=lambda x: x[0])
+        for prio, j, r, seed in queue:
+            if budget <= 0:
+                if prio == 0:
+                    self._accept(j, r, seed, new_list)
+                elif seed:
+                    self.store.mark_seed(j["uid"])
+                continue
+            budget -= 1
+            try:
+                d = sources.fetch_description(j)
+            except sources.RateLimited:
+                d, budget = None, 0
+            if d is None:
+                if prio == 0:
+                    j["desc_checked"] = 2  # description illisible automatiquement
+                    self._accept(j, r, seed, new_list)
+                else:
+                    self.store.add_rejected(j["uid"], "stage à confirmer", j)
+                continue
+            r2 = self._classify(j, d["description"], self._desc_employment(d))
+            if r2["ok"]:
+                j["desc_checked"] = 1
+                self._accept(j, r2, seed, new_list)
+            else:
+                self.store.add_rejected(j["uid"], r2["reason"] or "?", j)
+            time.sleep(random.uniform(0.1, 0.4))
+
+    def verify_offers(self):
+        """Contrôle progressif des offres déjà affichées : description lue (langue exigée, type de contrat).
+        Une offre qui exige l'allemand ou le mandarin, ou qui n'est finalement pas un stage, est retirée du tableau."""
+        budget = int(self.cfg.get("verify_checks_per_run", 30))
+        li_budget = int(self.cfg.get("verify_linkedin_per_run", 8))
+        todo = self.store.offers_to_verify()
+        # D'abord les intitulés sans le mot "stage", puis la Suisse et Singapour, puis les plus récentes
+        todo.sort(key=lambda o: (bool(filters.INTERN_TITLE.search(filters.normalize(o["title"]))),
+                                 filters.region_of(o["location"], o["title"]) == "France", -(o["first_seen"] or 0)))
+        removed = 0
+        for o in todo:
+            is_li = o["source"] == "LinkedIn"
+            if is_li:
+                if li_budget <= 0 or self.backoff.get("LinkedIn", 0) > time.time():
+                    continue
+                li_budget -= 1
+            else:
+                if budget <= 0:
+                    continue
+                budget -= 1
+            try:
+                d = sources.fetch_description(o)
+            except sources.RateLimited:
+                if is_li:
+                    self.backoff["LinkedIn"] = time.time() + 900
+                    self._save_backoff("LinkedIn")
+                continue
+            if d is None:
+                self.store.set_desc_checked(o["uid"], 2)
+                continue
+            r = self._classify(o, d["description"], self._desc_employment(d))
+            lang = (r["reason"] or "").startswith("langue requise")
+            if lang or (r["intern"] == "no" and d.get("trusted")):
+                removed += self.store.exclude_offer(o["uid"], r["reason"])
+                log("  ✖ retirée : %s · %s (%s)" % (o["company"], o["title"], r["reason"]))
+            else:
+                self.store.set_desc_checked(o["uid"], 1)
+            time.sleep(random.uniform(1.0, 2.0) if is_li else random.uniform(0.1, 0.4))
+        return removed
 
     def notify_new(self, new_list):
         """Offres prioritaires : toujours une notification urgente chacune. Les autres : une par offre,
@@ -1039,6 +1081,12 @@ def main():
                           "Tu seras notifié de chaque nouvelle offre." % n, dash_link(), button="Voir le tableau")
             tracker.notify_new(new_list)
             tracker.announce_regions()
+            try:
+                removed = tracker.verify_offers()
+                if removed:
+                    log("%d offre(s) retirée(s) après lecture de la description." % removed)
+            except Exception:
+                log("Contrôle des descriptions : erreur\n" + traceback.format_exc())
             try:
                 closed = tracker.check_closed()
                 if closed:

@@ -7,7 +7,7 @@ import re
 import unicodedata
 
 # À incrémenter à chaque changement de règles : les offres déjà écartées sont alors réexaminées.
-FILTER_VERSION = 4
+FILTER_VERSION = 5
 
 
 def normalize(text):
@@ -34,7 +34,9 @@ def _rx(words):
 INTERN_TITLE = _rx([
     r"stages?", r"stagiaires?", r"interns?", r"internships?", r"off ?cycle", r"offcycle",
     r"cesure", r"gap year", r"summer analysts?", r"summer internship", r"spring internship",
-    r"winter internship", r"autumn internship", r"fall internship", r"trainee",
+    r"winter internship", r"autumn internship", r"fall internship",
+    # "Placement" (Citi, Barclays...) = stage ; "trainee" seul ne suffit pas (souvent un CDI junior)
+    r"placement analysts?", r"placement (?:year|programme|program|student)", r"industrial placement",
     # Allemand (Suisse alémanique)
     r"praktikums?", r"praktika", r"praktikant(?:in|innen|en)?",
 ])
@@ -47,6 +49,20 @@ CONTRACT_EXCLUDE = _rx([
     # Allemand : étudiant salarié, apprentissage (Lehre / Lernende)
     r"werkstudent\w*", r"lehrstelle\w*", r"lernende[nr]?", r"lehrling\w*",
 ])
+# Titres de postes confirmés ou de programmes graduate : jamais un stage si le titre ne dit pas "stage"/"intern"
+NOT_INTERN_TITLE = _rx([
+    r"senior", r"sr", r"vp", r"avp", r"vice president", r"directors?", r"directeur\w*", r"directrice\w*",
+    r"head", r"managing", r"managers?", r"associates?",
+    r"lead", r"principal", r"partner", r"experienced", r"experimente\w*", r"confirme\w*", r"expert\w*",
+    r"\d+ ?(?:ans|years|yrs|year)", r"graduates?", r"graduate program\w*", r"new grads?", r"fresh grad\w*",
+    r"full ?time", r"temps plein", r"permanent", r"contract", r"contractor", r"freelance", r"officer",
+    r"specialist", r"specialiste", r"executive", r"responsable", r"chief", r"team head", r"heads?",
+])
+# "Assistant(e) ..." : intitulé usuel des stages en France, c'est le type de contrat qui tranche
+ASSISTANT_TITLE = _rx([r"assistante?s?", r"assistant e"])
+# "(with commodities/bank internship or work experience)" : l'expérience demandée n'est pas le contrat
+INTERN_EXPERIENCE = re.compile(
+    r"(?<![a-z0-9])(?:\w+ ){0,3}internships? (?:and |or )?(?:work |relevant )?experiences?(?![a-z0-9])")
 # Faux positifs anglais/français de "stage" dans les descriptions (early stage, etc.)
 STAGE_FALSE = re.compile(
     r"(?<![a-z0-9])(?:early|growth|late|later|seed|any|every|all|this|that|next|first|"
@@ -54,7 +70,7 @@ STAGE_FALSE = re.compile(
     r"advanced|initial|current|same|various|different|critical|key|new|young)\s+stages?(?![a-z0-9])"
 )
 INTERN_DESC = re.compile(
-    r"(?<![a-z0-9])(?:stagiaires?|internships?|interns?|off ?cycle|cesure|gap year|"
+    r"(?<![a-z0-9])(?:internships?|off ?cycle|cesure|gap year|"
     r"praktikums?|praktikant(?:in|en)?|convention de stage|stage de \d+|stage d une duree|stage a pourvoir|"
     r"duree du stage|offre de stage|stage de fin d etudes|stage (?:de )?(?:\d+|six|quatre|cinq) mois)(?![a-z0-9])"
 )
@@ -109,17 +125,24 @@ CAT_PATTERNS = {
         r"financial institutions? group", r"advisory (?:and )?(?:mna|m a)",
         r"corporate development", r"deal advisory", r"lead advisory", r"structured finance",
         r"financements? structures?", r"project finance", r"financements? de projets?", r"debt syndicate",
+        r"acquisitions? cessions?", r"cessions? acquisitions?", r"valorisation d entreprises?", r"business valuation",
+        r"corporate banking", r"banquier conseil", r"banking (?:off ?cycle|summer|spring|winter|autumn)",
+        r"syndicated loans?", r"loan syndication", r"financements? syndiques?", r"loan sales",
+        r"infra\w* (?:and )?(?:energy )?finance", r"charge e? d affaires financements?",
+        r"financements? (?:aeronautiques?|aviation|d actifs|maritimes?|shipping)", r"aviation finance", r"asset finance",
+        r"private capital advisory", r"primary capital advisory", r"private placements?", r"placements? prives",
+        r"fundraising advisory", r"analyste fundraising", r"fundraising analysts?",
     ],
     "Private Equity": [
         r"private equity", r"capital investissement", r"capital developpement", r"capital transmission",
         r"lbo", r"buy ?out", r"growth equity", r"private debt", r"dette privee", r"secondaires?",
         r"secondaries", r"fonds d investissement", r"investment analyst", r"analyste investissements?",
         r"charge d affaires (?:capital|investissement|private|fonds|pe|lbo|mezzanine)\w*", r"investment associate", r"investment team", r"equipe d investissement",
-        r"investissement non cote", r"\bpe\b fund",
+        r"investissement non cote", r"\bpe\b fund", r"gp stakes", r"gp solutions", r"gp led", r"continuation funds?",
     ],
     "Private Equity (faible)": [
         r"infrastructure", r"real assets", r"fund finance", r"primaries", r"co ?invest\w*",
-        r"fund of funds", r"fonds de fonds", r"portfolio operations", r"value creation",
+        r"fund of funds", r"fonds de fonds", r"portfolio operations", r"value creation", r"private markets?",
     ],
     "Venture Capital": [
         r"venture capital", r"venture", r"capital risque", r"vc", r"corporate venture",
@@ -133,6 +156,7 @@ CAT_PATTERNS = {
         r"analyste gestion", r"gestion d investissements?", r"investment management",
         r"gestionnaire de portefeuilles?", r"investment solutions", r"fund selection", r"selection de fonds",
         r"investment research", r"buy ?side research", r"recherche (?:investissement|gestion)",
+        r"high yield", r"multi ?gestion", r"multi ?management", r"fund analysts?",
     ],
     "Sales & Trading": [
         r"sales trading", r"sales and trading", r"sales traders?", r"traders?", r"trading",
@@ -143,6 +167,7 @@ CAT_PATTERNS = {
         r"marches? primaires?", r"prime brokerage", r"securities lending", r"repo",
         r"equity research", r"credit research", r"fixed income research", r"macro research",
         r"recherche (?:actions|credit|macro\w*|economique|marches?|obligataire|taux)",
+        r"exchange traded", r"etfs?", r"research analysts?",
     ],
 }
 CAT_RX = {k: _rx(v) for k, v in CAT_PATTERNS.items()}
@@ -155,7 +180,7 @@ MARKET_CTX = _rx([
     r"commodit(?:y|ies)", r"matieres premieres", r"bonds?", r"obligataire", r"cross asset",
     r"institutional", r"institutionnels?", r"structured products", r"produits structures",
     r"flow", r"investors?", r"investisseurs", r"etfs?", r"options", r"futures", r"swaps?", r"convertibles?",
-    r"repo", r"money markets?", r"monetaire", r"obligations",
+    r"repo", r"money markets?", r"monetaire", r"obligations", r"exchange traded",
 ])
 
 ADMIN_ASSISTANT = [
@@ -179,9 +204,15 @@ ROLE_EXCLUDE = _rx([
     r"transaction services", r"middle office", r"back office", r"operations", r"ops",
     r"it", r"developer", r"developpeur",
     r"developpeuse", r"engineer", r"engineering", r"ingenieur", r"ingenieure", r"data",
-    r"software", r"devops", r"cyber", r"cybersecurity", r"juriste", r"legal", r"avocat",
-    r"lawyer", r"droit", r"juridique", r"law", r"rh", r"hr", r"human resources", r"ressources humaines", r"recrutement",
-    r"recruitment", r"talent", r"marketing", r"communication", r"comptable", r"comptabilite",
+    r"software", r"devops", r"cyber\w*", r"juristes?", r"legal", r"avocats?", r"cabinet d avocats",
+    r"lawyers?", r"droit", r"juridique", r"law", r"rh", r"hr", r"human resources", r"ressources humaines", r"recrutement",
+    r"recruitment", r"talent (?:acquisition|management|sourcing|partner|development)", r"marketing",
+    r"consultant\w*", r"consulting", r"chief of staff", r"medias?", r"programmati\w*", r"digital trader\w*",
+    r"trader\w* digital", r"social media", r"trader social", r"ads", r"advertising", r"publicite", r"adtech", r"paid media",
+    r"superintend\w*",
+    r"technicien\w*", r"inspecteur\w*", r"inspection", r"securite financiere", r"fraude", r"fraud",
+    r"enseignant\w*", r"teacher", r"professeur", r"commercial banking", r"banque commerciale",
+    r"conseil en strategie", r"communication", r"comptable", r"comptabilite",
     r"accounting", r"accountant", r"controle de gestion", r"controller", r"controleur", r"kyc",
     r"aml", r"lcb ft", r"product owner", r"project manager", r"chef de projet", r"moa", r"pmo",
     r"research scientist", r"ux research\w*", r"user research\w*", r"recherche et developpement",
@@ -272,18 +303,20 @@ def city_of(location, title=""):
 
 def intern_status(title, description="", employment_type=""):
     """Retourne 'yes', 'no' ou 'unknown'."""
-    t = normalize(title)
+    t = INTERN_EXPERIENCE.sub(" ", normalize(title))
     if CONTRACT_EXCLUDE.search(t):
         return "no"
     if INTERN_TITLE.search(t):
         return "yes"
+    if NOT_INTERN_TITLE.search(t) and not ASSISTANT_TITLE.search(t):
+        return "no"  # VP, associate, graduate programme, CDI... sans le mot "stage"
     et = normalize(employment_type)
     if et.strip():
-        if re.search(r"(?<![a-z])(internship|stage|intern)(?![a-z])", et):
+        if re.search(r"(?<![a-z])(internship|internships|stage|intern|interns|attachment|praktikum)(?![a-z])", et):
             return "yes"
-        if re.search(r"(?<![a-z])(full time|temps plein|contract|temporary|part time|cdi|cdd)(?![a-z])", et) \
-                and not description:
-            return "no"
+        if re.search(r"(?<![a-z])(full time|temps plein|contract|contractor|temporary|part time|permanent|cdi|cdd|"
+                     r"freelance|mid senior level|entry level|associate|director|executive)(?![a-z])", et):
+            return "no"  # type de contrat indiqué par l'employeur : ce n'est pas un stage
     if description:
         d = STAGE_FALSE.sub(" ", normalize(description))
         if INTERN_DESC.search(d):
@@ -294,16 +327,49 @@ def intern_status(title, description="", employment_type=""):
 
 # Commodities : tout poste lié aux matières premières (trading, analyse de marché, origination,
 # opérations, trade finance, affrètement...), seules les fonctions support restent exclues.
+# Mots sans ambiguïté
 COMMO_RX = _rx([
     r"commodit(?:y|ies)", r"matieres? premieres?", r"energy trading", r"energy markets?",
     r"marches? de l energie", r"marches? de l electricite", r"marches? du gaz", r"power trading",
-    r"power markets?", r"gas trading", r"gas markets?", r"lng", r"gnl", r"oil", r"petrole", r"petroliers?",
-    r"crude", r"metals?", r"metaux", r"softs", r"agri commodit\w*", r"freight", r"affretement",
-    r"chartering", r"bunkers?", r"carbon trading", r"marches? (?:du )?carbone", r"emissions trading",
+    r"power markets?", r"gas trading", r"gas markets?", r"agri commodit\w*", r"affretement",
+    r"chartering", r"charterers?", r"bunkers?", r"carbon trading", r"marches? (?:du )?carbone", r"emissions trading",
     r"energy (?:origination|analyst|trader|trading|sales|markets?)", r"trading (?:d )?energie", r"negoce",
-    r"power", r"gas", r"gaz", r"electricity", r"electricite", r"emissions?", r"carbon markets?",
-    r"rohstoff\w*", r"energiehandel\w*", r"stromhandel\w*", r"gashandel\w*",
+    r"carbon markets?", r"rohstoff\w*", r"energiehandel\w*", r"stromhandel\w*", r"gashandel\w*",
+    r"freight (?:trad\w*|markets?|analysts?|derivatives|desk)", r"shipping markets?", r"ship ?brok\w*", r"tankers?",
+    r"(?:oil|gas|power|lng|lpg|metals?|crude|freight|coal|softs|grains?) (?:market )?analysts?",
 ])
+# Mots ambigus (électricien, consultant Oil & Gas, transitaire...) : comptent seulement avec un contexte marché
+COMMO_WEAK = _rx([
+    r"oil", r"petrole", r"petroliers?", r"crude", r"metals?", r"metaux", r"freight", r"power", r"gas", r"gaz",
+    r"electricity", r"electricite", r"emissions?", r"carbon", r"lng", r"gnl", r"energy", r"energie", r"shipping",
+    r"coal", r"charbon", r"grains?", r"sugar", r"coffee", r"cocoa", r"cotton", r"copper", r"aluminium", r"iron ore",
+    r"softs",
+])
+COMMO_CTX = _rx([
+    r"trading", r"trad(?:er|ers|eur|euse|euses)", r"markets?", r"marches?", r"negoce", r"origination", r"hedg\w*",
+    r"couverture", r"pricing", r"schedul\w*", r"desk", r"operators?", r"operations?", r"chartering",
+])
+
+
+def _commo(t):
+    return bool(COMMO_RX.search(t) or (COMMO_WEAK.search(t) and COMMO_CTX.search(t)))
+
+
+# Grandes maisons de négoce : leurs stages d'analyse, de trading ou d'opérations relèvent des Commodities
+COMMO_HOUSES = _rx([
+    r"vitol", r"trafigura", r"gunvor", r"glencore", r"mercuria", r"cargill", r"louis dreyfus", r"ldc", r"cofco\w*",
+    r"bunge", r"olam", r"ofi", r"wilmar", r"axpo", r"castleton", r"hartree", r"litasco", r"socar", r"sucden",
+    r"ameropa", r"alvean", r"engelhart", r"etg", r"bb energy", r"sinochem", r"unipec", r"petrochina", r"freepoint",
+    r"edf trading", r"uniper", r"totalenergies trading", r"shell trading", r"bp trading", r"koch supply",
+])
+COMMO_HOUSE_ROLE = _rx([
+    r"analysts?", r"analyste", r"research", r"recherche", r"trading", r"traders?", r"operations?", r"operators?",
+    r"freight", r"chartering", r"markets?", r"origination", r"scheduler\w*",
+])
+HOUSE_EXCLUDE = _rx([r"risk", r"risks", r"control\w*", r"finance", r"treasury", r"tresorerie", r"credit", r"gen ?ai", r"ai",
+                     r"digital", r"strategy", r"sustainability", r"esg", r"business analyst"])
+
+
 COMMO_HARD_EXCLUDE = _rx([
     r"it", r"developer", r"developpeur", r"developpeuse", r"engineer", r"engineering", r"ingenieur",
     r"ingenieure", r"data", r"software", r"devops", r"cyber\w*", r"juriste", r"legal", r"avocat", r"lawyer",
@@ -314,7 +380,9 @@ COMMO_HARD_EXCLUDE = _rx([
     r"procurement", r"acheteur", r"acheteuse",
     r"controle de gestion", r"controller", r"tax", r"fiscal\w*", r"retail", r"station",
     r"power ?bi", r"power ?point", r"power ?apps", r"power ?automate", r"technicien\w*", r"chantier",
-    r"electricien\w*", r"installat\w*", r"bureau d etudes", r"btp",
+    r"electricien\w*", r"installat\w*", r"bureau d etudes", r"btp", r"consultant\w*", r"consulting",
+    r"superintend\w*", r"forwarding", r"transitaire", r"credit analysts?", r"analyste credit", r"customs",
+    r"business develop\w*", r"bizdev", r"conseil en strategie", r"strategy", r"strategie",
 ] + ADMIN_ASSISTANT + SUPPORT_EXCLUDE)
 IBD_STRICT = _rx([r"mna", r"fusions?", r"mergers?", r"investment banking", r"ibd", r"banque d affaires",
                   r"corporate finance", r"private equity", r"capital investissement", r"lbo", r"buy ?out",
@@ -328,10 +396,94 @@ LEVFIN_RX = _rx([r"leveraged finance", r"levfin", r"acquisition finance", r"fina
 AM_ASSISTANT_OK = re.compile(r"(?<![a-z0-9])assistante? (?:de |du |au |aux )?(?:gerants?|gerantes?|portfolio manag\w*|fund manag\w*)(?![a-z0-9])")
 
 
-def categorize(title):
+# ---------- Langues exigées (allemand, mandarin) ----------
+LANG_WORDS = {
+    "allemand": _rx([r"german", r"deutsch", r"deutschkenntnisse\w*", r"allemand", r"tedesco", r"swiss german",
+                     r"schweizerdeutsch", r"suisse allemand"]),
+    "mandarin": _rx([r"mandarin", r"chinese", r"chinois", r"putonghua", r"zhongwen"]),
+}
+LANG_CONTEXT = _rx([
+    r"language\w*", r"langues?", r"linguisti\w*", r"speak\w*", r"spoken", r"written", r"writing", r"fluen\w*",
+    r"proficien\w*", r"bilingu\w*", r"native", r"natif", r"native speaker", r"parler", r"parle\w*", r"maitris\w*",
+    r"courant\w*", r"converse", r"conversational", r"verbal", r"oral", r"ecrit", r"command", r"mother tongue",
+    r"deutschkenntnisse\w*", r"sprachkenntnisse\w*", r"kenntnisse", r"sprache\w*", r"muttersprache\w*",
+    r"deutsch", r"allemand", r"mandarin", r"read", r"lire", r"english", r"anglais", r"englisch", r"french",
+    r"francais", r"franzosisch", r"italian", r"italien", r"spanish", r"espagnol", r"cantonese", r"malay",
+])
+LANG_REQUIRED = _rx([
+    r"fluen\w*", r"native", r"natif", r"native speaker", r"proficien\w*", r"bilingu\w*", r"mandatory", r"required",
+    r"requirements?", r"requis\w*", r"essential", r"must", r"necessary", r"necessaire", r"indispensable",
+    r"obligatoire", r"exige\w*", r"imperati\w*", r"courant\w*", r"maitris\w*", r"excellent\w*", r"strong",
+    r"good command", r"command of", r"business level", r"professional working", r"full professional",
+    r"written and spoken", r"spoken and written", r"ecrit et oral", r"oral et ecrit", r"able to speak",
+    r"able to converse", r"able to communicate", r"ability to (?:speak|converse|communicate)", r"to liaise",
+    r"fliessend\w*", r"verhandlungssicher\w*", r"muttersprache\w*", r"zwingend", r"erforderlich",
+    r"vorausgesetzt", r"sehr gute\w*", r"ausgezeichnete\w*", r"stilsicher\w*", r"need to", r"needs to",
+    r"speak mandarin", r"speak german", r"parler allemand", r"parler mandarin",
+    r"proficiency", r"qualifications?",
+])
+LANG_PLUS = _rx([
+    r"plus", r"advantage\w*", r"asset", r"atout", r"apprecie\w*", r"souhait\w*", r"nice to have", r"bonus",
+    r"prefer\w*", r"ideally", r"idealement", r"desirable", r"desired", r"beneficial", r"benefit", r"would be",
+    r"serait", r"wunschenswert", r"von vorteil", r"vorteil\w*", r"idealerweise", r"optional\w*", r"not required",
+    r"not mandatory", r"not necessary", r"pas obligatoire", r"non obligatoire", r"pas necessaire", r"additional",
+    r"other languages?", r"further languages?", r"autres? langues?", r"helpful", r"welcome", r"bienvenu\w*",
+    r"good to have", r"valued", r"an edge",
+])
+# "allemand ou anglais", "German or French" : une alternative existe, la langue n'est pas exigée
+LANG_ALTERNATIVE = re.compile(
+    r"(?<![a-z0-9])(?:german|deutsch|allemand|mandarin|chinese|chinois)\s+(?:and ?/ ?)?(?:or|ou|oder)\s+"
+    r"(?:\w+\s+){0,2}(?:french|francais|franzosisch|english|anglais|englisch|italian|italien|spanish|espagnol)"
+    r"|(?:french|francais|franzosisch|english|anglais|englisch|italian|italien)\s+(?:or|ou|oder)\s+"
+    r"(?:\w+\s+){0,2}(?:german|deutsch|allemand|mandarin|chinese|chinois)(?![a-z0-9])")
+GERMAN_STOP = re.compile(r"(?<![a-zäöüß])(?:und|der|die|das|mit|für|wir|sie|ihre|ihr|eine|einen|einem|sind|werden|"
+                         r"oder|bei|auf|zu|im|ist|unser|unsere|von|als|sowie|deine|du|dich)(?![a-zäöüß])", re.I)
+
+
+def language_required(description):
+    """'allemand' ou 'mandarin' si l'offre exige cette langue (pas si c'est « un plus »), sinon None."""
+    if not description:
+        return None
+    raw = str(description)
+    words = re.findall(r"[A-Za-zÀ-ÿß]+", raw)
+    if len(words) >= 40 and len(GERMAN_STOP.findall(raw)) / len(words) > 0.08:
+        return "allemand"  # offre rédigée en allemand
+    if len(re.findall(r"[\u4e00-\u9fff]", raw)) >= 20:
+        return "mandarin"  # offre rédigée en chinois
+    for sent in re.split(r"[.!?;\n\r•·▪●◦\u2022]+|<br\s*/?>|</?(?:li|p|div|ul)[^>]*>", raw):
+        n = normalize(sent)
+        if len(n) < 6:
+            continue
+        for lang, rx in LANG_WORDS.items():
+            if not rx.search(n):
+                continue
+            if not LANG_CONTEXT.search(rx.sub(" ", n)) and not re.search(r"(?<![a-z])(?:deutsch|allemand|mandarin)(?![a-z])", n):
+                continue  # "Chinese clients", "marché allemand" : pas une langue
+            if LANG_ALTERNATIVE.search(n):
+                continue
+            # "English and German required, French a plus" : on juge chaque morceau de phrase
+            parts = [normalize(x) for x in re.split(r"[,:()\[\]]| - | – ", sent)] if LANG_PLUS.search(n) else [n]
+            for part in parts:
+                if rx.search(part) and LANG_REQUIRED.search(part) and not LANG_PLUS.search(part):
+                    return lang
+                if rx.search(part) and not LANG_PLUS.search(part) and LANG_REQUIRED.search(n) and len(parts) == 1:
+                    return lang
+    return None
+
+
+# Exclusions qui ne valent pas pour un groupe sectoriel de banque d'affaires ou de la recherche actions
+SECTOR_WORDS = {"retail", "real estate", "immobilier", "media", "medias", "telecom"}
+SECTOR_OK = _rx([r"investment banking", r"mna", r"ibd", r"coverage", r"equity research\w*", r"recherche actions",
+                 r"corporate finance", r"consumer"])
+
+
+def categorize(title, company=""):
     """Renvoie (categorie, raison_exclusion). categorie=None si hors périmètre."""
     t = normalize(title)
-    if COMMO_RX.search(t):
+    if company and COMMO_HOUSES.search(normalize(company)) and COMMO_HOUSE_ROLE.search(t) \
+            and not COMMO_HARD_EXCLUDE.search(t) and not HOUSE_EXCLUDE.search(t):
+        return "Commodities", None
+    if _commo(t):
         m = COMMO_HARD_EXCLUDE.search(t)
         if m:
             return None, "métier exclu (%s)" % m.group(0).strip()
@@ -345,6 +497,9 @@ def categorize(title):
         return "Commodities", None
     t = AM_ASSISTANT_OK.sub(" gerant ", t)
     t_for_excl = ROLE_EXCLUDE_EXCEPTIONS.sub(" ", t)
+    if SECTOR_OK.search(t):  # "Investment Banking, Consumer Retail Group", "Equity Research Immobilier"
+        for w in SECTOR_WORDS:
+            t_for_excl = re.sub(r"(?<![a-z0-9])%s(?![a-z0-9])" % w, " ", t_for_excl)
     m = ROLE_EXCLUDE.search(t_for_excl)
     if m:
         return None, "métier exclu (%s)" % m.group(0).strip()
@@ -361,7 +516,7 @@ def categorize(title):
     return None, "métier hors périmètre"
 
 
-def classify(title, location, description="", employment_type="", extra_include=None, extra_exclude=None):
+def classify(title, location, description="", employment_type="", extra_include=None, extra_exclude=None, company=""):
     """Décision complète. Renvoie dict(ok, category, intern, reason, summer, region)."""
     t = normalize(title)
     region = region_of(location, title)
@@ -369,7 +524,7 @@ def classify(title, location, description="", employment_type="", extra_include=
         return dict(ok=False, category=None, intern="no", reason="mot exclu (config)", summer=False, region=region)
     if region is None:
         return dict(ok=False, category=None, intern="?", reason="hors zone", summer=False, region=None)
-    cat, why = categorize(title)
+    cat, why = categorize(title, company)
     if cat is None and extra_include:
         if any(normalize(w).strip() and normalize(w) in t for w in extra_include):
             cat, why = "Autre (mot-clé perso)", None
@@ -379,6 +534,9 @@ def classify(title, location, description="", employment_type="", extra_include=
     summer = bool(SUMMER_TITLE.search(t))
     if st == "no":
         return dict(ok=False, category=cat, intern="no", reason="pas un stage", summer=summer, region=region)
+    lang = language_required(description)
+    if lang:
+        return dict(ok=False, category=cat, intern=st, reason="langue requise (%s)" % lang, summer=summer, region=region)
     return dict(ok=(st == "yes"), category=cat, intern=st,
                 reason=None if st == "yes" else "stage à confirmer", summer=summer, region=region)
 

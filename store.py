@@ -25,7 +25,8 @@ class Store:
         self.db.executescript(SCHEMA)
         # Colonnes ajoutées après coup (bases existantes mises à niveau sans perte)
         cols = {r["name"] for r in self.db.execute("PRAGMA table_info(offers)")}
-        for col, decl in (("closed", "INTEGER DEFAULT 0"), ("closed_at", "REAL"), ("last_checked", "REAL")):
+        for col, decl in (("closed", "INTEGER DEFAULT 0"), ("closed_at", "REAL"), ("last_checked", "REAL"),
+                          ("desc_checked", "INTEGER DEFAULT 0")):
             if col not in cols:
                 self.db.execute("ALTER TABLE offers ADD COLUMN %s %s" % (col, decl))
         rcols = {r["name"] for r in self.db.execute("PRAGMA table_info(rejected)")}
@@ -59,11 +60,32 @@ class Store:
     def add_offer(self, o, notified, duplicate_of=None):
         self.db.execute(
             "INSERT OR IGNORE INTO offers(uid, source, ext_id, title, company, location, url, apply_url, posted,"
-            " category, summer, first_seen, notified, dedup_key, duplicate_of)"
-            " VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+            " category, summer, first_seen, notified, dedup_key, duplicate_of, desc_checked)"
+            " VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
             (o["uid"], o["source"], o["ext_id"], o["title"], o.get("company") or "", o.get("location") or "",
              o["url"], o.get("apply_url"), o.get("posted") or "", o["category"], int(bool(o.get("summer"))),
-             time.time(), int(notified), o["dedup_key"], duplicate_of))
+             time.time(), int(notified), o["dedup_key"], duplicate_of, int(o.get("desc_checked") or 0)))
+        self.db.commit()
+
+    def exclude_offer(self, uid, reason):
+        """Retire une offre (et ses doublons) du tableau : elle passe dans les offres écartées avec la raison."""
+        rows = [dict(r) for r in self.db.execute("SELECT * FROM offers WHERE uid=? OR duplicate_of=?", (uid, uid))]
+        for o in rows:
+            self.db.execute("INSERT OR REPLACE INTO rejected(uid, reason, ts, title, company, location, source, url)"
+                            " VALUES(?,?,?,?,?,?,?,?)", (o["uid"], reason, time.time(), o["title"], o["company"],
+                                                        o["location"], o["source"], o["url"]))
+        self.db.execute("DELETE FROM offers WHERE uid=? OR duplicate_of=?", (uid, uid))
+        self.db.commit()
+        return len(rows)
+
+    def offers_to_verify(self):
+        """Offres ouvertes dont la description n'a pas encore été contrôlée (langue, type de contrat)."""
+        return [dict(r) for r in self.db.execute(
+            "SELECT * FROM offers WHERE duplicate_of IS NULL AND COALESCE(closed,0)=0 AND COALESCE(desc_checked,0)=0 "
+            "ORDER BY first_seen DESC")]
+
+    def set_desc_checked(self, uid, value=1):
+        self.db.execute("UPDATE offers SET desc_checked=? WHERE uid=?", (value, uid))
         self.db.commit()
 
     def add_rejected(self, uid, reason, job=None):

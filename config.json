@@ -13,7 +13,7 @@
       1.5,
       3
     ],
-    "detail_limit_per_cycle": 25,
+    "detail_limit_per_cycle": 30,
     "sweep_all": true,
     "sweep_all_seconds": 7200,
     "sweep_all_pages": 8,
@@ -394,8 +394,9 @@
       "company": "BlackRock",
       "type": "html",
       "urls": [
-        "https://careers.blackrock.com/search-jobs/intern/Paris",
-        "https://careers.blackrock.com/category/students-and-graduates-jobs/45831/9022304/1"
+        "https://careers.blackrock.com/category/students-and-graduates-jobs/45831/9022304/1",
+        "https://careers.blackrock.com/location/singapore-jobs/45831/1880251/4",
+        "https://careers.blackrock.com/location/france-jobs/45831/3017382/2"
       ],
       "link_regex": "/job/[^/\\\"]+/[^/\\\"]+/45831/\\d+"
     },
@@ -407,35 +408,18 @@
     },
     {
       "company": "Blackstone",
+      "label": "Blackstone (campus)",
       "type": "workday",
       "host": "blackstone.wd1.myworkdayjobs.com",
       "tenant": "blackstone",
-      "site": "Blackstone_Careers"
-    },
-    {
-      "company": "KKR",
-      "type": "workday",
-      "host": "kkr.wd1.myworkdayjobs.com",
-      "tenant": "kkr",
-      "site": "KKR_Careers"
+      "site": "Blackstone_Campus_Careers"
     },
     {
       "company": "Fidelity International",
-      "type": "workday",
-      "host": "fil.wd3.myworkdayjobs.com",
-      "tenant": "fil",
-      "site": "FidelityInternational"
-    },
-    {
-      "company": "Nomura",
+      "label": "Fidelity International (early careers)",
       "type": "html",
-      "urls": [
-        "https://careers.nomura.com/Nomura/search/?q=intern",
-        "https://careers.nomura.com/Nomura/search/?q=internship",
-        "https://careers.nomura.com/Nomura/search/?q=summer",
-        "https://careers.nomura.com/Nomura/search/?q=off-cycle"
-      ],
-      "link_regex": "/Nomura/job/[^\\\"]+/\\d+/"
+      "url": "https://fidelityinternational.tal.net/vx/lang-en-GB/mobile-0/brand-5/candidate/jobboard/vacancy/1/adv/",
+      "link_regex": "/candidate/so/pm/\\d+/pl/\\d+/opp/\\d+"
     },
     {
       "company": "Houlihan Lokey",
@@ -446,10 +430,9 @@
     },
     {
       "company": "Jefferies",
-      "type": "workday",
-      "host": "jefferies.wd5.myworkdayjobs.com",
-      "tenant": "jefferies",
-      "site": "JefferiesCareers"
+      "type": "html",
+      "url": "https://jefferies.tal.net/vx/lang-en-GB/mobile-0/appcentre-ext/brand-4/xf-016c915b0a67/candidate/jobboard/vacancy/2/adv/",
+      "link_regex": "/candidate/so/pm/\\d+/pl/\\d+/opp/\\d+"
     },
     {
       "company": "Bank of America",
@@ -465,16 +448,15 @@
     },
     {
       "company": "Macquarie",
+      "label": "Macquarie (graduates & interns)",
       "type": "html",
       "urls": [
-        "https://recruitment.macquarie.com/en_US/careers/SearchJobs/?listFilterMode=1&jobRecordsPerPage=100&jobOffset=0",
-        "https://recruitment.macquarie.com/en_US/careers/SearchJobs/?listFilterMode=1&jobRecordsPerPage=100&jobOffset=100",
-        "https://recruitment.macquarie.com/en_US/careers/SearchJobs/?listFilterMode=1&jobRecordsPerPage=100&jobOffset=200",
-        "https://recruitment.macquarie.com/en_US/careers/SearchJobs/?listFilterMode=1&jobRecordsPerPage=100&jobOffset=300",
-        "https://recruitment.macquarie.com/en_US/careers/SearchJobs/?listFilterMode=1&jobRecordsPerPage=100&jobOffset=400",
-        "https://recruitment.macquarie.com/en_US/careers/SearchJobs/?listFilterMode=1&jobRecordsPerPage=100&jobOffset=500"
+        "https://recruitment.macquarie.com/en_US/careers/SearchJobs/?7959=%5B421070%2C421069%5D&7959_format=14495&listFilterMode=1&jobRecordsPerPage=9&jobOffset=0",
+        "https://recruitment.macquarie.com/en_US/careers/SearchJobs/?7959=%5B421070%2C421069%5D&7959_format=14495&listFilterMode=1&jobRecordsPerPage=9&jobOffset=9",
+        "https://recruitment.macquarie.com/en_US/careers/SearchJobs/?7959=%5B421070%2C421069%5D&7959_format=14495&listFilterMode=1&jobRecordsPerPage=9&jobOffset=18",
+        "https://recruitment.macquarie.com/en_US/careers/SearchJobs/?7959=%5B421070%2C421069%5D&7959_format=14495&listFilterMode=1&jobRecordsPerPage=9&jobOffset=27"
       ],
-      "link_regex": "/en_US/careers/JobDetail/[^/\\\"]+/\\d+"
+      "link_regex": "JobDetail\\?jobId=\\d+"
     },
     {
       "company": "Trafigura",
@@ -505,20 +487,10 @@
       "site": "ShellCareers"
     },
     {
-      "company": "Vitol",
-      "type": "smartrecruiters",
-      "company_id": "Vitol"
-    },
-    {
-      "company": "Louis Dreyfus Company",
-      "type": "smartrecruiters",
-      "company_id": "LouisDreyfusCompany"
-    },
-    {
       "company": "Cargill",
       "type": "html",
       "urls": [
-        "https://careers.cargill.com/en/search-jobs/Geneva",
+        "https://careers.cargill.com/en/location/switzerland-jobs/23251/2658434/2",
         "https://careers.cargill.com/en/location/singapore-jobs/23251/1880251-7535954-1880252/4"
       ],
       "link_regex": "/en/job/[^/\\\"]+/[^/\\\"]+/23251/\\d+"
@@ -568,11 +540,6 @@
       "type": "oracle",
       "host": "iaadtu.fa.ocs.oraclecloud.eu",
       "site": "CX_1"
-    },
-    {
-      "company": "Mirabaud",
-      "type": "smartrecruiters",
-      "company_id": "MirabaudCieSA"
     },
     {
       "company": "Citi",
@@ -661,6 +628,107 @@
       "host": "baincapital.wd1.myworkdayjobs.com",
       "tenant": "baincapital",
       "site": "External_Public"
+    },
+    {
+      "company": "Lombard Odier",
+      "type": "workday",
+      "host": "lombardodier.wd3.myworkdayjobs.com",
+      "tenant": "lombardodier",
+      "site": "Lombard_Odier_Careers"
+    },
+    {
+      "company": "Edmond de Rothschild",
+      "type": "oracle",
+      "host": "evht.fa.ocs.oraclecloud.eu",
+      "site": "CX_7001",
+      "site_number": "CX_7001"
+    },
+    {
+      "company": "EFG International",
+      "type": "oracle",
+      "host": "fa-eqai-saasfaprod1.fa.ocs.oraclecloud.com",
+      "site": "CX_1001",
+      "site_number": "CX_1001"
+    },
+    {
+      "company": "Garda Capital Partners",
+      "type": "greenhouse",
+      "board": "gardacp"
+    },
+    {
+      "company": "Engelhart",
+      "type": "greenhouse",
+      "board": "engelhart"
+    },
+    {
+      "company": "Kepler Cheuvreux",
+      "type": "html",
+      "url": "https://keplercheuvreux.teamtailor.com/jobs",
+      "link_regex": "/jobs/\\d+-[a-z0-9-]+"
+    },
+    {
+      "company": "DWS",
+      "type": "workday",
+      "host": "db.wd3.myworkdayjobs.com",
+      "tenant": "db",
+      "site": "DWSWebsite"
+    },
+    {
+      "company": "ING",
+      "label": "ING (France)",
+      "type": "workday",
+      "host": "ing.wd3.myworkdayjobs.com",
+      "tenant": "ing",
+      "site": "ICSFRADIR"
+    },
+    {
+      "company": "ING",
+      "label": "ING (global)",
+      "type": "workday",
+      "host": "ing.wd3.myworkdayjobs.com",
+      "tenant": "ing",
+      "site": "ICSGBLCOR"
+    },
+    {
+      "company": "Point72",
+      "type": "greenhouse",
+      "board": "point72"
+    },
+    {
+      "company": "Capital Group",
+      "type": "workday",
+      "host": "capgroup.wd1.myworkdayjobs.com",
+      "tenant": "capgroup",
+      "site": "capitalgroupcareers"
+    },
+    {
+      "company": "MUFG",
+      "type": "workday",
+      "host": "mufgub.wd3.myworkdayjobs.com",
+      "tenant": "mufgub",
+      "site": "MUFG-Careers"
+    },
+    {
+      "company": "SMBC",
+      "label": "SMBC (Asie)",
+      "type": "html",
+      "default_location": "Singapore",
+      "urls": [
+        "https://careerasia.smbc.co.jp/SMBC/search/?q=&locationsearch=Singapore&startrow=0",
+        "https://careerasia.smbc.co.jp/SMBC/search/?q=&locationsearch=Singapore&startrow=25",
+        "https://careerasia.smbc.co.jp/SMBC/search/?q=&locationsearch=Singapore&startrow=50",
+        "https://careerasia.smbc.co.jp/SMBC/search/?q=&locationsearch=Singapore&startrow=75",
+        "https://careerasia.smbc.co.jp/SMBC/search/?q=&locationsearch=Singapore&startrow=100",
+        "https://careerasia.smbc.co.jp/SMBC/search/?q=&locationsearch=Singapore&startrow=125"
+      ],
+      "link_regex": "/SMBC/job/[^\\\"]+/\\d+/"
+    },
+    {
+      "company": "Castleton Commodities",
+      "type": "workday",
+      "host": "osv-cci.wd1.myworkdayjobs.com",
+      "tenant": "osv-cci",
+      "site": "CCICareers"
     }
   ],
   "mcf": {
@@ -709,6 +777,9 @@
   ],
   "closed_checks_per_run": 20,
   "parallel_sources": 6,
+  "description_checks_per_run": 40,
+  "verify_checks_per_run": 30,
+  "verify_linkedin_per_run": 8,
   "cloud": {
     "ntfy_topic": "stages-paris-d15cb32c5a",
     "dashboard_url": ""

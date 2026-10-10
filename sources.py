@@ -220,6 +220,7 @@ def linkedin_tasks(cfg):
                       loc=loc, region="France") for k in li.get("sweeps", [])]
         rest += [dict(q=k, past=li["past_seconds"], jt=None, pages=li.get("pages_per_query", 1), label=k, loc=loc,
                       region="France") for k in li["queries"]]
+        rest += _backfill_tasks(li, fr, loc, "France", 40)
     for name, r in regions.items():
         if name == "France" or not isinstance(r, dict) or not r.get("enabled", True) or not r.get("location"):
             continue
@@ -233,7 +234,18 @@ def linkedin_tasks(cfg):
         rest += [dict(q=k, past=r.get("past_seconds", li["past_seconds"]), jt=None,
                       pages=r.get("pages_per_query", li.get("pages_per_query", 1)), label="%s · %s" % (k, name),
                       loc=loc, region=name) for k in r.get("queries", [])]
+        rest += _backfill_tasks(li, r, loc, name, 20)
     return first, rest
+
+
+def _backfill_tasks(li, region_cfg, loc, name, default_pages):
+    """Rattrapage : tous les stages publiés dans la zone depuis 30 jours, une page de résultats par recherche,
+    répartis dans la rotation (les offres plus anciennes que la fenêtre de balayage ne sont pas perdues)."""
+    pages = int(region_cfg.get("backfill_pages", li.get("backfill_pages", {}).get(name, default_pages)
+                               if isinstance(li.get("backfill_pages"), dict) else default_pages))
+    past = int(region_cfg.get("backfill_seconds", li.get("backfill_seconds", 2592000)))
+    return [dict(q="", past=past, jt="I", pages=1, start=k * 25, label="rattrapage 30 j · %s · page %d" % (name, k + 1),
+                 loc=loc, region=name) for k in range(pages)]
 
 
 def collect_linkedin(cfg, log, state=None):
@@ -250,7 +262,7 @@ def collect_linkedin(cfg, log, state=None):
     for idx, task in enumerate(order):
         if used >= budget:
             break
-        start, seen_task, page_len = 0, set(), 0
+        start, seen_task, page_len = int(task.get("start", 0)), set(), 0
         try:
             for _ in range(task["pages"]):
                 if used >= budget:
@@ -261,8 +273,8 @@ def collect_linkedin(cfg, log, state=None):
                 fresh = [j for j in res if j["ext_id"] not in seen_task]
                 for j in res:
                     seen_task.add(j["ext_id"])
-                    if task["jt"] == "I":
-                        j["employment_type"] = "Internship"  # recherche filtrée sur le type « Stage »
+                    # Le filtre « Stage » de LinkedIn laisse passer des offres sponsorisées en CDI : ce n'est pas une
+                    # preuve. Le type de contrat est lu sur la page de l'offre (détail) quand le titre ne le dit pas.
                     prev = out.get(j["ext_id"])
                     if prev and prev.get("employment_type") and not j.get("employment_type"):
                         j["employment_type"] = prev["employment_type"]
@@ -654,7 +666,7 @@ def collect_oracle_site(s):
     out = {}
     for q in s.get("queries", ORACLE_QUERIES):
         status, txt = _oracle_query(host, site_number, q)
-        if status != 200 and host not in _oracle_site_numbers:
+        if status in (400, 404) and host not in _oracle_site_numbers:
             # Le numéro de site interne (CX_xxx) diffère du nom dans l'URL : on le lit dans la page
             st, page = http("https://%s/hcmUI/CandidateExperience/en/sites/%s/" % (host, site_url),
                             headers={"Accept": "text/html"})
@@ -887,13 +899,172 @@ def collect_mcf(cfg, log):
     return list(out.values())
 
 
+# ---------------------------------------------------------------- Greenhouse et Lever (API publiques des offres)
+def parse_greenhouse(data, company):
+    jobs = []
+    for p in data.get("jobs", []) or []:
+        if not p.get("id") or not p.get("absolute_url"):
+            continue
+        j = _job(company, p["id"], p.get("title") or "", (p.get("location") or {}).get("name") or "",
+                 p["absolute_url"], (p.get("first_published") or p.get("updated_at") or "")[:10])
+        j["gh"] = "%s" % p["id"]
+        jobs.append(j)
+    return jobs
+
+
+def collect_greenhouse_site(s):
+    status, txt = http("https://boards-api.greenhouse.io/v1/boards/%s/jobs" % urllib.parse.quote(s["board"]),
+                       headers={"Accept": "application/json"})
+    if status != 200:
+        raise SourceError("HTTP %d" % status)
+    return parse_greenhouse(json.loads(txt), s["company"])
+
+
+def parse_lever(data, company):
+    import datetime as _dt
+    jobs = []
+    for p in data if isinstance(data, list) else []:
+        if not p.get("id") or not p.get("hostedUrl"):
+            continue
+        cat = p.get("categories") or {}
+        locs = [cat.get("location") or ""] + list(cat.get("allLocations") or [])
+        ts = p.get("createdAt")
+        posted = _dt.datetime.utcfromtimestamp(ts / 1000).strftime("%Y-%m-%d") if isinstance(ts, (int, float)) else ""
+        j = _job(company, p["id"], p.get("text") or "", ", ".join(dict.fromkeys(l for l in locs if l)),
+                 p["hostedUrl"], posted)
+        j["employment_type"] = cat.get("commitment") or ""
+        jobs.append(j)
+    return jobs
+
+
+def collect_lever_site(s):
+    status, txt = http("https://api.lever.co/v0/postings/%s?mode=json" % urllib.parse.quote(s["account"]),
+                       headers={"Accept": "application/json"})
+    if status != 200:
+        raise SourceError("HTTP %d" % status)
+    return parse_lever(json.loads(txt), s["company"])
+
+
 SITE_COLLECTORS = {
     "workday": collect_workday_site,
     "oracle": collect_oracle_site,
     "eightfold": collect_eightfold_site,
     "html": collect_html_site,
     "smartrecruiters": collect_smartrecruiters_site,
+    "greenhouse": collect_greenhouse_site,
+    "lever": collect_lever_site,
 }
+
+
+# =====================================================================
+# Description d'une offre (langue exigée, confirmation du stage)
+# =====================================================================
+def _html_text(fragment):
+    return _text(re.sub(r"<(script|style)\b.*?</\1>", " ", fragment or "", flags=re.S | re.I))
+
+
+def _jsonld_job(page):
+    """Bloc schema.org JobPosting d'une page (description + type de contrat), s'il existe."""
+    for raw in re.findall(r'<script[^>]+application/ld\+json[^>]*>(.*?)</script>', page, re.S | re.I):
+        try:
+            data = json.loads(html.unescape(raw.strip()))
+        except ValueError:
+            try:
+                data = json.loads(raw.strip())
+            except ValueError:
+                continue
+        items = data if isinstance(data, list) else data.get("@graph", [data]) if isinstance(data, dict) else []
+        for it in items:
+            if isinstance(it, dict) and "JobPosting" in str(it.get("@type")):
+                et = it.get("employmentType") or ""
+                if isinstance(et, list):
+                    et = " ".join(str(x) for x in et)
+                return dict(description=_html_text(html.unescape(str(it.get("description") or ""))),
+                            employment_type=str(et).replace("_", " "))
+    return None
+
+
+def fetch_description(offer):
+    """Texte de l'offre et type de contrat. Renvoie dict(description, employment_type, trusted) ou None.
+
+    trusted = le type de contrat vient de l'employeur et peut servir à écarter une offre (LinkedIn, MyCareersFuture).
+    Lève RateLimited ; renvoie None si la page n'est pas lisible automatiquement."""
+    url = offer.get("url") or ""
+    src = offer.get("source") or ""
+    try:
+        if src == "LinkedIn" or "linkedin.com/jobs/view/" in url:
+            jid = offer.get("ext_id") or _first(r"/jobs/view/(\d+)", url)
+            d = linkedin_detail(jid)
+            return dict(description=d["description"], employment_type=d["employment_type"], trusted=True)
+        if src == "MyCareersFuture":
+            status, txt = http("https://api.mycareersfuture.gov.sg/v2/jobs/%s" % offer.get("ext_id"),
+                               headers={"Accept": "application/json"})
+            if status != 200:
+                return None
+            d = json.loads(txt)
+            emp = " ".join(str((e or {}).get("employmentType") or "") for e in (d.get("employmentTypes") or []))
+            return dict(description=_html_text(d.get("description") or ""), employment_type=emp, trusted=True)
+        m = re.match(r"https://([^/]+\.myworkdayjobs\.com)/(?:[a-z]{2}-[A-Z]{2}/)?([^/]+)(/job/.+)$", url)
+        if m:
+            host, site, path = m.groups()
+            status, txt = http("https://%s/wday/cxs/%s/%s%s" % (host, host.split(".")[0], site, path),
+                               headers={"Accept": "application/json"})
+            if status != 200:
+                return None
+            info = json.loads(txt).get("jobPostingInfo") or {}
+            return dict(description=_html_text(info.get("jobDescription") or ""), employment_type="", trusted=False)
+        if "smartrecruiters.com" in url:
+            return None  # l'API SmartRecruiters est interdite aux robots (robots.txt) : pas de lecture
+        m = re.match(r"https://(?:boards|job-boards)\.greenhouse\.io/([^/]+)/jobs/(\d+)", url)
+        if m:
+            status, txt = http("https://boards-api.greenhouse.io/v1/boards/%s/jobs/%s" % m.groups(),
+                               headers={"Accept": "application/json"})
+            if status != 200:
+                return None
+            return dict(description=_html_text(html.unescape(json.loads(txt).get("content") or "")),
+                        employment_type="", trusted=False)
+        m = re.match(r"https://jobs\.lever\.co/([^/]+)/([0-9a-f-]{20,})", url)
+        if m:
+            status, txt = http("https://api.lever.co/v0/postings/%s/%s" % m.groups(), headers={"Accept": "application/json"})
+            if status != 200:
+                return None
+            d = json.loads(txt)
+            text = (d.get("descriptionPlain") or "") + " \n " + " \n ".join(
+                "%s: %s" % (x.get("text") or "", _html_text(x.get("content") or "")) for x in (d.get("lists") or []))
+            return dict(description=text, employment_type=(d.get("categories") or {}).get("commitment") or "",
+                        trusted=False)
+        m = re.match(r"https://([^/]+)/hcmUI/CandidateExperience/[a-z]{2}/sites/([^/]+)/job/(\d+)", url)
+        if m:
+            host, site, rid = m.groups()
+            site_number = _oracle_site_numbers.get(host) or site
+            finder = 'ById;Id="%s",siteNumber=%s' % (rid, site_number)
+            status, txt = http("https://%s/hcmRestApi/resources/latest/recruitingCEJobRequisitionDetails?expand=all"
+                               "&onlyData=true&finder=%s" % (host, urllib.parse.quote(finder, safe=";=,")),
+                               headers={"Accept": "application/json"})
+            if status != 200:
+                return None
+            items = json.loads(txt).get("items") or []
+            if not items:
+                return None
+            it = items[0]
+            text = " \n ".join(_html_text(it.get(k) or "") for k in (
+                "ExternalDescriptionStr", "ExternalResponsibilitiesStr", "ExternalQualificationsStr",
+                "CorporateDescriptionStr"))
+            return dict(description=text, employment_type="", trusted=False)
+        if not url.startswith("http"):
+            return None
+        status, page = http(url, headers={"Accept": "text/html"})
+        if status != 200:
+            return None
+        d = _jsonld_job(page)  # description structurée seulement : le reste de la page n'est pas fiable
+        if not d or len(d["description"]) < 80:
+            return None
+        d["trusted"] = False
+        return d
+    except RateLimited:
+        raise
+    except Exception:  # noqa: BLE001  page illisible : on n'écarte rien sur cette base
+        return None
 
 
 # =====================================================================
