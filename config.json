@@ -7,34 +7,103 @@
     "pages_per_query": 1,
     "pause_between_queries": [
       2,
-      5
+      4
+    ],
+    "pause_between_pages": [
+      1.5,
+      3
     ],
     "detail_limit_per_cycle": 25,
+    "sweep_all": true,
+    "sweep_all_seconds": 7200,
+    "sweep_all_pages": 8,
+    "sweep_seconds": 86400,
+    "sweep_pages": 2,
+    "sweeps": [
+      "finance",
+      "banque",
+      "bank",
+      "marchés",
+      "markets",
+      "trading",
+      "sales",
+      "investissement",
+      "investment",
+      "M&A",
+      "private equity",
+      "venture capital",
+      "asset management",
+      "gestion",
+      "commodities",
+      "énergie",
+      "energy",
+      "analyste",
+      "analyst",
+      "fund"
+    ],
+    "max_search_requests": 50,
     "queries": [
       "stage M&A",
+      "M&A internship",
       "stage fusions acquisitions",
       "stage banque d'affaires",
       "investment banking intern",
+      "stage investment banking",
+      "stage corporate finance",
+      "stage financement d'acquisition",
+      "leveraged finance internship",
+      "stage ECM",
+      "stage DCM",
       "off-cycle internship",
+      "off cycle internship Paris",
+      "stage césure finance",
       "stage private equity",
+      "private equity internship",
       "stage capital investissement",
+      "stage LBO",
       "stage venture capital",
+      "venture capital internship",
+      "stage capital risque",
       "stage sales trading",
+      "sales and trading internship",
       "stage salle des marchés",
       "stage trading",
+      "stage trader",
+      "assistant trader",
+      "sales assistant markets",
+      "stage sales",
+      "stage vendeur",
       "global markets internship",
+      "stage marchés de capitaux",
+      "stage fixed income",
+      "stage equity sales",
+      "stage dérivés",
+      "stage FX",
+      "stage taux",
       "stage asset management",
+      "asset management internship",
       "stage gestion de portefeuille",
       "stage assistant gérant",
       "portfolio management internship",
+      "stage gestion d'actifs",
       "stage commodities",
+      "commodities internship",
       "stage matières premières",
       "energy trading internship",
-      "stage marchés de l'énergie"
+      "stage marchés de l'énergie",
+      "stage trading énergie",
+      "stage power gas",
+      "stage métaux",
+      "stage pétrole trading",
+      "stage freight",
+      "stage négoce"
     ]
   },
   "wttj": {
     "enabled": true,
+    "hits_per_page": 100,
+    "max_pages": 3,
+    "recent_days": 30,
     "queries": [
       "M&A",
       "fusions acquisitions",
@@ -44,15 +113,93 @@
       "capital investissement",
       "LBO",
       "venture capital",
+      "capital risque",
       "sales trading",
       "trading",
+      "trader",
+      "sales",
       "marchés financiers",
+      "marchés de capitaux",
+      "fixed income",
+      "dérivés",
       "asset management",
       "gestion d'actifs",
       "gestion de portefeuille",
+      "assistant gérant",
       "commodities",
       "matières premières",
-      "énergie trading"
+      "énergie trading",
+      "énergie",
+      "négoce",
+      "analyste financier",
+      "investissement",
+      "banque d'investissement",
+      "finance de marché",
+      "fonds"
+    ],
+    "companies": [
+      "Natixis",
+      "BPCE",
+      "Société Générale",
+      "BNP Paribas",
+      "Crédit Agricole",
+      "CACIB",
+      "Crédit Mutuel",
+      "CIC",
+      "La Banque Postale",
+      "Oddo BHF",
+      "Rothschild",
+      "Edmond de Rothschild",
+      "Lazard",
+      "Kepler Cheuvreux",
+      "Bryan Garnier",
+      "Alantra",
+      "Clipperton",
+      "Cambon Partners",
+      "Messier",
+      "DC Advisory",
+      "Degroof Petercam",
+      "Amundi",
+      "AXA",
+      "Carmignac",
+      "Tikehau",
+      "Eurazeo",
+      "Ardian",
+      "Wendel",
+      "Bpifrance",
+      "Ostrum",
+      "Mirova",
+      "LBP AM",
+      "Groupama",
+      "Sycomore",
+      "DNCA",
+      "La Financière de l'Echiquier",
+      "Comgest",
+      "Candriam",
+      "Partech",
+      "Idinvest",
+      "Elaia",
+      "Serena",
+      "Alven",
+      "Breega",
+      "Eurazeo",
+      "Andera",
+      "Siparex",
+      "Apax",
+      "TotalEnergies",
+      "Engie",
+      "EDF",
+      "Trafigura",
+      "Vitol",
+      "Mercuria",
+      "Gunvor",
+      "Louis Dreyfus",
+      "Axpo",
+      "Uniper",
+      "Kpler",
+      "Argus",
+      "Vortexa",
+      "CMA CGM"
     ]
   },
   "workday": {
@@ -86,15 +233,155 @@
       }
     ]
   },
+  "sites": [
+    {
+      "company": "J.P. Morgan",
+      "type": "oracle",
+      "host": "jpmc.fa.oraclecloud.com",
+      "site": "CX_1001"
+    },
+    {
+      "company": "Lazard",
+      "type": "oracle",
+      "host": "icbpjb.fa.ocs.oraclecloud.com",
+      "site": "LazardProfessionalCareers"
+    },
+    {
+      "company": "HSBC",
+      "type": "eightfold",
+      "host": "portal.careers.hsbc.com",
+      "domain": "hsbc.com"
+    },
+    {
+      "company": "Ardian",
+      "type": "workday",
+      "host": "ardian.wd103.myworkdayjobs.com",
+      "tenant": "ardian",
+      "site": "ArdianCareers"
+    },
+    {
+      "company": "Rothschild & Co",
+      "type": "html",
+      "url": "https://www.rothschildandco.com/en/careers/students-and-graduates/opportunities/",
+      "link_regex": "/careers/students-and-graduates/opportunities/[^/?#]+/?$"
+    },
+    {
+      "company": "Crédit Agricole CIB",
+      "type": "html",
+      "url": "https://jobs.ca-cib.com/offre-de-emploi/liste-toutes-offres.aspx?all=1&mode=layer",
+      "link_regex": "/offre-de-emploi/emploi-[^\\\"?#]+_\\d+\\.aspx"
+    },
+    {
+      "company": "Evercore",
+      "type": "html",
+      "url": "https://evercore.tal.net/vx/lang-en-GB/mobile-0/channel-1/appcentre-ext/brand-6/candidate/jobboard/vacancy/2/adv/",
+      "link_regex": "/candidate/so/pm/\\d+/pl/\\d+/opp/\\d+"
+    },
+    {
+      "company": "Amundi",
+      "type": "html",
+      "urls": [
+        "https://jobs.amundi.com/job/list-of-all-jobs.aspx?all=1&mode=layer",
+        "https://jobs.amundi.com/offre-de-emploi/liste-toutes-offres.aspx?all=1&mode=layer"
+      ],
+      "link_regex": "/(?:job|offre-de-emploi)/(?:job|emploi)-[^\\\"?#]+_\\d+\\.aspx"
+    },
+    {
+      "company": "TotalEnergies",
+      "type": "html",
+      "urls": [
+        "https://jobs.totalenergies.com/fr_FR/careers/SearchJobs/stage",
+        "https://jobs.totalenergies.com/en_US/careers/SearchJobs/intern",
+        "https://jobs.totalenergies.com/fr_FR/careers/SearchJobs"
+      ],
+      "link_regex": "/careers/JobDetail/[^/\\\"]+/\\d+"
+    },
+    {
+      "company": "BlackRock",
+      "type": "html",
+      "urls": [
+        "https://careers.blackrock.com/search-jobs/intern/Paris",
+        "https://careers.blackrock.com/category/students-and-graduates-jobs/45831/9022304/1"
+      ],
+      "link_regex": "/job/[^/\\\"]+/[^/\\\"]+/45831/\\d+"
+    },
+    {
+      "company": "Comgest",
+      "type": "html",
+      "default_location": "Paris",
+      "url": "https://www.comgest.com/en/about-us/our-people/careers/internship-offers"
+    },
+    {
+      "company": "Blackstone",
+      "type": "workday",
+      "host": "blackstone.wd1.myworkdayjobs.com",
+      "tenant": "blackstone",
+      "site": "Blackstone_Careers"
+    },
+    {
+      "company": "KKR",
+      "type": "workday",
+      "host": "kkr.wd1.myworkdayjobs.com",
+      "tenant": "kkr",
+      "site": "KKR_Careers"
+    },
+    {
+      "company": "Fidelity International",
+      "type": "workday",
+      "host": "fil.wd3.myworkdayjobs.com",
+      "tenant": "fil",
+      "site": "FidelityInternational"
+    },
+    {
+      "company": "Nomura",
+      "type": "workday",
+      "host": "nomura.wd3.myworkdayjobs.com",
+      "tenant": "nomura",
+      "site": "nomura_campus"
+    },
+    {
+      "company": "Houlihan Lokey",
+      "type": "workday",
+      "host": "hl.wd1.myworkdayjobs.com",
+      "tenant": "hl",
+      "site": "Campus"
+    },
+    {
+      "company": "Jefferies",
+      "type": "workday",
+      "host": "jefferies.wd5.myworkdayjobs.com",
+      "tenant": "jefferies",
+      "site": "JefferiesCareers"
+    },
+    {
+      "company": "Bank of America",
+      "type": "html",
+      "url": "https://bankcampuscareers.tal.net/vx/lang-en-GB/mobile-0/brand-4/xf-6f0048376f93/candidate/jobboard/vacancy/2/adv/",
+      "link_regex": "/candidate/so/pm/\\d+/pl/\\d+/opp/\\d+"
+    }
+  ],
   "filters": {
+    "max_age_days": 60,
     "extra_include": [],
     "extra_exclude": [],
     "include_summer": true
   },
   "notifications": {
     "max_individual": 5,
-    "open_dashboard_on_start": true
+    "open_dashboard_on_start": true,
+    "digest_hour": 8
   },
+  "priority_companies": [
+    "Morgan Stanley",
+    "Goldman Sachs",
+    "J.P. Morgan",
+    "Lazard",
+    "Rothschild",
+    "BNP Paribas",
+    "Bank of America",
+    "Société Générale"
+  ],
+  "closed_checks_per_run": 20,
   "cloud": {
     "ntfy_topic": "stages-paris-d15cb32c5a",
     "dashboard_url": ""

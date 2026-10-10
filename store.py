@@ -28,6 +28,10 @@ class Store:
         for col, decl in (("closed", "INTEGER DEFAULT 0"), ("closed_at", "REAL"), ("last_checked", "REAL")):
             if col not in cols:
                 self.db.execute("ALTER TABLE offers ADD COLUMN %s %s" % (col, decl))
+        rcols = {r["name"] for r in self.db.execute("PRAGMA table_info(rejected)")}
+        for col in ("title", "company", "location", "source", "url"):
+            if col not in rcols:
+                self.db.execute("ALTER TABLE rejected ADD COLUMN %s TEXT" % col)
         self.db.commit()
 
     # --- méta ---
@@ -62,9 +66,24 @@ class Store:
              time.time(), int(notified), o["dedup_key"], duplicate_of))
         self.db.commit()
 
-    def add_rejected(self, uid, reason):
-        self.db.execute("INSERT OR REPLACE INTO rejected(uid, reason, ts) VALUES(?,?,?)", (uid, reason, time.time()))
+    def add_rejected(self, uid, reason, job=None):
+        j = job or {}
+        self.db.execute("INSERT OR REPLACE INTO rejected(uid, reason, ts, title, company, location, source, url)"
+                        " VALUES(?,?,?,?,?,?,?,?)",
+                        (uid, reason, time.time(), j.get("title"), j.get("company"), j.get("location"),
+                         j.get("source"), j.get("url")))
         self.db.commit()
+
+    def purge_rejected(self):
+        n = self.db.execute("SELECT COUNT(*) FROM rejected").fetchone()[0]
+        self.db.execute("DELETE FROM rejected")
+        self.db.commit()
+        return n
+
+    def recent_rejected(self, since, limit=300, skip_reasons=("hors Paris", "publiée il y a trop longtemps")):
+        q = ("SELECT uid, reason, ts, title, company, location, source, url FROM rejected WHERE ts >= ? "
+             "AND title IS NOT NULL AND reason NOT IN (%s) ORDER BY ts DESC LIMIT ?" % ",".join("?" * len(skip_reasons)))
+        return [dict(r) for r in self.db.execute(q, (since,) + tuple(skip_reasons) + (limit,))]
 
     def mark_seed(self, uid):
         self.db.execute("INSERT OR IGNORE INTO seedset(uid) VALUES(?)", (uid,))

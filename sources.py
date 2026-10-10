@@ -178,7 +178,7 @@ def parse_linkedin_detail(page):
     return dict(apply_url=apply_url, description=desc, employment_type=employment)
 
 
-def linkedin_search(query, location, past_seconds=604800, start=0):
+def linkedin_search(query, location, past_seconds=604800, start=0, job_type=None):
     params = {
         "keywords": query,
         "location": location,
@@ -186,9 +186,11 @@ def linkedin_search(query, location, past_seconds=604800, start=0):
         "sortBy": "DD",
         "start": str(start),
     }
+    if job_type:
+        params["f_JT"] = job_type  # "I" = stage
     url = LI_SEARCH + "?" + urllib.parse.urlencode(params)
     status, page = http(url, headers={"Accept": "text/html"})
-    if status == 400 and start > 0:
+    if status in (400, 404) and start > 0:
         return []  # plus de pages
     if status != 200:
         raise SourceError("LinkedIn HTTP %d" % status)
@@ -202,29 +204,71 @@ def linkedin_detail(job_id):
     return parse_linkedin_detail(page)
 
 
-def collect_linkedin(cfg, log):
-    out, errors = {}, []
-    queries = cfg["linkedin"]["queries"]
-    for i, q in enumerate(queries):
+def linkedin_tasks(cfg):
+    """Liste des recherches LinkedIn. Le balayage de tous les stages de Paris passe toujours en premier."""
+    li = cfg["linkedin"]
+    first = [dict(q="", past=li.get("sweep_all_seconds", 7200), jt="I", pages=li.get("sweep_all_pages", 6),
+                  label="tous les stages de Paris")] if li.get("sweep_all", True) else []
+    rest = [dict(q=k, past=li.get("sweep_seconds", 86400), jt="I", pages=li.get("sweep_pages", 2), label=k)
+            for k in li.get("sweeps", [])]
+    rest += [dict(q=k, past=li["past_seconds"], jt=None, pages=li.get("pages_per_query", 1), label=k)
+             for k in li["queries"]]
+    return first, rest
+
+
+def collect_linkedin(cfg, log, state=None):
+    """Recherches LinkedIn dans la limite de max_search_requests par passage. Les recherches qui ne tiennent pas
+    dans un passage sont faites au suivant (rotation), le balayage complet des stages est fait à chaque passage."""
+    state = state if state is not None else {}
+    li = cfg["linkedin"]
+    budget = int(li.get("max_search_requests", 50))
+    first, rest = linkedin_tasks(cfg)
+    n = len(rest)
+    offset = int(state.get("offset", 0)) % n if n else 0
+    order = first + [rest[(offset + i) % n] for i in range(n)]
+    out, errors, used, done_rest = {}, [], 0, 0
+    for idx, task in enumerate(order):
+        if used >= budget:
+            break
+        start, seen_task, page_len = 0, set(), 0
         try:
-            for page_idx in range(cfg["linkedin"].get("pages_per_query", 1)):
-                res = linkedin_search(q, cfg["linkedin"]["location"], cfg["linkedin"]["past_seconds"],
-                                      start=25 * page_idx)
-                for j in res:
-                    out[j["ext_id"]] = j
-                if len(res) < 10:
+            for _ in range(task["pages"]):
+                if used >= budget:
                     break
-                _pause(2, 4)
+                res = linkedin_search(task["q"], li["location"], task["past"], start=start, job_type=task["jt"])
+                used += 1
+                fresh = [j for j in res if j["ext_id"] not in seen_task]
+                for j in res:
+                    seen_task.add(j["ext_id"])
+                    if task["jt"] == "I":
+                        j["employment_type"] = "Internship"  # recherche filtrée sur le type « Stage »
+                    prev = out.get(j["ext_id"])
+                    if prev and prev.get("employment_type") and not j.get("employment_type"):
+                        j["employment_type"] = prev["employment_type"]
+                    out[j["ext_id"]] = j
+                page_len = page_len or len(res)
+                if not res or not fresh or len(res) < page_len:
+                    break  # page vide, déjà vue, ou incomplète (= dernière page)
+                start += len(res)  # pagination par nombre de résultats reçus (taille de page variable)
+                _pause(*li.get("pause_between_pages", [1.5, 3]))
         except RateLimited:
+            if out:  # on garde ce qui a déjà été trouvé, la pause sera gérée au passage suivant
+                log("LinkedIn : limitation atteinte après %d requêtes, résultats partiels conservés" % used)
+                state["rate_limited"] = True
+                break
             raise
         except SourceError as e:
-            errors.append("« %s » : %s" % (q, e))
-        if i < len(queries) - 1:
-            _pause(*cfg["linkedin"]["pause_between_queries"])
+            errors.append("« %s » : %s" % (task["label"], e))
+        if idx >= len(first):
+            done_rest += 1
+        if idx < len(order) - 1 and used < budget:
+            _pause(*li["pause_between_queries"])
+    state["offset"] = (offset + done_rest) % n if n else 0
+    state["requests"] = used
     if errors and not out:
         raise SourceError("; ".join(errors[:3]))
     if errors:
-        log("LinkedIn : %d requête(s) en erreur : %s" % (len(errors), "; ".join(errors[:2])))
+        log("LinkedIn : %d recherche(s) en erreur : %s" % (len(errors), "; ".join(errors[:2])))
     return list(out.values())
 
 
@@ -287,10 +331,18 @@ def parse_wttj_hits(hits):
     return jobs
 
 
-def wttj_query(query, app, key, index, filters):
-    params = {"query": query, "hitsPerPage": "50", "page": "0"}
+WTTJ_ATTRS = ["name", "slug", "reference", "objectID", "organization", "offices", "office", "published_at",
+              "contract_type", "contract_type_names"]
+
+
+def wttj_query(query, app, key, index, filters, page=0, hits=50, numeric=None, attrs=None):
+    params = {"query": query, "hitsPerPage": str(hits), "page": str(page)}
     if filters:
         params["filters"] = filters
+    if numeric:
+        params["numericFilters"] = numeric
+    if attrs:
+        params["attributesToRetrieve"] = json.dumps(attrs)
     url = "https://%s-dsn.algolia.net/1/indexes/*/queries" % app.lower()
     body = json.dumps({"requests": [{"indexName": index, "params": urllib.parse.urlencode(params)}]})
     return http(url, method="POST", data=body, headers={
@@ -337,27 +389,76 @@ def _wttj_find_config(probe_query):
     raise SourceError("recherche WTTJ inaccessible : " + last)
 
 
+def _wttj_result(txt):
+    res = (json.loads(txt).get("results") or [{}])[0]
+    return res.get("hits", []) or [], int(res.get("nbPages", 1) or 1)
+
+
+def _wttj_options(cfg):
+    """Options avancées (résultats récents, champs réduits) : abandonnées une à une si le site les refuse."""
+    w = cfg["wttj"]
+    days = int(w.get("recent_days", 0) or 0)
+    numeric = "published_at_timestamp>%d" % (time.time() - days * 86400) if days else None
+    return [(numeric, WTTJ_ATTRS), (None, WTTJ_ATTRS), (numeric, None), (None, None)]
+
+
+def _wttj_pick_option(probe, opts, hits_pp):
+    """Garde la première combinaison d'options qui renvoie réellement des offres lisibles."""
+    s = _wttj_state
+    for k, (numeric, attrs) in enumerate(opts):
+        status, txt = wttj_query(probe, s["app"], s["key"], s["index"], s["filters"], 0, hits_pp, numeric, attrs)
+        if status == 200 and parse_wttj_hits(_wttj_result(txt)[0]):
+            s["opt"] = k
+            return
+    s["opt"] = len(opts) - 1  # rien de concluant : requête la plus simple
+
+
 def collect_wttj(cfg, log):
-    queries = cfg["wttj"]["queries"]
+    w = cfg["wttj"]
+    queries = list(w["queries"]) + [c for c in w.get("companies", []) if c not in w["queries"]]
+    hits_pp, max_pages = int(w.get("hits_per_page", 100)), int(w.get("max_pages", 3))
     if not _wttj_state:
         _wttj_state.update(_wttj_find_config(queries[0] if queries else "stage"))
-    out = {}
+    out, errors = {}, []
+    opts = _wttj_options(cfg)
+    if "opt" not in _wttj_state:
+        _wttj_pick_option(w.get("probe_query", "stage"), opts, hits_pp)
     for i, q in enumerate(queries):
-        s = _wttj_state
-        status, txt = wttj_query(q, s["app"], s["key"], s["index"], s["filters"])
-        if status in (400, 401, 403, 404):
-            _wttj_state.clear()
-            _wttj_state.update(_wttj_find_config(q))  # clé ou index changés : on recherche à nouveau
+        page = 0
+        while page < max_pages:
             s = _wttj_state
-            status, txt = wttj_query(q, s["app"], s["key"], s["index"], s["filters"])
-        if status != 200:
-            raise SourceError("WTTJ HTTP %d : %s" % (status, txt[:150]))
-        hits = (json.loads(txt).get("results") or [{}])[0].get("hits", [])
-        for j in parse_wttj_hits(hits):
-            out[j["ext_id"]] = j
+            numeric, attrs = opts[s.get("opt", 0)]
+            status, txt = wttj_query(q, s["app"], s["key"], s["index"], s["filters"], page, hits_pp, numeric, attrs)
+            if status == 400 and s.get("opt", 0) < len(opts) - 1:
+                s["opt"] = s.get("opt", 0) + 1  # option refusée : on réessaie sans
+                continue
+            if status in (400, 401, 403, 404):
+                opt = s.get("opt", 0)
+                _wttj_state.clear()
+                _wttj_state.update(_wttj_find_config(q))  # clé ou index changés : on recherche à nouveau
+                _wttj_state["opt"] = opt
+                s = _wttj_state
+                status, txt = wttj_query(q, s["app"], s["key"], s["index"], s["filters"], page, hits_pp,
+                                         *opts[opt])
+            if status != 200:
+                errors.append("« %s » : HTTP %d" % (q, status))
+                break
+            hits, nb_pages = _wttj_result(txt)
+            for j in parse_wttj_hits(hits):
+                out[j["ext_id"]] = j
+            page += 1
+            if page >= nb_pages or len(hits) < hits_pp:
+                break
+            _pause(0.2, 0.6)
         if i < len(queries) - 1:
-            _pause(0.5, 1.5)
+            _pause(0.2, 0.6)
+    if errors and not out:
+        raise SourceError("WTTJ : " + "; ".join(errors[:3]))
+    if errors:
+        log("WTTJ : %d recherche(s) en erreur : %s" % (len(errors), "; ".join(errors[:2])))
     return list(out.values())
+
+
 # =====================================================================
 # Workday (API JSON publique utilisée par les sites carrières Workday)
 # =====================================================================

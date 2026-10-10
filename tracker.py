@@ -54,38 +54,64 @@ DEFAULT_CONFIG = {
         "location": "Paris, Île-de-France, France",
         "past_seconds": 604800,
         "pages_per_query": 1,
-        "pause_between_queries": [3, 7],
+        "pause_between_queries": [2, 4],
+        "pause_between_pages": [1.5, 3],
         "detail_limit_per_cycle": 25,
+        # Balayage de TOUS les stages publiés à Paris (filtre LinkedIn « Stage »), à chaque passage
+        "sweep_all": True,
+        "sweep_all_seconds": 7200,
+        "sweep_all_pages": 8,
+        # Balayages par thème, sur les stages publiés depuis 24 h
+        "sweep_seconds": 86400,
+        "sweep_pages": 2,
+        "sweeps": [
+            "finance", "banque", "bank", "marchés", "markets", "trading", "sales", "investissement",
+            "investment", "M&A", "private equity", "venture capital", "asset management", "gestion",
+            "commodities", "énergie", "energy", "analyste", "analyst", "fund",
+        ],
+        # Nombre maximal de requêtes de recherche par passage (les recherches restantes passent au suivant)
+        "max_search_requests": 50,
         "queries": [
-            "stage M&A",
-            "stage fusions acquisitions",
-            "stage banque d'affaires",
-            "investment banking intern",
-            "off-cycle internship",
-            "stage private equity",
-            "stage capital investissement",
-            "stage venture capital",
-            "stage sales trading",
-            "stage salle des marchés",
-            "stage trading",
-            "global markets internship",
-            "stage asset management",
-            "stage gestion de portefeuille",
-            "stage assistant gérant",
-            "portfolio management internship",
-            "stage commodities",
-            "stage matières premières",
-            "energy trading internship",
-            "stage marchés de l'énergie",
+            "stage M&A", "M&A internship", "stage fusions acquisitions", "stage banque d'affaires",
+            "investment banking intern", "stage investment banking", "stage corporate finance",
+            "stage financement d'acquisition", "leveraged finance internship", "stage ECM", "stage DCM",
+            "off-cycle internship", "off cycle internship Paris", "stage césure finance",
+            "stage private equity", "private equity internship", "stage capital investissement", "stage LBO",
+            "stage venture capital", "venture capital internship", "stage capital risque",
+            "stage sales trading", "sales and trading internship", "stage salle des marchés", "stage trading",
+            "stage trader", "assistant trader", "sales assistant markets", "stage sales", "stage vendeur",
+            "global markets internship", "stage marchés de capitaux", "stage fixed income", "stage equity sales",
+            "stage dérivés", "stage FX", "stage taux",
+            "stage asset management", "asset management internship", "stage gestion de portefeuille",
+            "stage assistant gérant", "portfolio management internship", "stage gestion d'actifs",
+            "stage commodities", "commodities internship", "stage matières premières", "energy trading internship",
+            "stage marchés de l'énergie", "stage trading énergie", "stage power gas", "stage métaux",
+            "stage pétrole trading", "stage freight", "stage négoce",
         ],
     },
     "wttj": {
         "enabled": True,
+        "hits_per_page": 100,
+        "max_pages": 3,
+        "recent_days": 30,
         "queries": [
             "M&A", "fusions acquisitions", "banque d'affaires", "corporate finance", "private equity",
-            "capital investissement", "LBO", "venture capital", "sales trading", "trading", "marchés financiers",
-            "asset management", "gestion d'actifs", "gestion de portefeuille", "commodities", "matières premières",
-            "énergie trading",
+            "capital investissement", "LBO", "venture capital", "capital risque", "sales trading", "trading",
+            "trader", "sales", "marchés financiers", "marchés de capitaux", "fixed income", "dérivés",
+            "asset management", "gestion d'actifs", "gestion de portefeuille", "assistant gérant",
+            "commodities", "matières premières", "énergie trading", "énergie", "négoce", "analyste financier",
+            "investissement", "banque d'investissement", "finance de marché", "fonds",
+        ],
+        # Recherches par employeur : couvre toutes les offres de ces entreprises sur Welcome to the Jungle
+        "companies": [
+            "Natixis", "BPCE", "Société Générale", "BNP Paribas", "Crédit Agricole", "CACIB", "Crédit Mutuel",
+            "CIC", "La Banque Postale", "Oddo BHF", "Rothschild", "Edmond de Rothschild", "Lazard", "Kepler Cheuvreux",
+            "Bryan Garnier", "Alantra", "Clipperton", "Cambon Partners", "Messier", "DC Advisory", "Degroof Petercam",
+            "Amundi", "AXA", "Carmignac", "Tikehau", "Eurazeo", "Ardian", "Wendel", "Bpifrance", "Ostrum", "Mirova",
+            "LBP AM", "Groupama", "Sycomore", "DNCA", "La Financière de l'Echiquier", "Comgest", "Candriam",
+            "Partech", "Idinvest", "Elaia", "Serena", "Alven", "Breega", "Eurazeo", "Andera", "Siparex", "Apax",
+            "TotalEnergies", "Engie", "EDF", "Trafigura", "Vitol", "Mercuria", "Gunvor", "Louis Dreyfus", "Axpo",
+            "Uniper", "Kpler", "Argus", "Vortexa", "CMA CGM",
         ],
     },
     "workday": {
@@ -271,6 +297,16 @@ class Tracker:
                     self.backoff_len.pop(name)
             except ValueError:
                 pass
+        self._check_filter_version()
+
+    def _check_filter_version(self):
+        """Après un changement des règles de filtrage, les offres déjà écartées sont réexaminées."""
+        cur = str(filters.FILTER_VERSION)
+        if self.store.get_meta("filter_version") != cur:
+            n = self.store.purge_rejected()
+            self.store.set_meta("filter_version", cur)
+            if n:
+                log("Règles de filtrage mises à jour : %d offres écartées seront réexaminées." % n)
 
     def _save_backoff(self, name):
         self.store.set_meta("backoff:" + name, self.backoff.get(name, 0))
@@ -355,11 +391,20 @@ class Tracker:
                                                  "host": s["_host"], "site": s["_site"]}))
         return res
 
+    def _collect_linkedin(self):
+        state = {"offset": int(self.store.get_meta("li_offset", 0) or 0)}
+        res = sources.collect_linkedin(self.cfg, log, state)
+        self.store.set_meta("li_offset", state.get("offset", 0))
+        if state.get("rate_limited"):  # résultats partiels : courte pause avant le prochain passage
+            self.backoff["LinkedIn"] = time.time() + 600
+            self._save_backoff("LinkedIn")
+        return res
+
     def collect(self):
         c = self.cfg
         batches = []
         if c["linkedin"]["enabled"]:
-            batches.append(("LinkedIn", self._run_source("LinkedIn", lambda: sources.collect_linkedin(c, log))))
+            batches.append(("LinkedIn", self._run_source("LinkedIn", self._collect_linkedin)))
         if c["wttj"]["enabled"]:
             batches.append(("Welcome to the Jungle",
                             self._run_source("Welcome to the Jungle", lambda: sources.collect_wttj(c, log))))
@@ -397,7 +442,7 @@ class Tracker:
                 if self.store.known(j["uid"]):
                     continue
                 if too_old(j.get("posted"), self.cfg):
-                    self.store.add_rejected(j["uid"], "publiée il y a trop longtemps")
+                    self.store.add_rejected(j["uid"], "publiée il y a trop longtemps", j)
                     continue
                 r = self._classify(j)
                 if j["source"] == "LinkedIn" and (r["ok"] or r["intern"] == "unknown"):
@@ -406,7 +451,7 @@ class Tracker:
                 elif r["ok"]:
                     self._accept(j, r, seed, new_list)
                 else:
-                    self.store.add_rejected(j["uid"], r["reason"] or "?")
+                    self.store.add_rejected(j["uid"], r["reason"] or "?", j)
             if seed and jobs:
                 seeded_now.append(name)
 
@@ -429,7 +474,7 @@ class Tracker:
                 if r2["ok"]:
                     self._accept(j, r2, seed, new_list)
                 else:
-                    self.store.add_rejected(j["uid"], r2["reason"] or "?")
+                    self.store.add_rejected(j["uid"], r2["reason"] or "?", j)
             except sources.RateLimited as e:
                 self.backoff["LinkedIn"] = time.time() + 900
                 self._save_backoff("LinkedIn")
@@ -577,6 +622,8 @@ def write_dashboard(store, cfg, next_run=None):
         "sources": [x for x in store.sources() if x["name"] in active],
         "priority": priority_list(cfg),
         "repo": repo if "/" in repo else None,
+        "rejected": [dict(r, title=sources._text(r["title"]), company=sources._text(r.get("company") or ""))
+                     for r in store.recent_rejected(time.time() - 72 * 3600, 300)],
     }
     dashboard.write(DASH_PATH, payload)
 

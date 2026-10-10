@@ -150,6 +150,10 @@ details.src summary::before{content:"▸";transition:transform .2s var(--ease);d
 details.src[open] summary::before{transform:rotate(90deg)}
 .srcgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:6px 18px;margin-top:10px}
 .srcrow{display:flex;gap:8px;align-items:baseline}
+.rejlist{display:flex;flex-direction:column;gap:4px;max-height:420px;overflow:auto}
+.rejrow{display:flex;gap:10px;align-items:baseline;padding:6px 8px;border-radius:8px;background:var(--bg2)}
+.rejrow .why{margin-left:auto;flex:none;font-size:12px;color:var(--warn)}
+.rejrow a{color:var(--ink);text-decoration:none}.rejrow a:hover{text-decoration:underline}
 .pipe{display:flex;height:10px;border-radius:999px;overflow:hidden;background:var(--bg2);margin:6px 0 16px}
 .pipe span{height:100%;transition:width .6s var(--ease)}
 .kanban{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(250px,1fr);gap:12px;overflow-x:auto;padding-bottom:10px;scroll-snap-type:x proximity}
@@ -257,6 +261,11 @@ hr.sep{border:0;border-top:1px solid var(--line);margin:16px 0}
   <div class="list" id="list"></div>
   <div class="more" id="more"></div>
   <details class="src" id="srcBox"><summary><span>Sources</span><span id="srcSum" style="color:var(--mute);font-weight:500"></span></summary><div class="srcgrid" id="src"></div></details>
+  <details class="src" id="rejBox"><summary><span>Offres écartées par le filtre</span><span id="rejSum" style="color:var(--mute);font-weight:500"></span></summary>
+    <p class="hint" style="margin:10px 0">Les 72 dernières heures, hors offres situées en dehors de Paris. Si une offre qui t'intéresse apparaît ici, signale-la pour que la règle soit ajustée.</p>
+    <div class="search" style="max-width:420px;margin-bottom:10px"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+      <input id="qr" type="search" placeholder="Rechercher dans les offres écartées…" autocomplete="off"></div>
+    <div id="rej" class="rejlist"></div></details>
 </section>
 
 <section class="view" id="view-cand">
@@ -528,6 +537,16 @@ function renderHeader(){
   $("#liveDot").style.background = nowS() - g < 40 * 60 ? "var(--ok)" : "var(--warn)";
 }
 
+function renderRejected(){
+  const R = DATA.rejected || [], ql = ($("#qr").value || "").trim().toLowerCase();
+  $("#rejSum").textContent = R.length + " offre" + (R.length > 1 ? "s" : "");
+  if (!$("#rejBox").open) return;  // rendu seulement quand la section est ouverte
+  const rows = R.filter(r => !ql || ((r.company || "") + " " + r.title + " " + r.reason).toLowerCase().includes(ql)).slice(0, 300);
+  $("#rej").innerHTML = rows.length ? rows.map(r => '<div class="rejrow"><span style="color:var(--mute);flex:none">' + esc(r.company || "—") + '</span>' +
+    '<a href="' + esc(safeUrl(r.url)) + '" target="_blank" rel="noopener">' + esc(r.title) + '</a><span class="why">' + esc(r.reason) + '</span></div>').join("")
+    : '<div class="hint">Aucune offre écartée sur la période.</div>';
+}
+
 /* ---------- rendu : candidatures ---------- */
 function renderCand(){
   const ql = ($("#qc").value || "").trim().toLowerCase(), all = Object.values(CAND.items);
@@ -564,6 +583,8 @@ $("#cats").onclick = e => { const b = e.target.closest("[data-cat]"); if (!b) re
 $$(".toggles .chip").forEach(b => b.onclick = () => { F[b.dataset.t] = !F[b.dataset.t]; saveF(); LIMIT = 60; renderOffers(); });
 $("#q").addEventListener("input", debounce(e => { F.q = e.target.value; LIMIT = 60; renderOffers(); }, 120));
 $("#qc").addEventListener("input", debounce(renderCand, 120));
+$("#qr").addEventListener("input", debounce(renderRejected, 150));
+$("#rejBox").addEventListener("toggle", renderRejected);
 $("#more").onclick = e => { if (e.target.id === "moreBtn") { LIMIT += 60; renderOffers(); } };
 
 /* ---------- menu de statut ---------- */
@@ -667,7 +688,7 @@ async function refreshData(){
     const known = new Set((DATA.offers || []).map(o => o.uid));
     const fresh = d.offers.filter(o => !known.has(o.uid) && !o.closed);
     DATA = d; if (!LS.get("ts_prio_local", null) && Array.isArray(d.priority)) PRIO = d.priority.slice();
-    renderAll(); renderSources();
+    renderAll(); renderSources(); renderRejected();
     if (fresh.length) toast(fresh.length + (fresh.length > 1 ? " nouvelles offres" : " nouvelle offre"), "Voir", () => { go("offres"); window.scrollTo({top:0, behavior:"smooth"}); });
   } catch(e) {}
 }
@@ -676,7 +697,7 @@ setInterval(renderHeader, 30000);
 document.addEventListener("visibilitychange", () => { if (!document.hidden) { refreshData(); if (Sync.enabled()) Sync.pull().catch(() => {}); } });
 
 /* ---------- démarrage ---------- */
-renderAll(); renderSources();
+renderAll(); renderSources(); renderRejected();
 go(LS.get("ts_view", "offres") === "cand" ? "cand" : "offres");
 requestAnimationFrame(moveInk);
 if (document.fonts && document.fonts.ready) document.fonts.ready.then(moveInk);

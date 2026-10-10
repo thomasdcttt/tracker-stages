@@ -6,6 +6,9 @@ Les listes sont volontairement explicites pour pouvoir être ajustées dans conf
 import re
 import unicodedata
 
+# À incrémenter à chaque changement de règles : les offres déjà écartées sont alors réexaminées.
+FILTER_VERSION = 3
+
 
 def normalize(text):
     if not text:
@@ -58,7 +61,14 @@ PARIS_LOC = _rx([
     r"neuilly sur seine", r"levallois", r"levallois perret", r"boulogne", r"boulogne billancourt",
     r"issy les moulineaux", r"saint denis", r"montrouge", r"nanterre", r"clichy", r"saint cloud",
     r"rueil malmaison", r"suresnes", r"saint ouen", r"vincennes", r"charenton", r"ivry sur seine",
-    r"75\d{3}", r"92\d{3}",
+    r"montreuil", r"pantin", r"aubervilliers", r"saint mande", r"fontenay sous bois", r"nogent sur marne",
+    r"malakoff", r"vanves", r"clamart", r"meudon", r"sevres", r"chatillon", r"bagneux", r"arcueil",
+    r"gentilly", r"kremlin bicetre", r"colombes", r"bois colombes", r"la garenne colombes",
+    r"asnieres(?: sur seine)?", r"gennevilliers", r"bobigny", r"noisy le grand", r"marne la vallee",
+    r"versailles", r"saint germain en laye", r"guyancourt", r"saint quentin en yvelines", r"velizy\w*",
+    r"massy", r"palaiseau", r"saclay", r"evry", r"cergy", r"roissy", r"orly", r"rungis",
+    r"greater paris", r"region de paris", r"paris et peripherie",
+    r"75\d{3}", r"77\d{3}", r"78\d{3}", r"91\d{3}", r"92\d{3}", r"93\d{3}", r"94\d{3}", r"95\d{3}",
 ])
 
 # ---------- Métiers ----------
@@ -72,6 +82,8 @@ CAT_PATTERNS = {
         r"corporate advisory", r"financial advisory", r"coverage", r"origination", r"global advisory",
         r"sovereign advisory", r"financial sponsors?", r"sponsors coverage", r"fig",
         r"financial institutions? group", r"advisory (?:and )?(?:mna|m a)",
+        r"corporate development", r"deal advisory", r"lead advisory", r"structured finance",
+        r"financements? structures?", r"project finance", r"financements? de projets?", r"debt syndicate",
     ],
     "Private Equity": [
         r"private equity", r"capital investissement", r"capital developpement", r"capital transmission",
@@ -79,6 +91,10 @@ CAT_PATTERNS = {
         r"secondaries", r"fonds d investissement", r"investment analyst", r"analyste investissements?",
         r"charge d affaires (?:capital|investissement|private|fonds|pe|lbo|mezzanine)\w*", r"investment associate", r"investment team", r"equipe d investissement",
         r"investissement non cote", r"\bpe\b fund",
+    ],
+    "Private Equity (faible)": [
+        r"infrastructure", r"real assets", r"fund finance", r"primaries", r"co ?invest\w*",
+        r"fund of funds", r"fonds de fonds", r"portfolio operations", r"value creation",
     ],
     "Venture Capital": [
         r"venture capital", r"venture", r"capital risque", r"vc", r"corporate venture",
@@ -90,13 +106,18 @@ CAT_PATTERNS = {
         r"asset allocation", r"investment specialist", r"product specialist", r"buy ?side", r"hedge funds?",
         r"gestion (?:actions|obligataire|taux|diversifiee|credit|collective|alternative|multi ?gestion)",
         r"analyste gestion", r"gestion d investissements?", r"investment management",
+        r"gestionnaire de portefeuilles?", r"investment solutions", r"fund selection", r"selection de fonds",
+        r"investment research", r"buy ?side research", r"recherche (?:investissement|gestion)",
     ],
     "Sales & Trading": [
         r"sales trading", r"sales and trading", r"sales traders?", r"traders?", r"trading",
         r"global markets?", r"markets", r"capital markets", r"marches de capitaux", r"marches financiers",
         r"salle des? marches?", r"fixed income", r"ficc", r"equities", r"equity derivatives",
         r"derivatives", r"derives", r"fx", r"forex", r"rates", r"institutional sales", r"cross asset",
-        r"obligataire", r"primary bonds", r"syndicate", r"syndication",
+        r"obligataire", r"primary bonds", r"syndicate", r"syndication", r"primary markets?",
+        r"marches? primaires?", r"prime brokerage", r"securities lending", r"repo",
+        r"equity research", r"credit research", r"fixed income research", r"macro research",
+        r"recherche (?:actions|credit|macro\w*|economique|marches?|obligataire|taux)",
     ],
 }
 CAT_RX = {k: _rx(v) for k, v in CAT_PATTERNS.items()}
@@ -108,8 +129,22 @@ MARKET_CTX = _rx([
     r"derivatives?", r"derives", r"fx", r"forex", r"change", r"rates", r"taux", r"credit",
     r"commodit(?:y|ies)", r"matieres premieres", r"bonds?", r"obligataire", r"cross asset",
     r"institutional", r"institutionnels?", r"structured products", r"produits structures",
-    r"flow", r"investors?", r"investisseurs",
+    r"flow", r"investors?", r"investisseurs", r"etfs?", r"options", r"futures", r"swaps?", r"convertibles?",
+    r"repo", r"money markets?", r"monetaire", r"obligations",
 ])
+
+ADMIN_ASSISTANT = [
+    r"assistante?s? (?:de |d |du )?(?:direction|administrati\w*|gestion|equipe|polyvalent\w*|comptable|juridique|"
+    r"rh|ressources humaines|communication|marketing|bureau|accueil|achats?|facturation|paie|recrutement)",
+    r"(?:executive|office|personal|administrative|admin|team|legal|hr|marketing|management|board|ceo|division|"
+    r"department|events?) assistants?",
+    r"secretaires?", r"secretariat", r"office manager", r"receptionist\w*", r"hote\w* d accueil",
+]
+SUPPORT_EXCLUDE = [
+    r"trade support", r"trading support", r"it support", r"support informatique", r"support utilisateurs?",
+    r"support technique", r"technical support", r"customer support", r"user support", r"support applicatif",
+    r"application support", r"production support",
+]
 
 # Métiers exclus (demande explicite : pas de structuring ni de quant)
 ROLE_EXCLUDE = _rx([
@@ -117,26 +152,30 @@ ROLE_EXCLUDE = _rx([
     r"quant", r"quants", r"quantitative?", r"quantitatif", r"quantitatives", r"strats?",
     r"risk", r"risks", r"risques?", r"compliance", r"conformite", r"audit", r"auditeur",
     r"transaction services", r"middle office", r"back office", r"operations", r"ops",
-    r"trade support", r"trading support", r"support", r"it", r"developer", r"developpeur",
+    r"it", r"developer", r"developpeur",
     r"developpeuse", r"engineer", r"engineering", r"ingenieur", r"ingenieure", r"data",
     r"software", r"devops", r"cyber", r"cybersecurity", r"juriste", r"legal", r"avocat",
     r"lawyer", r"droit", r"juridique", r"law", r"rh", r"hr", r"human resources", r"ressources humaines", r"recrutement",
     r"recruitment", r"talent", r"marketing", r"communication", r"comptable", r"comptabilite",
     r"accounting", r"accountant", r"controle de gestion", r"controller", r"controleur", r"kyc",
     r"aml", r"lcb ft", r"product owner", r"project manager", r"chef de projet", r"moa", r"pmo",
-    r"research", r"recherche", r"business developer", r"business development", r"bizdev",
+    r"research scientist", r"ux research\w*", r"user research\w*", r"recherche et developpement",
+    r"r and d", r"business developer", r"business development", r"bizdev",
     r"account executive", r"account manager", r"sdr", r"bdr", r"customer success",
-    r"assistant", r"assistante", r"office manager", r"real estate", r"immobilier",
+    r"real estate", r"immobilier",
     r"wealth", r"patrimoine", r"gestion de patrimoine", r"private bank", r"banque privee",
-    r"retail", r"reseau", r"agence", r"conseiller clientele", r"actuar\w*", r"model\w*", r"valuation control",
+    r"retail", r"reseau", r"agence", r"conseiller clientele", r"actuar\w*", r"model validation", r"model risk",
+    r"validation des modeles", r"valuation control", r"cloud", r"network\w*", r"systemes?", r"systems", r"sre",
     r"product control", r"tax", r"fiscal\w*", r"strategy consulting",
     r"esg analyst", r"esg", r"trade finance", r"financement du commerce", r"commerce international",
     r"financement export", r"credit documentaire", r"trade services",
-])
+] + ADMIN_ASSISTANT + SUPPORT_EXCLUDE)
 # Exceptions : ne pas exclure ces formulations utiles
 ROLE_EXCLUDE_EXCEPTIONS = re.compile(
     r"(?<![a-z0-9])(?:structured products sales|sales structured products|"
-    r"credit sales|equity research sales|capital risques?|capital risk|"
+    r"credit sales|equity research sales|capital risques?|capital risk|portfolio operations|"
+    r"structur\w* (?:lbo|d acquisition|acquisition|financ\w*)|(?:leveraged|acquisition) finance structur\w*|"
+    r"financements? structures?|structured finance|"
     r"sales (?:and )?trading (?:and )?structur\w*|trading (?:and )?structur\w*|sales (?:and )?structur\w*|"
     r"structur\w* (?:and )?(?:sales|trading)\w*)(?![a-z0-9])"
 )
@@ -183,7 +222,8 @@ COMMO_RX = _rx([
     r"power markets?", r"gas trading", r"gas markets?", r"lng", r"gnl", r"oil", r"petrole", r"petroliers?",
     r"crude", r"metals?", r"metaux", r"softs", r"agri commodit\w*", r"freight", r"affretement",
     r"chartering", r"bunkers?", r"carbon trading", r"marches? (?:du )?carbone", r"emissions trading",
-    r"energy (?:origination|analyst|trader)", r"trading (?:d )?energie", r"negoce",
+    r"energy (?:origination|analyst|trader|trading|sales|markets?)", r"trading (?:d )?energie", r"negoce",
+    r"power", r"gas", r"gaz", r"electricity", r"electricite", r"emissions?", r"carbon markets?",
 ])
 COMMO_HARD_EXCLUDE = _rx([
     r"it", r"developer", r"developpeur", r"developpeuse", r"engineer", r"engineering", r"ingenieur",
@@ -192,12 +232,19 @@ COMMO_HARD_EXCLUDE = _rx([
     r"marketing", r"communication", r"comptable", r"comptabilite", r"accounting", r"accountant", r"audit",
     r"auditeur", r"compliance", r"conformite", r"kyc", r"aml", r"quant", r"quants", r"quantitative?",
     r"structuring", r"structureur", r"maintenance", r"hse", r"securite", r"safety", r"achats?",
-    r"procurement", r"acheteur", r"acheteuse", r"assistant", r"assistante", r"office manager",
+    r"procurement", r"acheteur", r"acheteuse",
     r"controle de gestion", r"controller", r"tax", r"fiscal\w*", r"retail", r"station",
-])
+    r"power ?bi", r"power ?point", r"power ?apps", r"power ?automate", r"technicien\w*", r"chantier",
+    r"electricien\w*", r"installat\w*", r"bureau d etudes", r"btp",
+] + ADMIN_ASSISTANT + SUPPORT_EXCLUDE)
 IBD_STRICT = _rx([r"mna", r"fusions?", r"mergers?", r"investment banking", r"ibd", r"banque d affaires",
                   r"corporate finance", r"private equity", r"capital investissement", r"lbo", r"buy ?out",
-                  r"venture capital", r"capital risque", r"vc", r"ecm", r"dcm", r"leveraged finance"])
+                  r"venture capital", r"capital risque", r"vc", r"ecm", r"dcm", r"leveraged finance",
+                  r"coverage", r"restructuring", r"debt advisory", r"acquisition finance", r"project finance",
+                  r"financements? de projets?", r"structured finance"])
+# Financement d'acquisition / LevFin : métier de banque d'affaires, même si le titre cite "LBO"
+LEVFIN_RX = _rx([r"leveraged finance", r"levfin", r"acquisition finance", r"financements? d acquisitions?",
+                 r"structured finance", r"financements? structures?", r"debt advisory"])
 # Assistant gérant : métier de gestion d'actifs, pas un poste d'assistanat
 AM_ASSISTANT_OK = re.compile(r"(?<![a-z0-9])assistante? (?:de |du |au |aux )?(?:gerants?|gerantes?|portfolio manag\w*|fund manag\w*)(?![a-z0-9])")
 
@@ -211,6 +258,8 @@ def categorize(title):
             return None, "métier exclu (%s)" % m.group(0).strip()
         # "M&A Oil & Gas" reste du M&A ; "origination" ou "coverage" seuls restent des Commodities
         if IBD_STRICT.search(t):
+            if LEVFIN_RX.search(t):
+                return "M&A / IBD", None
             for cat in ("Private Equity", "Venture Capital", "M&A / IBD"):
                 if CAT_RX[cat].search(t):
                     return cat, None
@@ -220,11 +269,14 @@ def categorize(title):
     m = ROLE_EXCLUDE.search(t_for_excl)
     if m:
         return None, "métier exclu (%s)" % m.group(0).strip()
+    if LEVFIN_RX.search(t):
+        return "M&A / IBD", None
     # Ordre : PE et VC avant M&A (un "stage investissement PE" ne doit pas finir en IBD)
-    for cat in ("Private Equity", "Venture Capital", "Asset Management", "M&A / IBD", "Sales & Trading"):
+    for cat in ("Private Equity", "Venture Capital", "Asset Management", "M&A / IBD", "Private Equity (faible)",
+                "Sales & Trading"):
         if CAT_RX[cat].search(t):
             # "private equity" contient "equity" : géré car S&T vérifié après PE
-            return cat, None
+            return ("Private Equity" if cat == "Private Equity (faible)" else cat), None
     if SALES_RX.search(t) and MARKET_CTX.search(t):
         return "Sales & Trading", None
     return None, "métier hors périmètre"
