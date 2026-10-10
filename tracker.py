@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Tracker de stages off-cycle / césure à Paris : IBD (M&A, PE, VC) et Sales & Trading.
+"""Tracker de stages off-cycle / césure à Paris, en Suisse et à Singapour : IBD (M&A, PE, VC), S&T, AM, Commodities.
 
 Usage :
     python tracker.py              surveillance continue (notifications + tableau de bord)
@@ -17,7 +17,9 @@ import re
 import sys
 import time
 import traceback
+import urllib.parse
 import webbrowser
+from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
 
 # Console Windows / lancement sans console (pythonw) : jamais de plantage sur un affichage
@@ -70,7 +72,7 @@ DEFAULT_CONFIG = {
             "commodities", "énergie", "energy", "analyste", "analyst", "fund",
         ],
         # Nombre maximal de requêtes de recherche par passage (les recherches restantes passent au suivant)
-        "max_search_requests": 50,
+        "max_search_requests": 70,
         "queries": [
             "stage M&A", "M&A internship", "stage fusions acquisitions", "stage banque d'affaires",
             "investment banking intern", "stage investment banking", "stage corporate finance",
@@ -88,6 +90,36 @@ DEFAULT_CONFIG = {
             "stage marchés de l'énergie", "stage trading énergie", "stage power gas", "stage métaux",
             "stage pétrole trading", "stage freight", "stage négoce",
         ],
+        # Zones couvertes. France : lieu ci-dessus, sweeps et queries ci-dessus. Suisse et Singapour : balayage de
+        # tous les stages récents (filtre « Stage ») à chaque passage + recherches en rotation avec celles de Paris.
+        "regions": {
+            "France": {"enabled": True, "location": "Paris, Île-de-France, France"},
+            "Suisse": {
+                "enabled": True, "location": "Switzerland",
+                "sweep_all": True, "sweep_all_seconds": 7200, "sweep_all_pages": 4,
+                "queries": [
+                    "investment banking intern", "M&A intern", "private equity intern", "venture capital intern",
+                    "sales and trading intern", "global markets intern", "summer analyst", "off-cycle internship",
+                    "commodities intern", "commodity trading intern", "energy trading intern",
+                    "asset management intern", "portfolio management intern", "hedge fund intern",
+                    "equity research intern", "corporate finance intern",
+                    "stage M&A Genève", "stage trading Genève", "stage finance Genève",
+                    "Praktikum Investment Banking", "Praktikum Trading", "Praktikum Asset Management",
+                    "Praktikum Rohstoffhandel",
+                ],
+            },
+            "Singapour": {
+                "enabled": True, "location": "Singapore",
+                "sweep_all": True, "sweep_all_seconds": 7200, "sweep_all_pages": 4,
+                "queries": [
+                    "investment banking intern", "M&A intern", "private equity intern", "venture capital intern",
+                    "sales and trading intern", "global markets intern", "summer analyst", "off-cycle internship",
+                    "commodities intern", "commodity trading intern", "energy trading intern",
+                    "asset management intern", "portfolio management intern", "hedge fund intern",
+                    "equity research intern", "corporate finance intern",
+                ],
+            },
+        },
     },
     "wttj": {
         "enabled": True,
@@ -116,7 +148,8 @@ DEFAULT_CONFIG = {
     },
     "workday": {
         "enabled": True,
-        "queries": ["intern Paris", "stage Paris", "off-cycle"],
+        "queries": ["intern Paris", "stage Paris", "off-cycle", "intern Geneva", "intern Zurich", "intern Singapore",
+                    "summer intern Singapore"],
         "tenants": [
             {"company": "Barclays", "host": "barclays.wd3.myworkdayjobs.com", "tenant": "barclays",
              "site": "External_Career_Site_Barclays", "enabled": True},
@@ -128,15 +161,25 @@ DEFAULT_CONFIG = {
     },
     # Sites carrières surveillés directement (en plus de LinkedIn). Types : workday, oracle, eightfold, html.
     "sites": [
+        # ---- France (et sites mondiaux qui publient aussi Genève / Singapour)
         {"company": "J.P. Morgan", "type": "oracle", "host": "jpmc.fa.oraclecloud.com", "site": "CX_1001"},
         {"company": "Lazard", "type": "oracle", "host": "icbpjb.fa.ocs.oraclecloud.com",
          "site": "LazardProfessionalCareers"},
+        {"company": "Lazard", "label": "Lazard (étudiants)", "type": "oracle", "host": "icbpjb.fa.ocs.oraclecloud.com",
+         "site": "LazardStudentCareers"},
         {"company": "HSBC", "type": "eightfold", "host": "portal.careers.hsbc.com", "domain": "hsbc.com"},
+        {"company": "HSBC", "label": "HSBC (early careers)", "type": "html",
+         "url": "https://mycareer.hsbc.com/en_GB/external/SearchJobs/?listFilterMode=1&jobRecordsPerPage=50",
+         "link_regex": r"/en_GB/external/PipelineDetail/[^/\"]+/\d+"},
         {"company": "Ardian", "type": "workday", "host": "ardian.wd103.myworkdayjobs.com", "tenant": "ardian",
          "site": "ArdianCareers"},
         {"company": "Rothschild & Co", "type": "html",
-         "url": "https://www.rothschildandco.com/en/careers/students-and-graduates/opportunities/",
+         "urls": ["https://www.rothschildandco.com/en/careers/students-and-graduates/opportunities/",
+                  "https://www.rothschildandco.com/en/careers/students-and-graduates/opportunities/?page=2",
+                  "https://www.rothschildandco.com/en/careers/students-and-graduates/opportunities/?taxonomy_1156=739"],
          "link_regex": r"/careers/students-and-graduates/opportunities/[^/?#]+/?$"},
+        {"company": "Rothschild & Co", "label": "Rothschild & Co (Workday)", "type": "workday",
+         "host": "rothschildandco.wd3.myworkdayjobs.com", "tenant": "rothschildandco", "site": "Rothschildandco_Lateral"},
         {"company": "Crédit Agricole CIB", "type": "html",
          "url": "https://jobs.ca-cib.com/offre-de-emploi/liste-toutes-offres.aspx?all=1&mode=layer",
          "link_regex": r"/offre-de-emploi/emploi-[^\"?#]+_\d+\.aspx"},
@@ -150,7 +193,8 @@ DEFAULT_CONFIG = {
         {"company": "TotalEnergies", "type": "html",
          "urls": ["https://jobs.totalenergies.com/fr_FR/careers/SearchJobs/stage",
                   "https://jobs.totalenergies.com/en_US/careers/SearchJobs/intern",
-                  "https://jobs.totalenergies.com/fr_FR/careers/SearchJobs"],
+                  "https://jobs.totalenergies.com/fr_FR/careers/SearchJobs",
+                  "https://jobs.totalenergies.com/en_US/careers/SearchJobs/Singapore?listFilterMode=1&jobRecordsPerPage=20"],
          "link_regex": r"/careers/JobDetail/[^/\"]+/\d+"},
         {"company": "BlackRock", "type": "html",
          "urls": ["https://careers.blackrock.com/search-jobs/intern/Paris",
@@ -164,8 +208,10 @@ DEFAULT_CONFIG = {
          "site": "KKR_Careers"},
         {"company": "Fidelity International", "type": "workday", "host": "fil.wd3.myworkdayjobs.com",
          "tenant": "fil", "site": "FidelityInternational"},
-        {"company": "Nomura", "type": "workday", "host": "nomura.wd3.myworkdayjobs.com", "tenant": "nomura",
-         "site": "nomura_campus"},
+        {"company": "Nomura", "type": "html",
+         "urls": ["https://careers.nomura.com/Nomura/search/?q=intern", "https://careers.nomura.com/Nomura/search/?q=internship",
+                  "https://careers.nomura.com/Nomura/search/?q=summer", "https://careers.nomura.com/Nomura/search/?q=off-cycle"],
+         "link_regex": r"/Nomura/job/[^\"]+/\d+/"},
         {"company": "Houlihan Lokey", "type": "workday", "host": "hl.wd1.myworkdayjobs.com", "tenant": "hl",
          "site": "Campus"},
         {"company": "Jefferies", "type": "workday", "host": "jefferies.wd5.myworkdayjobs.com",
@@ -173,7 +219,81 @@ DEFAULT_CONFIG = {
         {"company": "Bank of America", "type": "html",
          "url": "https://bankcampuscareers.tal.net/vx/lang-en-GB/mobile-0/brand-4/xf-6f0048376f93/candidate/jobboard/vacancy/2/adv/",
          "link_regex": r"/candidate/so/pm/\d+/pl/\d+/opp/\d+"},
+        {"company": "Goldman Sachs", "type": "oracle", "host": "hdpc.fa.us2.oraclecloud.com", "site": "LateralHiring"},
+        {"company": "Macquarie", "type": "html",
+         "urls": ["https://recruitment.macquarie.com/en_US/careers/SearchJobs/?listFilterMode=1&jobRecordsPerPage=100&jobOffset=%d" % k
+                  for k in range(0, 600, 100)],
+         "link_regex": r"/en_US/careers/JobDetail/[^/\"]+/\d+"},
+        # ---- Commodities (Genève, Zoug, Singapour)
+        {"company": "Trafigura", "type": "workday", "host": "trafigura.wd3.myworkdayjobs.com", "tenant": "trafigura",
+         "site": "TrafiguraCareerSite"},
+        {"company": "Gunvor", "type": "workday", "host": "gunvor.wd3.myworkdayjobs.com", "tenant": "gunvor",
+         "site": "Gunvor_Careers"},
+        {"company": "Glencore", "type": "workday", "host": "glencorecorp.wd3.myworkdayjobs.com", "tenant": "glencorecorp",
+         "site": "External"},
+        {"company": "Shell", "type": "workday", "host": "shell.wd3.myworkdayjobs.com", "tenant": "shell",
+         "site": "ShellCareers"},
+        {"company": "Vitol", "type": "smartrecruiters", "company_id": "Vitol"},
+        {"company": "Louis Dreyfus Company", "type": "smartrecruiters", "company_id": "LouisDreyfusCompany"},
+        {"company": "Cargill", "type": "html",
+         "urls": ["https://careers.cargill.com/en/search-jobs/Geneva",
+                  "https://careers.cargill.com/en/location/singapore-jobs/23251/1880251-7535954-1880252/4"],
+         "link_regex": r"/en/job/[^/\"]+/[^/\"]+/23251/\d+"},
+        {"company": "COFCO International", "type": "html", "default_location": "Genève, Suisse",
+         "url": "https://careers.cofcointernational.com/search/?q=&locationsearch=Geneva",
+         "link_regex": r"/job/[^/\"]+/\d+/"},
+        {"company": "Bunge", "type": "html",
+         "urls": ["https://jobs.bunge.com/search/?q=&locationsearch=Geneva", "https://jobs.bunge.com/search/?q=&locationsearch=Singapore"],
+         "link_regex": r"/job/[^\"]+/\d+/"},
+        {"company": "Axpo", "type": "html", "default_location": "Baden, Switzerland",
+         "urls": ["https://careers.axpo.com/jobs", "https://careers.axpo.com/jobs?query=intern",
+                  "https://careers.axpo.com/jobs?query=praktikum"],
+         "link_regex": r"/jobs/\d+-[a-z0-9-]+"},
+        {"company": "SGX Group", "type": "html", "url": "https://careers.sgx.com/search/?q=intern",
+         "link_regex": r"/job/[^\"]+/\d+/"},
+        # ---- Suisse : banques, gérants, private markets
+        {"company": "Julius Baer", "type": "workday", "host": "juliusbaer.wd3.myworkdayjobs.com", "tenant": "juliusbaer",
+         "site": "External"},
+        {"company": "UBP", "type": "oracle", "host": "iaadtu.fa.ocs.oraclecloud.eu", "site": "CX_1"},
+        {"company": "Mirabaud", "type": "smartrecruiters", "company_id": "MirabaudCieSA"},
+        {"company": "Citi", "label": "Citi (Suisse et Singapour)", "type": "html",
+         "urls": ["https://jobs.citi.com/location/switzerland-jobs/287/2658434/2",
+                  "https://jobs.citi.com/location/singapore-jobs/287/1880251/4"],
+         "link_regex": r"/job/[^/\"]+/[^/\"]+/287/\d+"},
+        {"company": "Partners Group", "type": "html", "url": "https://jobs.partnersgroup.com/search/?q=intern",
+         "link_regex": r"/job/[^/\"]+/\d+/"},
+        {"company": "Swiss Re", "type": "html", "url": "https://careers.swissre.com/search/?q=intern",
+         "link_regex": r"/job/[^/\"]+/\d+/"},
+        {"company": "Vontobel", "type": "html", "default_location": "Zurich, Switzerland",
+         "url": "https://www.vontobel.com/en/about-vontobel/careers/open-positions/",
+         "link_regex": r"/careers/open-positions/\d+-[a-z0-9-]+/?"},
+        {"company": "LGT", "type": "html",
+         "urls": ["https://www.lgt.com/ch-en/career/jobs"] +
+                 ["https://www.lgt.com/ch-en/career/jobs/48662!jobSearch?pageNum=%d" % k for k in range(1, 6)],
+         "link_regex": r"/career/jobs/[a-z0-9-]+-\d+"},
+        # ---- Singapour : banques, fonds souverains, gérants, private equity
+        {"company": "DBS", "type": "workday", "host": "dbs.wd3.myworkdayjobs.com", "tenant": "dbs", "site": "DBS_Careers"},
+        {"company": "Temasek", "type": "html", "url": "https://jobs.temasek.com.sg/search/?q=intern",
+         "link_regex": r"/job/[^\"]+/\d+/"},
+        {"company": "GIC", "type": "html", "url": "https://careers.gic.com.sg/search/?q=intern",
+         "link_regex": r"/job/[^\"]+/\d+/?"},
+        {"company": "Eastspring Investments", "type": "workday", "host": "prudential.wd3.myworkdayjobs.com",
+         "tenant": "prudential", "site": "prudential_eastspring"},
+        {"company": "Schroders", "type": "oracle", "host": "ekbq.fa.em2.oraclecloud.com", "site": "CX_2"},
+        {"company": "Brookfield", "type": "workday", "host": "brookfield.wd5.myworkdayjobs.com", "tenant": "brookfield",
+         "site": "brookfield"},
+        {"company": "Bain Capital", "type": "workday", "host": "baincapital.wd1.myworkdayjobs.com", "tenant": "baincapital",
+         "site": "External_Public"},
     ],
+    # Portail officiel de l'emploi à Singapour (offres « Internship/Attachment »)
+    "mcf": {
+        "enabled": True,
+        "limit": 100,
+        "max_pages": 2,
+        "queries": ["intern", "internship", "summer intern", "investment", "trading", "commodities", "analyst",
+                    "private equity", "venture capital", "M&A", "investment banking", "asset management",
+                    "portfolio", "sales", "markets", "energy"],
+    },
     "filters": {
         "max_age_days": 60,
         "extra_include": [],
@@ -189,6 +309,7 @@ DEFAULT_CONFIG = {
     "priority_companies": ["Morgan Stanley", "Goldman Sachs", "J.P. Morgan", "Lazard", "Rothschild",
                            "BNP Paribas", "Bank of America", "Société Générale"],
     "closed_checks_per_run": 20,
+    "parallel_sources": 6,  # sites interrogés en même temps (un seul fil par site web)
     "cloud": {
         "ntfy_topic": "",
         "dashboard_url": "",
@@ -298,6 +419,28 @@ class Tracker:
             except ValueError:
                 pass
         self._check_filter_version()
+        self._init_region_seeding()
+
+    # Zone ajoutée à une base déjà en service : pendant REGION_SEED_HOURS, les offres déjà en ligne de cette zone
+    # entrent dans le tableau de bord sans notification (comme au tout premier passage), une seule annonce est envoyée.
+    REGION_SEED_HOURS = 3
+
+    def _init_region_seeding(self):
+        now = time.time()
+        self.region_seed_until, self.regions_announce, self.region_seeded = {}, [], {}
+        in_service = self.store.db.execute("SELECT 1 FROM meta WHERE key LIKE 'seeded:%' LIMIT 1").fetchone()
+        for reg in filters.REGION_NAMES[1:]:
+            since = self.store.get_meta("region_since:" + reg)
+            if since is None:
+                since = now if in_service else 0  # base neuve : le premier passage normal suffit
+                self.store.set_meta("region_since:" + reg, since)
+                if in_service:
+                    self.store.set_meta("region_announce:" + reg, "pending")
+            since = float(since or 0)
+            if since and now < since + self.REGION_SEED_HOURS * 3600:
+                self.region_seed_until[reg] = since + self.REGION_SEED_HOURS * 3600
+            elif self.store.get_meta("region_announce:" + reg) == "pending":
+                self.regions_announce.append(reg)  # fenêtre silencieuse terminée : on annonce le total
 
     def _check_filter_version(self):
         """Après un changement des règles de filtrage, les offres déjà écartées sont réexaminées."""
@@ -311,18 +454,28 @@ class Tracker:
     def _save_backoff(self, name):
         self.store.set_meta("backoff:" + name, self.backoff.get(name, 0))
         self.store.set_meta("backoff_len:" + name, self.backoff_len.get(name, 0))
-        self.pending = {}      # offres LinkedIn à confirmer (stage ?) en attente de détail
 
     def _classify(self, j, description="", employment_type=""):
         f = self.cfg["filters"]
         r = filters.classify(j["title"], j.get("location", ""), description,
                              employment_type or j.get("employment_type", ""),
                              f.get("extra_include"), f.get("extra_exclude"))
-        if r["ok"] and r["summer"] and not f.get("include_summer", True):
+        # include_summer ne concerne que la France : en Suisse et à Singapour, summer et off-cycle sont gardés
+        if r["ok"] and r["summer"] and not f.get("include_summer", True) and r.get("region") == "France":
             r["ok"], r["reason"] = False, "summer exclu (config)"
         return r
 
     def _run_source(self, name, fn):
+        if not self._source_ready(name):
+            return []
+        try:
+            res = fn()
+        except Exception as e:  # noqa: BLE001
+            return self._source_done(name, error=e)
+        return self._source_done(name, res)
+
+    def _source_ready(self, name):
+        """Vrai si la source peut être interrogée maintenant (pas de pause en cours)."""
         now = time.time()
         if name not in self.backoff:
             try:
@@ -335,11 +488,17 @@ class Tracker:
         if self.backoff.get(name, 0) > now:
             mins = int((self.backoff[name] - now) / 60) + 1
             if int(self.store.get_meta("fails:" + name, 0) or 0) >= 6:
-                return []  # le message "non lisible" reste affiché tel quel
+                return False  # le message "non lisible" reste affiché tel quel
             self.store.set_source(name, False, "En pause %d min (limitation du site)" % mins)
-            return []
+            return False
+        return True
+
+    def _source_done(self, name, res=None, error=None):
+        """Enregistre le résultat (ou l'erreur) d'une source et renvoie les offres lues."""
+        now = time.time()
         try:
-            res = fn()
+            if error is not None:
+                raise error
             errs = []
             if isinstance(res, tuple):
                 res, errs = res
@@ -375,54 +534,124 @@ class Tracker:
                 self.store.set_source(name, False, "Erreur : %s" % str(e)[:200])
         return []
 
-    def _run_site(self, site, fn):
-        """Lance un site en réutilisant l'adresse corrigée trouvée lors d'un passage précédent."""
+    def _site_prepare(self, site):
+        """Copie de la config du site, avec l'adresse corrigée trouvée lors d'un passage précédent."""
         s = dict(site)
-        key = "found:" + site["company"]
+        key = "found:" + site.get("label", site["company"])
         try:
             found = json.loads(self.store.get_meta(key, "{}") or "{}")
         except ValueError:
             found = {}
         if found.get("site_ref") == [site.get("host"), site.get("site")]:
             s.update(_host=found["host"], _site=found["site"], _discovered=True)
-        res = fn(s)
+        return s
+
+    def _site_finish(self, site, s):
         if s.get("_discovered") and s.get("_host"):
+            key = "found:" + site.get("label", site["company"])
             self.store.set_meta(key, json.dumps({"site_ref": [site.get("host"), site.get("site")],
                                                  "host": s["_host"], "site": s["_site"]}))
+
+    def _run_site(self, site, fn):
+        """Lance un site en réutilisant l'adresse corrigée trouvée lors d'un passage précédent."""
+        s = self._site_prepare(site)
+        res = fn(s)
+        self._site_finish(site, s)
         return res
 
     def _collect_linkedin(self):
         state = {"offset": int(self.store.get_meta("li_offset", 0) or 0)}
-        res = sources.collect_linkedin(self.cfg, log, state)
+        try:
+            return sources.collect_linkedin(self.cfg, log, state)
+        finally:
+            self._linkedin_finish(state)
+
+    def _linkedin_finish(self, state):
         self.store.set_meta("li_offset", state.get("offset", 0))
         if state.get("rate_limited"):  # résultats partiels : courte pause avant le prochain passage
             self.backoff["LinkedIn"] = time.time() + 600
             self._save_backoff("LinkedIn")
-        return res
+
+    @staticmethod
+    def _host_of(site):
+        if site.get("host"):
+            return site["host"].split(".")[0] if "myworkdayjobs" in site["host"] else site["host"]
+        u = site.get("url") or (site.get("urls") or [""])[0]
+        return urllib.parse.urlparse(u).netloc or site.get("type", "") + ":" + site.get("company", "")
 
     def collect(self):
+        """Interroge toutes les sources en parallèle (un seul fil par site web, pour rester discret)
+        et renvoie les lots d'offres dans l'ordre de la configuration.
+
+        La base SQLite n'est lue et écrite que dans le fil principal : les fils ne font que du réseau."""
         c = self.cfg
-        batches = []
+        tasks = []  # (nom, groupe, fonction réseau, fonction de fin ou None)
         if c["linkedin"]["enabled"]:
-            batches.append(("LinkedIn", self._run_source("LinkedIn", self._collect_linkedin)))
+            st = {"offset": int(self.store.get_meta("li_offset", 0) or 0)}
+            tasks.append(("LinkedIn", "linkedin", lambda st=st: sources.collect_linkedin(c, log, st),
+                          lambda st=st: self._linkedin_finish(st)))
         if c["wttj"]["enabled"]:
-            batches.append(("Welcome to the Jungle",
-                            self._run_source("Welcome to the Jungle", lambda: sources.collect_wttj(c, log))))
+            tasks.append(("Welcome to the Jungle", "wttj", lambda: sources.collect_wttj(c, log), None))
         if c["workday"]["enabled"] and c["workday"]["tenants"]:
-            batches.append(("Sites carrières Workday",
-                            self._run_source("Sites carrières Workday", lambda: sources.collect_workday(c, log))))
+            tasks.append(("Sites carrières Workday", "workday-tenants", lambda: sources.collect_workday(c, log), None))
+        if (c.get("mcf") or {}).get("enabled"):
+            tasks.append(("MyCareersFuture", "mcf", lambda: sources.collect_mcf(c, log), None))
         for site in c.get("sites") or []:
             fn = sources.SITE_COLLECTORS.get(site.get("type"))
             if not fn or not site.get("enabled", True):
                 continue
-            name = "Site · %s" % site["company"]
-            batches.append((name, self._run_source(name, lambda site=site, fn=fn: self._run_site(site, fn))))
+            s = self._site_prepare(site)
+            tasks.append(("Site · %s" % site.get("label", site["company"]), self._host_of(site),
+                          lambda s=s, fn=fn: fn(s), lambda site=site, s=s: self._site_finish(site, s)))
+
+        ready = [t for t in tasks if self._source_ready(t[0])]
+        groups = {}
+        for t in ready:
+            groups.setdefault(t[1], []).append(t)
+
+        outcomes = {}
+
+        def run_group(items):
+            for name, _, net, _ in items:
+                try:
+                    outcomes[name] = (net(), None)
+                except Exception as e:  # noqa: BLE001
+                    outcomes[name] = (None, e)
+
+        workers = max(1, int(c.get("parallel_sources", 6)))
+        if workers == 1 or len(groups) <= 1:
+            for items in groups.values():
+                run_group(items)
+        else:
+            with ThreadPoolExecutor(max_workers=workers) as ex:
+                # Les groupes les plus longs d'abord, pour que le passage se termine au plus tôt
+                order = sorted(groups.values(), key=lambda it: (it[0][1] != "linkedin", -len(it)))
+                for f in [ex.submit(run_group, it) for it in order]:
+                    f.result()
+
+        batches = []
+        for name, _, _, finish in tasks:
+            if name not in outcomes:
+                batches.append((name, []))
+                continue
+            if finish:
+                try:
+                    finish()
+                except Exception as e:  # noqa: BLE001
+                    log("%s : %s" % (name, e))
+            res, err = outcomes[name]
+            batches.append((name, self._source_done(name, res, error=err)))
         return batches
 
     def _accept(self, j, r, seed, new_list):
         seed = seed or self.store.in_seed(j["uid"])
+        reg = r.get("region")
+        if not seed and self.region_seed_until.get(reg, 0) > time.time():
+            seed = True
+            self.region_seeded[reg] = self.region_seeded.get(reg, 0) + 1
+            self.store.set_meta("region_seeded:" + reg, int(self.store.get_meta("region_seeded:" + reg, 0) or 0) + 1)
         j["category"], j["summer"] = r["category"], r["summer"]
-        j["dedup_key"] = filters.dedup_key(j.get("company"), j["title"])
+        j["dedup_key"] = filters.dedup_key(j.get("company"), j["title"], r.get("region") or "France")
         dup = self.store.find_duplicate(j["dedup_key"])
         notified = not seed and dup is None
         self.store.add_offer(j, notified=notified, duplicate_of=dup)
@@ -507,20 +736,40 @@ class Tracker:
         rest = [j for j in new_list if not is_priority(j.get("company"), plist)]
         for j in prio:
             _send(SEND, "⭐ %s · %s" % (j.get("company") or "Entreprise prioritaire", j["category"]),
-                  "%s\n%s · %s" % (j["title"], j.get("location") or "Paris", j["source"]),
+                  "%s\n📍 %s · %s" % (j["title"], place_label(j.get("location"), j["title"]), j["source"]),
                   j.get("apply_url") or j["url"], priority=5, tags=["star"])
             time.sleep(1)
         mx = self.cfg["notifications"]["max_individual"]
         if len(rest) <= mx:
             for j in rest:
                 _send(SEND, "%s · %s" % (j.get("company") or "Nouvelle offre", j["category"]),
-                      "%s\n%s · %s" % (j["title"], j.get("location") or "Paris", j["source"]),
+                      "%s\n📍 %s · %s" % (j["title"], place_label(j.get("location"), j["title"]), j["source"]),
                       j.get("apply_url") or j["url"])
                 time.sleep(1)
         else:
-            _send(SEND, "%d nouvelles offres de stage à Paris" % len(rest),
-                  ", ".join(sorted({j.get("company") or "?" for j in rest}))[:200],
-                  dash_link(), button="Voir le tableau")
+            counts = region_counts(rest)
+            if len(counts) > 1:
+                title = "%d nouvelles offres · %s" % (len(rest), ", ".join("%s %d" % kv for kv in counts))
+            else:
+                title = "%d nouvelles offres de stage %s" % (len(rest), REGION_IN.get(counts[0][0], "") if counts
+                                                             else "")
+            body = ", ".join(sorted({"%s (%s)" % (j.get("company") or "?",
+                                                  filters.city_of(j.get("location"), j["title"]) or "?")
+                                     for j in rest}))
+            _send(SEND, title.strip(), body[:300], dash_link(), button="Voir le tableau")
+
+    def announce_regions(self):
+        """Une notification quand de nouvelles zones sont ajoutées à un tracker déjà en service."""
+        if not self.regions_announce:
+            return
+        regs, self.regions_announce = self.regions_announce, []
+        n = sum(int(self.store.get_meta("region_seeded:" + r, 0) or 0) for r in regs)
+        for r in regs:
+            self.store.set_meta("region_announce:" + r, "done")
+        _send(SEND, "Nouvelles zones suivies : %s" % ", ".join(regs),
+              "%d offre%s déjà en ligne ajoutée%s au tableau de bord sans notification. Désormais, chaque "
+              "nouvelle offre de ces zones est notifiée avec sa localisation." % (n, "s" if n > 1 else "", "s" if n > 1 else ""),
+              dash_link(), button="Voir le tableau", priority=3, tags=["earth_africa"])
 
     def check_closed(self):
         """Revérifie quelques offres par passage et marque celles qui ont été retirées."""
@@ -564,8 +813,10 @@ class Tracker:
             counts[o["category"]] = counts.get(o["category"], 0) + 1
         plist = priority_list(self.cfg)
         top = sorted(recent, key=lambda o: (not is_priority(o.get("company"), plist), -o["first_seen"]))[:5]
-        lines = [" · ".join("%s %d" % (k, v) for k, v in sorted(counts.items(), key=lambda x: -x[1]))]
-        lines += ["%s%s · %s" % ("⭐ " if is_priority(o.get("company"), plist) else "", o.get("company"), o["title"])
+        lines = ["📍 " + " · ".join("%s %d" % kv for kv in region_counts(recent))]
+        lines += [" · ".join("%s %d" % (k, v) for k, v in sorted(counts.items(), key=lambda x: -x[1]))]
+        lines += ["%s%s · %s · %s" % ("⭐ " if is_priority(o.get("company"), plist) else "", o.get("company"), o["title"],
+                                      filters.city_of(o.get("location"), o["title"]) or "?")
                   for o in top]
         if len(recent) > 5:
             lines.append("… et %d autres" % (len(recent) - 5))
@@ -573,6 +824,28 @@ class Tracker:
                                                                "s" if len(recent) > 1 else ""),
               "\n".join(lines), dash_link(), button="Voir le tableau", priority=3, tags=["sunrise"])
         return True
+
+
+REGION_IN = {"France": "à Paris", "Suisse": "en Suisse", "Singapour": "à Singapour"}
+
+
+def place_label(location, title=""):
+    """Lieu explicite pour les notifications : "Genève, Suisse", "Paris, France", "Singapour"."""
+    reg = filters.region_of(location, title)
+    if not reg:
+        return location or "Lieu inconnu"
+    city = filters.city_of(location, title)
+    return reg if not city or city == reg else "%s, %s" % (city, reg)
+
+
+def region_counts(offers):
+    """[(zone, nombre)] dans l'ordre France, Suisse, Singapour, pour les zones présentes."""
+    c = {}
+    for o in offers:
+        reg = filters.region_of(o.get("location"), o.get("title") or "") or "Autre"
+        c[reg] = c.get(reg, 0) + 1
+    order = list(filters.REGION_NAMES) + ["Autre"]
+    return [(k, c[k]) for k in order if k in c]
 
 
 def _send(fn, title, message, url=None, button="Postuler", priority=4, tags=None):
@@ -593,15 +866,17 @@ def write_dashboard(store, cfg, next_run=None):
         o["posted_plus"] = "+" in raw
         o["title"] = sources._text(o["title"])  # corrige les titres déjà enregistrés avec &amp;
         o["company"] = sources._text(o.get("company") or "")
-        if too_old(o.get("posted"), cfg) or not filters.is_paris(o.get("location"), o["title"]):
+        region = filters.region_of(o.get("location"), o["title"])
+        if too_old(o.get("posted"), cfg) or region is None:
             continue
+        o["region"], o["city"] = region, filters.city_of(o.get("location"), o["title"])
         cat, _ = filters.categorize(o["title"])  # applique aussi les corrections de filtre aux offres déjà vues
         if cat is None and o["category"] != "Autre (mot-clé perso)":
             continue
         o["category"] = cat or o["category"]
         offers.append(o)
     keep = ("uid", "company", "title", "category", "location", "url", "apply_url", "posted", "posted_plus",
-            "first_seen", "source", "summer", "closed", "closed_at")
+            "first_seen", "source", "summer", "closed", "closed_at", "region", "city")
     rows = []
     for o in offers:
         r = {k: o.get(k) for k in keep}
@@ -612,7 +887,8 @@ def write_dashboard(store, cfg, next_run=None):
             r["others"] = [{"source": x["source"], "url": x.get("apply_url") or x["url"]} for x in others]
         rows.append(r)
     active = {"LinkedIn", "Welcome to the Jungle", "Sites carrières Workday"} | {
-        "Site · %s" % x["company"] for x in cfg.get("sites") or [] if x.get("enabled", True)}
+        "Site · %s" % x.get("label", x["company"]) for x in cfg.get("sites") or [] if x.get("enabled", True)} | (
+        {"MyCareersFuture"} if (cfg.get("mcf") or {}).get("enabled") else set())
     repo = os.environ.get("GITHUB_REPOSITORY", "")
     payload = {
         "generated": time.time(),
@@ -622,7 +898,8 @@ def write_dashboard(store, cfg, next_run=None):
         "sources": [x for x in store.sources() if x["name"] in active],
         "priority": priority_list(cfg),
         "repo": repo if "/" in repo else None,
-        "rejected": [dict(r, title=sources._text(r["title"]), company=sources._text(r.get("company") or ""))
+        "rejected": [dict(r, title=sources._text(r["title"]), company=sources._text(r.get("company") or ""),
+                          region=filters.region_of(r.get("location"), r.get("title") or ""))
                      for r in store.recent_rejected(time.time() - 72 * 3600, 300)],
     }
     dashboard.write(DASH_PATH, payload)
@@ -676,7 +953,7 @@ def run_check(cfg):
 
 
 def main():
-    ap = argparse.ArgumentParser(description="Tracker de stages Paris (IBD / S&T)")
+    ap = argparse.ArgumentParser(description="Tracker de stages Paris, Suisse, Singapour (IBD / S&T / AM / Commodities)")
     ap.add_argument("--check", action="store_true")
     ap.add_argument("--test-notif", action="store_true")
     ap.add_argument("--once", action="store_true")
@@ -708,7 +985,7 @@ def main():
         args.once, args.no_browser = True, True
 
     if args.test_notif:
-        shown = SEND("Rothschild & Co · M&A / IBD", "Stage M&A (test)\nParis · LinkedIn",
+        shown = SEND("Rothschild & Co · M&A / IBD", "Stage M&A (test)\n📍 Paris, France · LinkedIn",
                               "https://www.linkedin.com/jobs/")
         print("Notification système : %s (%s)" % ("affichée" if shown else "non disponible", notify.backend_name()))
         return
@@ -761,6 +1038,7 @@ def main():
                     _send(SEND, "Tracker prêt", "%d offres déjà en ligne sont dans le tableau de bord. "
                           "Tu seras notifié de chaque nouvelle offre." % n, dash_link(), button="Voir le tableau")
             tracker.notify_new(new_list)
+            tracker.announce_regions()
             try:
                 closed = tracker.check_closed()
                 if closed:

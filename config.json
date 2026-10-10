@@ -41,7 +41,7 @@
       "analyst",
       "fund"
     ],
-    "max_search_requests": 50,
+    "max_search_requests": 70,
     "queries": [
       "stage M&A",
       "M&A internship",
@@ -97,7 +97,70 @@
       "stage pétrole trading",
       "stage freight",
       "stage négoce"
-    ]
+    ],
+    "regions": {
+      "France": {
+        "enabled": true,
+        "location": "Paris, Île-de-France, France"
+      },
+      "Suisse": {
+        "enabled": true,
+        "location": "Switzerland",
+        "sweep_all": true,
+        "sweep_all_seconds": 7200,
+        "sweep_all_pages": 4,
+        "queries": [
+          "investment banking intern",
+          "M&A intern",
+          "private equity intern",
+          "venture capital intern",
+          "sales and trading intern",
+          "global markets intern",
+          "summer analyst",
+          "off-cycle internship",
+          "commodities intern",
+          "commodity trading intern",
+          "energy trading intern",
+          "asset management intern",
+          "portfolio management intern",
+          "hedge fund intern",
+          "equity research intern",
+          "corporate finance intern",
+          "stage M&A Genève",
+          "stage trading Genève",
+          "stage finance Genève",
+          "Praktikum Investment Banking",
+          "Praktikum Trading",
+          "Praktikum Asset Management",
+          "Praktikum Rohstoffhandel"
+        ]
+      },
+      "Singapour": {
+        "enabled": true,
+        "location": "Singapore",
+        "sweep_all": true,
+        "sweep_all_seconds": 7200,
+        "sweep_all_pages": 4,
+        "queries": [
+          "investment banking intern",
+          "M&A intern",
+          "private equity intern",
+          "venture capital intern",
+          "sales and trading intern",
+          "global markets intern",
+          "summer analyst",
+          "off-cycle internship",
+          "commodities intern",
+          "commodity trading intern",
+          "energy trading intern",
+          "asset management intern",
+          "portfolio management intern",
+          "hedge fund intern",
+          "equity research intern",
+          "corporate finance intern"
+        ]
+      }
+    }
   },
   "wttj": {
     "enabled": true,
@@ -207,7 +270,11 @@
     "queries": [
       "intern Paris",
       "stage Paris",
-      "off-cycle"
+      "off-cycle",
+      "intern Geneva",
+      "intern Zurich",
+      "intern Singapore",
+      "summer intern Singapore"
     ],
     "tenants": [
       {
@@ -247,10 +314,24 @@
       "site": "LazardProfessionalCareers"
     },
     {
+      "company": "Lazard",
+      "label": "Lazard (étudiants)",
+      "type": "oracle",
+      "host": "icbpjb.fa.ocs.oraclecloud.com",
+      "site": "LazardStudentCareers"
+    },
+    {
       "company": "HSBC",
       "type": "eightfold",
       "host": "portal.careers.hsbc.com",
       "domain": "hsbc.com"
+    },
+    {
+      "company": "HSBC",
+      "label": "HSBC (early careers)",
+      "type": "html",
+      "url": "https://mycareer.hsbc.com/en_GB/external/SearchJobs/?listFilterMode=1&jobRecordsPerPage=50",
+      "link_regex": "/en_GB/external/PipelineDetail/[^/\\\"]+/\\d+"
     },
     {
       "company": "Ardian",
@@ -262,8 +343,20 @@
     {
       "company": "Rothschild & Co",
       "type": "html",
-      "url": "https://www.rothschildandco.com/en/careers/students-and-graduates/opportunities/",
+      "urls": [
+        "https://www.rothschildandco.com/en/careers/students-and-graduates/opportunities/",
+        "https://www.rothschildandco.com/en/careers/students-and-graduates/opportunities/?page=2",
+        "https://www.rothschildandco.com/en/careers/students-and-graduates/opportunities/?taxonomy_1156=739"
+      ],
       "link_regex": "/careers/students-and-graduates/opportunities/[^/?#]+/?$"
+    },
+    {
+      "company": "Rothschild & Co",
+      "label": "Rothschild & Co (Workday)",
+      "type": "workday",
+      "host": "rothschildandco.wd3.myworkdayjobs.com",
+      "tenant": "rothschildandco",
+      "site": "Rothschildandco_Lateral"
     },
     {
       "company": "Crédit Agricole CIB",
@@ -292,7 +385,8 @@
       "urls": [
         "https://jobs.totalenergies.com/fr_FR/careers/SearchJobs/stage",
         "https://jobs.totalenergies.com/en_US/careers/SearchJobs/intern",
-        "https://jobs.totalenergies.com/fr_FR/careers/SearchJobs"
+        "https://jobs.totalenergies.com/fr_FR/careers/SearchJobs",
+        "https://jobs.totalenergies.com/en_US/careers/SearchJobs/Singapore?listFilterMode=1&jobRecordsPerPage=20"
       ],
       "link_regex": "/careers/JobDetail/[^/\\\"]+/\\d+"
     },
@@ -334,10 +428,14 @@
     },
     {
       "company": "Nomura",
-      "type": "workday",
-      "host": "nomura.wd3.myworkdayjobs.com",
-      "tenant": "nomura",
-      "site": "nomura_campus"
+      "type": "html",
+      "urls": [
+        "https://careers.nomura.com/Nomura/search/?q=intern",
+        "https://careers.nomura.com/Nomura/search/?q=internship",
+        "https://careers.nomura.com/Nomura/search/?q=summer",
+        "https://careers.nomura.com/Nomura/search/?q=off-cycle"
+      ],
+      "link_regex": "/Nomura/job/[^\\\"]+/\\d+/"
     },
     {
       "company": "Houlihan Lokey",
@@ -358,8 +456,236 @@
       "type": "html",
       "url": "https://bankcampuscareers.tal.net/vx/lang-en-GB/mobile-0/brand-4/xf-6f0048376f93/candidate/jobboard/vacancy/2/adv/",
       "link_regex": "/candidate/so/pm/\\d+/pl/\\d+/opp/\\d+"
+    },
+    {
+      "company": "Goldman Sachs",
+      "type": "oracle",
+      "host": "hdpc.fa.us2.oraclecloud.com",
+      "site": "LateralHiring"
+    },
+    {
+      "company": "Macquarie",
+      "type": "html",
+      "urls": [
+        "https://recruitment.macquarie.com/en_US/careers/SearchJobs/?listFilterMode=1&jobRecordsPerPage=100&jobOffset=0",
+        "https://recruitment.macquarie.com/en_US/careers/SearchJobs/?listFilterMode=1&jobRecordsPerPage=100&jobOffset=100",
+        "https://recruitment.macquarie.com/en_US/careers/SearchJobs/?listFilterMode=1&jobRecordsPerPage=100&jobOffset=200",
+        "https://recruitment.macquarie.com/en_US/careers/SearchJobs/?listFilterMode=1&jobRecordsPerPage=100&jobOffset=300",
+        "https://recruitment.macquarie.com/en_US/careers/SearchJobs/?listFilterMode=1&jobRecordsPerPage=100&jobOffset=400",
+        "https://recruitment.macquarie.com/en_US/careers/SearchJobs/?listFilterMode=1&jobRecordsPerPage=100&jobOffset=500"
+      ],
+      "link_regex": "/en_US/careers/JobDetail/[^/\\\"]+/\\d+"
+    },
+    {
+      "company": "Trafigura",
+      "type": "workday",
+      "host": "trafigura.wd3.myworkdayjobs.com",
+      "tenant": "trafigura",
+      "site": "TrafiguraCareerSite"
+    },
+    {
+      "company": "Gunvor",
+      "type": "workday",
+      "host": "gunvor.wd3.myworkdayjobs.com",
+      "tenant": "gunvor",
+      "site": "Gunvor_Careers"
+    },
+    {
+      "company": "Glencore",
+      "type": "workday",
+      "host": "glencorecorp.wd3.myworkdayjobs.com",
+      "tenant": "glencorecorp",
+      "site": "External"
+    },
+    {
+      "company": "Shell",
+      "type": "workday",
+      "host": "shell.wd3.myworkdayjobs.com",
+      "tenant": "shell",
+      "site": "ShellCareers"
+    },
+    {
+      "company": "Vitol",
+      "type": "smartrecruiters",
+      "company_id": "Vitol"
+    },
+    {
+      "company": "Louis Dreyfus Company",
+      "type": "smartrecruiters",
+      "company_id": "LouisDreyfusCompany"
+    },
+    {
+      "company": "Cargill",
+      "type": "html",
+      "urls": [
+        "https://careers.cargill.com/en/search-jobs/Geneva",
+        "https://careers.cargill.com/en/location/singapore-jobs/23251/1880251-7535954-1880252/4"
+      ],
+      "link_regex": "/en/job/[^/\\\"]+/[^/\\\"]+/23251/\\d+"
+    },
+    {
+      "company": "COFCO International",
+      "type": "html",
+      "default_location": "Genève, Suisse",
+      "url": "https://careers.cofcointernational.com/search/?q=&locationsearch=Geneva",
+      "link_regex": "/job/[^/\\\"]+/\\d+/"
+    },
+    {
+      "company": "Bunge",
+      "type": "html",
+      "urls": [
+        "https://jobs.bunge.com/search/?q=&locationsearch=Geneva",
+        "https://jobs.bunge.com/search/?q=&locationsearch=Singapore"
+      ],
+      "link_regex": "/job/[^\\\"]+/\\d+/"
+    },
+    {
+      "company": "Axpo",
+      "type": "html",
+      "default_location": "Baden, Switzerland",
+      "urls": [
+        "https://careers.axpo.com/jobs",
+        "https://careers.axpo.com/jobs?query=intern",
+        "https://careers.axpo.com/jobs?query=praktikum"
+      ],
+      "link_regex": "/jobs/\\d+-[a-z0-9-]+"
+    },
+    {
+      "company": "SGX Group",
+      "type": "html",
+      "url": "https://careers.sgx.com/search/?q=intern",
+      "link_regex": "/job/[^\\\"]+/\\d+/"
+    },
+    {
+      "company": "Julius Baer",
+      "type": "workday",
+      "host": "juliusbaer.wd3.myworkdayjobs.com",
+      "tenant": "juliusbaer",
+      "site": "External"
+    },
+    {
+      "company": "UBP",
+      "type": "oracle",
+      "host": "iaadtu.fa.ocs.oraclecloud.eu",
+      "site": "CX_1"
+    },
+    {
+      "company": "Mirabaud",
+      "type": "smartrecruiters",
+      "company_id": "MirabaudCieSA"
+    },
+    {
+      "company": "Citi",
+      "label": "Citi (Suisse et Singapour)",
+      "type": "html",
+      "urls": [
+        "https://jobs.citi.com/location/switzerland-jobs/287/2658434/2",
+        "https://jobs.citi.com/location/singapore-jobs/287/1880251/4"
+      ],
+      "link_regex": "/job/[^/\\\"]+/[^/\\\"]+/287/\\d+"
+    },
+    {
+      "company": "Partners Group",
+      "type": "html",
+      "url": "https://jobs.partnersgroup.com/search/?q=intern",
+      "link_regex": "/job/[^/\\\"]+/\\d+/"
+    },
+    {
+      "company": "Swiss Re",
+      "type": "html",
+      "url": "https://careers.swissre.com/search/?q=intern",
+      "link_regex": "/job/[^/\\\"]+/\\d+/"
+    },
+    {
+      "company": "Vontobel",
+      "type": "html",
+      "default_location": "Zurich, Switzerland",
+      "url": "https://www.vontobel.com/en/about-vontobel/careers/open-positions/",
+      "link_regex": "/careers/open-positions/\\d+-[a-z0-9-]+/?"
+    },
+    {
+      "company": "LGT",
+      "type": "html",
+      "urls": [
+        "https://www.lgt.com/ch-en/career/jobs",
+        "https://www.lgt.com/ch-en/career/jobs/48662!jobSearch?pageNum=1",
+        "https://www.lgt.com/ch-en/career/jobs/48662!jobSearch?pageNum=2",
+        "https://www.lgt.com/ch-en/career/jobs/48662!jobSearch?pageNum=3",
+        "https://www.lgt.com/ch-en/career/jobs/48662!jobSearch?pageNum=4",
+        "https://www.lgt.com/ch-en/career/jobs/48662!jobSearch?pageNum=5"
+      ],
+      "link_regex": "/career/jobs/[a-z0-9-]+-\\d+"
+    },
+    {
+      "company": "DBS",
+      "type": "workday",
+      "host": "dbs.wd3.myworkdayjobs.com",
+      "tenant": "dbs",
+      "site": "DBS_Careers"
+    },
+    {
+      "company": "Temasek",
+      "type": "html",
+      "url": "https://jobs.temasek.com.sg/search/?q=intern",
+      "link_regex": "/job/[^\\\"]+/\\d+/"
+    },
+    {
+      "company": "GIC",
+      "type": "html",
+      "url": "https://careers.gic.com.sg/search/?q=intern",
+      "link_regex": "/job/[^\\\"]+/\\d+/?"
+    },
+    {
+      "company": "Eastspring Investments",
+      "type": "workday",
+      "host": "prudential.wd3.myworkdayjobs.com",
+      "tenant": "prudential",
+      "site": "prudential_eastspring"
+    },
+    {
+      "company": "Schroders",
+      "type": "oracle",
+      "host": "ekbq.fa.em2.oraclecloud.com",
+      "site": "CX_2"
+    },
+    {
+      "company": "Brookfield",
+      "type": "workday",
+      "host": "brookfield.wd5.myworkdayjobs.com",
+      "tenant": "brookfield",
+      "site": "brookfield"
+    },
+    {
+      "company": "Bain Capital",
+      "type": "workday",
+      "host": "baincapital.wd1.myworkdayjobs.com",
+      "tenant": "baincapital",
+      "site": "External_Public"
     }
   ],
+  "mcf": {
+    "enabled": true,
+    "limit": 100,
+    "max_pages": 2,
+    "queries": [
+      "intern",
+      "internship",
+      "summer intern",
+      "investment",
+      "trading",
+      "commodities",
+      "analyst",
+      "private equity",
+      "venture capital",
+      "M&A",
+      "investment banking",
+      "asset management",
+      "portfolio",
+      "sales",
+      "markets",
+      "energy"
+    ]
+  },
   "filters": {
     "max_age_days": 60,
     "extra_include": [],
@@ -382,6 +708,7 @@
     "Société Générale"
   ],
   "closed_checks_per_run": 20,
+  "parallel_sources": 6,
   "cloud": {
     "ntfy_topic": "stages-paris-d15cb32c5a",
     "dashboard_url": ""

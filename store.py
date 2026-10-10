@@ -80,7 +80,7 @@ class Store:
         self.db.commit()
         return n
 
-    def recent_rejected(self, since, limit=300, skip_reasons=("hors Paris", "publiée il y a trop longtemps")):
+    def recent_rejected(self, since, limit=300, skip_reasons=("hors zone", "hors Paris", "publiée il y a trop longtemps")):
         q = ("SELECT uid, reason, ts, title, company, location, source, url FROM rejected WHERE ts >= ? "
              "AND title IS NOT NULL AND reason NOT IN (%s) ORDER BY ts DESC LIMIT ?" % ",".join("?" * len(skip_reasons)))
         return [dict(r) for r in self.db.execute(q, (since,) + tuple(skip_reasons) + (limit,))]

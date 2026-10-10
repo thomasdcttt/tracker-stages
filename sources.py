@@ -205,14 +205,34 @@ def linkedin_detail(job_id):
 
 
 def linkedin_tasks(cfg):
-    """Liste des recherches LinkedIn. Le balayage de tous les stages de Paris passe toujours en premier."""
+    """Liste des recherches LinkedIn, chacune avec son lieu. Les balayages de tous les stages (un par zone) passent
+    toujours en premier ; les recherches par mot-clé de toutes les zones se partagent la rotation."""
     li = cfg["linkedin"]
-    first = [dict(q="", past=li.get("sweep_all_seconds", 7200), jt="I", pages=li.get("sweep_all_pages", 6),
-                  label="tous les stages de Paris")] if li.get("sweep_all", True) else []
-    rest = [dict(q=k, past=li.get("sweep_seconds", 86400), jt="I", pages=li.get("sweep_pages", 2), label=k)
-            for k in li.get("sweeps", [])]
-    rest += [dict(q=k, past=li["past_seconds"], jt=None, pages=li.get("pages_per_query", 1), label=k)
-             for k in li["queries"]]
+    regions = li.get("regions") or {}
+    fr = regions.get("France") or {}
+    first, rest = [], []
+    if fr.get("enabled", True):
+        loc = fr.get("location") or li["location"]
+        if li.get("sweep_all", True):
+            first.append(dict(q="", past=li.get("sweep_all_seconds", 7200), jt="I", pages=li.get("sweep_all_pages", 6),
+                              label="tous les stages de Paris", loc=loc, region="France"))
+        rest += [dict(q=k, past=li.get("sweep_seconds", 86400), jt="I", pages=li.get("sweep_pages", 2), label=k,
+                      loc=loc, region="France") for k in li.get("sweeps", [])]
+        rest += [dict(q=k, past=li["past_seconds"], jt=None, pages=li.get("pages_per_query", 1), label=k, loc=loc,
+                      region="France") for k in li["queries"]]
+    for name, r in regions.items():
+        if name == "France" or not isinstance(r, dict) or not r.get("enabled", True) or not r.get("location"):
+            continue
+        loc = r["location"]
+        if r.get("sweep_all", True):
+            first.append(dict(q="", past=r.get("sweep_all_seconds", 7200), jt="I", pages=r.get("sweep_all_pages", 4),
+                              label="tous les stages · %s" % name, loc=loc, region=name))
+        rest += [dict(q=k, past=r.get("sweep_seconds", li.get("sweep_seconds", 86400)), jt="I",
+                      pages=r.get("sweep_pages", li.get("sweep_pages", 2)), label="%s · %s" % (k, name), loc=loc,
+                      region=name) for k in r.get("sweeps", [])]
+        rest += [dict(q=k, past=r.get("past_seconds", li["past_seconds"]), jt=None,
+                      pages=r.get("pages_per_query", li.get("pages_per_query", 1)), label="%s · %s" % (k, name),
+                      loc=loc, region=name) for k in r.get("queries", [])]
     return first, rest
 
 
@@ -221,12 +241,12 @@ def collect_linkedin(cfg, log, state=None):
     dans un passage sont faites au suivant (rotation), le balayage complet des stages est fait à chaque passage."""
     state = state if state is not None else {}
     li = cfg["linkedin"]
-    budget = int(li.get("max_search_requests", 50))
+    budget = int(li.get("max_search_requests", 70))
     first, rest = linkedin_tasks(cfg)
     n = len(rest)
     offset = int(state.get("offset", 0)) % n if n else 0
     order = first + [rest[(offset + i) % n] for i in range(n)]
-    out, errors, used, done_rest = {}, [], 0, 0
+    out, errors, used, done_rest, fails_in_row = {}, [], 0, 0, 0
     for idx, task in enumerate(order):
         if used >= budget:
             break
@@ -235,7 +255,8 @@ def collect_linkedin(cfg, log, state=None):
             for _ in range(task["pages"]):
                 if used >= budget:
                     break
-                res = linkedin_search(task["q"], li["location"], task["past"], start=start, job_type=task["jt"])
+                res = linkedin_search(task["q"], task.get("loc") or li["location"], task["past"], start=start,
+                                      job_type=task["jt"])
                 used += 1
                 fresh = [j for j in res if j["ext_id"] not in seen_task]
                 for j in res:
@@ -259,6 +280,12 @@ def collect_linkedin(cfg, log, state=None):
             raise
         except SourceError as e:
             errors.append("« %s » : %s" % (task["label"], e))
+            used += 1  # une requête en erreur compte aussi dans le budget
+            fails_in_row += 1
+            if fails_in_row >= 5:  # LinkedIn injoignable : inutile d'insister pendant ce passage
+                break
+        else:
+            fails_in_row = 0
         if idx >= len(first):
             done_rest += 1
         if idx < len(order) - 1 and used < budget:
@@ -563,11 +590,20 @@ def _wd_discover(s):
     raise SourceError("site Workday introuvable (%d variantes testées)" % tried)
 
 
+# Recherches par défaut des sites carrières : Paris, puis Genève, Zurich et Singapour
+SITE_QUERIES = ["intern Paris", "stage Paris", "off-cycle", "intern Geneva", "stage Genève", "intern Zurich",
+                "intern Singapore", "summer intern Singapore"]
+ORACLE_QUERIES = ["intern Paris", "internship Paris", "stage Paris", "off-cycle", "internship Geneva",
+                  "internship Zurich", "internship Singapore", "summer Singapore"]
+EIGHTFOLD_LOCATIONS = ["Paris", "Geneva", "Zurich", "Singapore"]
+EIGHTFOLD_QUERIES = ["intern", "internship", "stage", "off-cycle"]
+
+
 def collect_workday_site(s):
     """Un site Workday isolé. Si l'adresse configurée ne répond pas, la bonne est recherchée et mémorisée."""
     host, tenant, site = s.get("_host") or s["host"], s["tenant"], s.get("_site") or s["site"]
     seen = {}
-    for q in s.get("queries", ["intern Paris", "stage Paris", "off-cycle"]):
+    for q in s.get("queries", SITE_QUERIES):
         status, txt = _wd_search(host, tenant, site, q)
         if status in (404, 422) and not s.get("_discovered"):
             host, site = _wd_discover(s)
@@ -616,7 +652,7 @@ def collect_oracle_site(s):
     host, site_url = s["host"], s["site"]
     site_number = _oracle_site_numbers.get(host) or s.get("site_number") or site_url
     out = {}
-    for q in s.get("queries", ["intern Paris", "internship Paris", "stage Paris", "off-cycle"]):
+    for q in s.get("queries", ORACLE_QUERIES):
         status, txt = _oracle_query(host, site_number, q)
         if status != 200 and host not in _oracle_site_numbers:
             # Le numéro de site interne (CX_xxx) diffère du nom dans l'URL : on le lit dans la page
@@ -654,24 +690,31 @@ def parse_eightfold(data, host, domain):
 
 
 def collect_eightfold_site(s):
-    """Eightfold (HSBC, Morgan Stanley...)."""
+    """Eightfold (HSBC, Morgan Stanley...). Une série de recherches par lieu (Paris, Genève, Zurich, Singapour)."""
     host, domain = s["host"], s["domain"]
     out = {}
-    for q in s.get("queries", ["intern", "internship", "stage", "off-cycle"]):
-        params = {"domain": domain, "start": "0", "num": "50", "location": "Paris", "query": q,
-                  "sort_by": "timestamp"}
-        status, txt = http("https://%s/api/apply/v2/jobs?%s" % (host, urllib.parse.urlencode(params)),
-                           headers={"Accept": "application/json"})
-        if status != 200:
-            raise SourceError("HTTP %d" % status)
-        for j in parse_eightfold(json.loads(txt), host, domain):
-            out[j["id"]] = _job(s["company"], j["id"], j["title"], j["location"], j["url"], j["posted"])
-        _pause(0.5, 1.5)
+    for loc in s.get("locations", EIGHTFOLD_LOCATIONS):
+        for q in s.get("queries", EIGHTFOLD_QUERIES):
+            if q == "stage" and loc not in ("Paris", "Geneva"):
+                continue  # mot français : inutile à Zurich ou Singapour
+            params = {"domain": domain, "start": "0", "num": "50", "location": loc, "query": q,
+                      "sort_by": "timestamp"}
+            status, txt = http("https://%s/api/apply/v2/jobs?%s" % (host, urllib.parse.urlencode(params)),
+                               headers={"Accept": "application/json"})
+            if status != 200:
+                raise SourceError("HTTP %d" % status)
+            for j in parse_eightfold(json.loads(txt), host, domain):
+                out[j["id"]] = _job(s["company"], j["id"], j["title"], j["location"], j["url"], j["posted"])
+            _pause(0.5, 1.5)
     return list(out.values())
 
 
-PARIS_HINT = re.compile(r"(?<![A-Za-z])(Paris|PARIS|La D[ée]fense|Puteaux|Courbevoie|Neuilly|Levallois|"
-                        r"Boulogne|Montrouge|Saint-Denis|Nanterre|[ÎI]le-de-France)(?![A-Za-z])")
+# Lieux reconnus dans les pages d'offres (France / Suisse / Singapour)
+LOCATION_HINT = re.compile(
+    r"(?<![A-Za-zÀ-ÿ])(Paris|La D[ée]fense|Puteaux|Courbevoie|Neuilly|Levallois|Boulogne|Montrouge|Saint-Denis|"
+    r"Nanterre|[ÎI]le-de-France|Gen[eè]ve|Geneva|Genf|Z[uü]rich|Lausanne|Zug|Zoug|Baar|Basel|B[âa]le|Lugano|Bern|"
+    r"Berne|Nyon|Lucerne|Luzern|Switzerland|Suisse|Schweiz|Singapore|Singapour)(?![A-Za-zÀ-ÿ])", re.I)
+PARIS_HINT = LOCATION_HINT  # ancien nom
 
 
 def parse_html_listing(page, base_url, link_regex):
@@ -706,7 +749,9 @@ def parse_html_listing(page, base_url, link_regex):
         if len(title) < 6:  # lien sans texte (image) : titre tiré de l'adresse
             slug = urllib.parse.urlparse(href).path.rstrip("/").split("/")[-1]
             title = re.sub(r"[-_]+", " ", re.sub(r"\.(aspx|html?)$", "", slug)).strip()
-        m = PARIS_HINT.search(block)
+        m = LOCATION_HINT.search(block)
+        if not m:  # lieu souvent présent dans l'adresse de l'offre (/job/geneva/..., /job/Singapore-...)
+            m = LOCATION_HINT.search(re.sub(r"[-_/+]+", " ", urllib.parse.unquote(urllib.parse.urlparse(href).path)))
         jobs.append(dict(href=href, title=title, location=m.group(1) if m else "", block=block[:400]))
     return jobs
 
@@ -739,11 +784,115 @@ def collect_html_site(s):
     return list(out.values())
 
 
+# ---------------------------------------------------------------- SmartRecruiters (API publique des offres)
+SR_COUNTRIES = {"ch": "Switzerland", "sg": "Singapore", "fr": "France"}
+
+
+def parse_smartrecruiters(data, company_id, company_name):
+    jobs = []
+    for p in data.get("content", []) or []:
+        pid = p.get("id")
+        if not pid:
+            continue
+        loc = p.get("location") or {}
+        country = SR_COUNTRIES.get(str(loc.get("country") or "").lower(), str(loc.get("country") or ""))
+        place = ", ".join(x for x in [loc.get("city") or "", country] if x) or loc.get("fullLocation") or ""
+        emp = " ".join(x for x in [(p.get("typeOfEmployment") or {}).get("label") or "",
+                                   (p.get("experienceLevel") or {}).get("label") or ""] if x)
+        j = _job(company_name, pid, p.get("name") or "", place,
+                 "https://jobs.smartrecruiters.com/%s/%s" % (company_id, pid), p.get("releasedDate") or "")
+        j["employment_type"] = emp
+        jobs.append(j)
+    return jobs
+
+
+def collect_smartrecruiters_site(s):
+    cid, out, offset = s["company_id"], {}, 0
+    for _ in range(int(s.get("max_pages", 6))):
+        status, txt = http("https://api.smartrecruiters.com/v1/companies/%s/postings?limit=100&offset=%d"
+                           % (urllib.parse.quote(cid), offset), headers={"Accept": "application/json"})
+        if status != 200:
+            raise SourceError("HTTP %d" % status)
+        data = json.loads(txt)
+        for j in parse_smartrecruiters(data, cid, s["company"]):
+            out[j["ext_id"]] = j
+        offset += 100
+        if offset >= int(data.get("totalFound") or 0):
+            break
+        _pause(0.3, 0.8)
+    return list(out.values())
+
+
+# ---------------------------------------------------------------- MyCareersFuture (portail public de Singapour)
+MCF_INTERN = re.compile(r"(?i)(?<![a-z])(?:interns?|internships?|attachments?|trainees?)(?![a-z])")
+
+
+def parse_mcf(data):
+    items = data.get("results")
+    if items is None:
+        items = data.get("data") or []
+    jobs = []
+    for r in items:
+        if not isinstance(r, dict):
+            continue
+        uid = r.get("uuid") or r.get("id")
+        meta = r.get("metadata") or {}
+        url = meta.get("jobDetailsUrl") or (("https://www.mycareersfuture.gov.sg/job/%s" % uid) if uid else "")
+        if not uid or not url or not r.get("title"):
+            continue
+        comp = (r.get("hiringCompany") or {}).get("name") or (r.get("postedCompany") or {}).get("name") or ""
+        addr = r.get("address") or {}
+        dist = ((addr.get("districts") or [{}])[0] or {}).get("location") or ""
+        place = "Singapore" + (", %s" % dist if dist else "")
+        if addr.get("isOverseas"):
+            place = "Overseas"
+        emp = " ".join(str((e or {}).get("employmentType") or "") for e in (r.get("employmentTypes") or []))
+        j = dict(source="MyCareersFuture", ext_id=str(uid), title=r["title"], company=comp, location=place,
+                 url=url, apply_url=url, posted=norm_posted(meta.get("newPostingDate") or meta.get("originalPostingDate")),
+                 employment_type=emp)
+        jobs.append(j)
+    return jobs
+
+
+def collect_mcf(cfg, log):
+    """Offres de stage (« Internship/Attachment ») du portail MyCareersFuture, par mots-clés."""
+    m = cfg["mcf"]
+    out, got_any, errors = {}, False, []
+    for i, q in enumerate(m["queries"]):
+        for page in range(int(m.get("max_pages", 2))):
+            status, txt = http("https://api.mycareersfuture.gov.sg/v2/jobs?%s" % urllib.parse.urlencode(
+                {"search": q, "limit": m.get("limit", 100), "page": page}), headers={"Accept": "application/json"})
+            if status != 200:
+                errors.append("« %s » : HTTP %d" % (q, status))
+                break
+            data = json.loads(txt)
+            jobs = parse_mcf(data)
+            if jobs:
+                got_any = True
+            elif int(data.get("total") or 0) > 0 and page == 0:
+                raise SourceError("format de réponse inattendu (offres présentes mais illisibles)")
+            for j in jobs:
+                if MCF_INTERN.search(j["employment_type"]) or MCF_INTERN.search(j["title"]):
+                    j["employment_type"] = j["employment_type"] or "Internship"
+                    out[j["ext_id"]] = j
+            if len(jobs) < int(m.get("limit", 100)):
+                break
+            _pause(0.3, 0.8)
+        if i < len(m["queries"]) - 1:
+            _pause(0.3, 0.8)
+    if errors and not got_any:
+        raise SourceError("; ".join(errors[:3]))
+    if errors:
+        log("MyCareersFuture : %d recherche(s) en erreur" % len(errors))
+    return list(out.values())
+
+
 SITE_COLLECTORS = {
     "workday": collect_workday_site,
     "oracle": collect_oracle_site,
     "eightfold": collect_eightfold_site,
     "html": collect_html_site,
+    "smartrecruiters": collect_smartrecruiters_site,
 }
 
 

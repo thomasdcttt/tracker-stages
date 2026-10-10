@@ -1,4 +1,4 @@
-"""Filtrage des offres : stage/off-cycle + Paris + IBD (M&A, PE, VC) ou Sales & Trading.
+"""Filtrage des offres : stage/off-cycle + zone (Paris, Suisse, Singapour) + IBD (M&A, PE, VC), S&T, AM, Commodities.
 
 Tout se joue sur du texte normalisé (minuscules, sans accents, ponctuation -> espaces).
 Les listes sont volontairement explicites pour pouvoir être ajustées dans config.json.
@@ -7,7 +7,7 @@ import re
 import unicodedata
 
 # À incrémenter à chaque changement de règles : les offres déjà écartées sont alors réexaminées.
-FILTER_VERSION = 3
+FILTER_VERSION = 4
 
 
 def normalize(text):
@@ -35,6 +35,8 @@ INTERN_TITLE = _rx([
     r"stages?", r"stagiaires?", r"interns?", r"internships?", r"off ?cycle", r"offcycle",
     r"cesure", r"gap year", r"summer analysts?", r"summer internship", r"spring internship",
     r"winter internship", r"autumn internship", r"fall internship", r"trainee",
+    # Allemand (Suisse alémanique)
+    r"praktikums?", r"praktika", r"praktikant(?:in|innen|en)?",
 ])
 SUMMER_TITLE = _rx([r"summer"])
 # Contrats explicitement exclus
@@ -42,6 +44,8 @@ CONTRACT_EXCLUDE = _rx([
     r"alternance", r"alternant", r"alternante", r"apprenti", r"apprentie", r"apprentissage",
     r"apprenticeship", r"v i e", r"volontariat international", r"cdi", r"cdd",
     r"contrat pro", r"contrat de professionnalisation", r"work ?study", r"phd", r"doctorat",
+    # Allemand : étudiant salarié, apprentissage (Lehre / Lernende)
+    r"werkstudent\w*", r"lehrstelle\w*", r"lernende[nr]?", r"lehrling\w*",
 ])
 # Faux positifs anglais/français de "stage" dans les descriptions (early stage, etc.)
 STAGE_FALSE = re.compile(
@@ -51,7 +55,7 @@ STAGE_FALSE = re.compile(
 )
 INTERN_DESC = re.compile(
     r"(?<![a-z0-9])(?:stagiaires?|internships?|interns?|off ?cycle|cesure|gap year|"
-    r"convention de stage|stage de \d+|stage d une duree|stage a pourvoir|"
+    r"praktikums?|praktikant(?:in|en)?|convention de stage|stage de \d+|stage d une duree|stage a pourvoir|"
     r"duree du stage|offre de stage|stage de fin d etudes|stage (?:de )?(?:\d+|six|quatre|cinq) mois)(?![a-z0-9])"
 )
 
@@ -70,6 +74,27 @@ PARIS_LOC = _rx([
     r"greater paris", r"region de paris", r"paris et peripherie",
     r"75\d{3}", r"77\d{3}", r"78\d{3}", r"91\d{3}", r"92\d{3}", r"93\d{3}", r"94\d{3}", r"95\d{3}",
 ])
+# Suisse : toutes les villes comptent (Genève surtout). Formes françaises, anglaises, allemandes, italiennes.
+SWISS_LOC = _rx([
+    r"switzerland", r"suisse", r"schweiz", r"svizzera", r"swiss",
+    r"geneva", r"geneve", r"genf", r"ginevra", r"zurich", r"zuerich", r"lausanne", r"zug", r"zoug", r"baar",
+    r"basel", r"bale", r"basle", r"lugano", r"bern", r"berne", r"nyon", r"lucerne", r"luzern",
+    r"winterthur", r"winterthour", r"st gallen", r"sankt gallen", r"saint gall", r"fribourg", r"neuchatel",
+    r"vaud", r"pfaffikon", r"chiasso", r"carouge", r"plan les ouates", r"cointrin",
+])
+SG_LOC = _rx([r"singapore", r"singapour", r"singapura"])
+REGIONS = (("France", PARIS_LOC), ("Suisse", SWISS_LOC), ("Singapour", SG_LOC))
+REGION_NAMES = tuple(r for r, _ in REGIONS)
+# Noms de ville affichés (premier motif trouvé dans le segment de lieu)
+CITY_NAMES = [(re.compile(r"(?<![a-z0-9])(?:%s)(?![a-z0-9])" % rx), name) for rx, name in [
+    (r"la defense", "La Défense"), (r"paris", "Paris"), (r"ile de france|idf", "Île-de-France"),
+    (r"geneva|geneve|genf|ginevra", "Genève"), (r"zurich|zuerich", "Zurich"), (r"lausanne", "Lausanne"),
+    (r"zug|zoug", "Zoug"), (r"baar", "Baar"), (r"basel|bale|basle", "Bâle"), (r"lugano", "Lugano"),
+    (r"berne?", "Berne"), (r"nyon", "Nyon"), (r"lucerne|luzern", "Lucerne"),
+    (r"winterthur|winterthour", "Winterthour"), (r"st gallen|sankt gallen|saint gall", "Saint-Gall"),
+    (r"fribourg", "Fribourg"), (r"neuchatel", "Neuchâtel"), (r"pfaffikon", "Pfäffikon"),
+    (r"switzerland|suisse|schweiz|svizzera|swiss", "Suisse"), (r"singapore|singapour|singapura", "Singapour"),
+]]
 
 # ---------- Métiers ----------
 CAT_PATTERNS = {
@@ -164,6 +189,8 @@ ROLE_EXCLUDE = _rx([
     r"account executive", r"account manager", r"sdr", r"bdr", r"customer success",
     r"real estate", r"immobilier",
     r"wealth", r"patrimoine", r"gestion de patrimoine", r"private bank", r"banque privee",
+    r"gestion de fortune", r"gerante?s? de fortune", r"gestionnaires? de fortune", r"vermogensverwaltung",
+    r"privatbank\w*", r"private banking",
     r"retail", r"reseau", r"agence", r"conseiller clientele", r"actuar\w*", r"model validation", r"model risk",
     r"validation des modeles", r"valuation control", r"cloud", r"network\w*", r"systemes?", r"systems", r"sre",
     r"product control", r"tax", r"fiscal\w*", r"strategy consulting",
@@ -181,15 +208,66 @@ ROLE_EXCLUDE_EXCEPTIONS = re.compile(
 )
 
 
-def is_paris(location, title=""):
+def _first_region(norm_text, allowed=REGION_NAMES):
+    """Région dont la première mention apparaît le plus tôt dans le texte normalisé."""
+    best = None
+    for name, rx in REGIONS:
+        if name not in allowed:
+            continue
+        m = rx.search(norm_text)
+        if m and (best is None or m.start() < best[0]):
+            best = (m.start(), name)
+    return best[1] if best else None
+
+
+def region_of(location, title=""):
+    """'France' (Paris et Île-de-France uniquement), 'Suisse', 'Singapour' ou None."""
     loc = normalize(location)
-    if PARIS_LOC.search(loc):
-        return True
-    # Lieu vide ou juste "France" : on accepte seulement si le titre mentionne Paris
+    reg = _first_region(loc)
+    if reg:
+        return reg
+    # Lieu vide, télétravail ou juste "France" : on regarde si le titre nomme une ville d'une zone
     stripped = loc.strip()
-    if stripped in ("", "france", "fr", "remote", "hybrid"):
-        return bool(PARIS_LOC.search(normalize(title)))
-    return False
+    if stripped in ("", "remote", "hybrid", "teletravail", "on site"):
+        return _first_region(normalize(title))
+    if stripped in ("france", "fr"):
+        return _first_region(normalize(title), ("France",))
+    return None
+
+
+def is_paris(location, title=""):
+    return region_of(location, title) == "France"
+
+
+def _city_name(norm_text):
+    if CITY_NAMES[0][0].search(norm_text):  # "Paris La Défense" : La Défense, plus précis
+        return CITY_NAMES[0][1]
+    best = None
+    for rx, name in CITY_NAMES:
+        m = rx.search(norm_text)
+        if m and (best is None or m.start() < best[0]):
+            best = (m.start(), name)
+    return best[1] if best else None
+
+
+def city_of(location, title=""):
+    """Ville lisible pour l'affichage ("Paris", "La Défense", "Genève", "Zurich", "Singapour"...)."""
+    reg = region_of(location, title)
+    if not reg:
+        return ""
+    allowed = (reg,)
+    for seg in re.split(r"[,;/|·•()\[\]\n]+|\s[-–]\s", location or ""):
+        n = normalize(seg)
+        if not _first_region(n, allowed):
+            continue
+        name = _city_name(n)
+        if name:
+            return name
+        clean = re.sub(r"\b\d{4,6}\b", " ", seg)
+        clean = re.sub(r"\s+", " ", clean).strip(" -–")
+        if clean:
+            return clean
+    return _city_name(normalize(title)) or ("Paris" if reg == "France" else reg)
 
 
 def intern_status(title, description="", employment_type=""):
@@ -224,6 +302,7 @@ COMMO_RX = _rx([
     r"chartering", r"bunkers?", r"carbon trading", r"marches? (?:du )?carbone", r"emissions trading",
     r"energy (?:origination|analyst|trader|trading|sales|markets?)", r"trading (?:d )?energie", r"negoce",
     r"power", r"gas", r"gaz", r"electricity", r"electricite", r"emissions?", r"carbon markets?",
+    r"rohstoff\w*", r"energiehandel\w*", r"stromhandel\w*", r"gashandel\w*",
 ])
 COMMO_HARD_EXCLUDE = _rx([
     r"it", r"developer", r"developpeur", r"developpeuse", r"engineer", r"engineering", r"ingenieur",
@@ -283,28 +362,32 @@ def categorize(title):
 
 
 def classify(title, location, description="", employment_type="", extra_include=None, extra_exclude=None):
-    """Décision complète. Renvoie dict(ok, category, intern, reason, summer)."""
+    """Décision complète. Renvoie dict(ok, category, intern, reason, summer, region)."""
     t = normalize(title)
+    region = region_of(location, title)
     if extra_exclude and any(normalize(w).strip() and normalize(w) in t for w in extra_exclude):
-        return dict(ok=False, category=None, intern="no", reason="mot exclu (config)", summer=False)
-    if not is_paris(location, title):
-        return dict(ok=False, category=None, intern="?", reason="hors Paris", summer=False)
+        return dict(ok=False, category=None, intern="no", reason="mot exclu (config)", summer=False, region=region)
+    if region is None:
+        return dict(ok=False, category=None, intern="?", reason="hors zone", summer=False, region=None)
     cat, why = categorize(title)
     if cat is None and extra_include:
         if any(normalize(w).strip() and normalize(w) in t for w in extra_include):
             cat, why = "Autre (mot-clé perso)", None
     if cat is None:
-        return dict(ok=False, category=None, intern="?", reason=why, summer=False)
+        return dict(ok=False, category=None, intern="?", reason=why, summer=False, region=region)
     st = intern_status(title, description, employment_type)
     summer = bool(SUMMER_TITLE.search(t))
     if st == "no":
-        return dict(ok=False, category=cat, intern="no", reason="pas un stage", summer=summer)
+        return dict(ok=False, category=cat, intern="no", reason="pas un stage", summer=summer, region=region)
     return dict(ok=(st == "yes"), category=cat, intern=st,
-                reason=None if st == "yes" else "stage à confirmer", summer=summer)
+                reason=None if st == "yes" else "stage à confirmer", summer=summer, region=region)
 
 
-def dedup_key(company, title):
+def dedup_key(company, title, region="France"):
+    """Clé de doublon. Inchangée pour la France (clés déjà enregistrées), suffixée par la zone sinon."""
     t = normalize(title)
     t = re.sub(r"(?<![a-z0-9])(h f|f h|m f|f m|h f x|x h f|hf|fh|m w d|f h x|2026|2027|2028)(?![a-z0-9])", " ", t)
-    t = re.sub(r"(?<![a-z0-9])(stage|stagiaire|intern|internship|off cycle|offcycle)(?![a-z0-9])", " ", t)
-    return re.sub(r"\s+", " ", normalize(company).strip() + "|" + t.strip())
+    t = re.sub(r"(?<![a-z0-9])(stage|stagiaire|intern|internship|off cycle|offcycle|praktikum|praktikant|"
+               r"praktikantin)(?![a-z0-9])", " ", t)
+    key = re.sub(r"\s+", " ", normalize(company).strip() + "|" + t.strip())
+    return key if (region or "France") == "France" else key + "|" + region
