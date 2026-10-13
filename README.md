@@ -1,8 +1,8 @@
-# Tracker Stages · France, Suisse, Singapour
+# Tracker Stages · France, Suisse, Singapour, Londres
 
 Surveille en continu les offres de stage (off-cycle, césure, et summer en Suisse et à Singapour) en M&A / IBD,
 Private Equity, Venture Capital, Sales & Trading, Asset Management et Commodities, à **Paris et en Île-de-France**,
-en **Suisse** (Genève surtout, aussi Zurich, Lausanne, Zoug, Lugano…) et à **Singapour**. Chaque nouvelle offre
+en **Suisse** (Genève surtout, aussi Zurich, Lausanne, Zoug, Lugano…), à **Singapour** et à **Londres**. Chaque nouvelle offre
 déclenche une **notification** qui indique le lieu (« 📍 Genève, Suisse ») et ouvre la page de candidature.
 
 Version en ligne : GitHub Actions lance `python tracker.py --cloud` toutes les 10 minutes, les notifications
@@ -55,7 +55,7 @@ Une offre est retenue seulement si **les trois conditions** sont réunies :
 
 1. **Stage** : stage, stagiaire, intern, off-cycle, césure, summer… (vérifié dans la description et le
    type de contrat quand l'intitulé ne le dit pas). Exclus : alternance, apprentissage, VIE, CDI, CDD.
-2. **Zone** : Paris et Île-de-France, Suisse ou Singapour (les summer internships sont gardés partout ;
+2. **Zone** : Paris et Île-de-France, Suisse, Singapour ou Londres (les summer internships sont gardés partout ;
    `include_summer: false` ne les retire qu'en France).
 3. **Métier** : M&A / IBD (M&A, ECM, DCM, LevFin, corporate finance…), Private Equity, Venture Capital,
    Sales & Trading / Sales marchés, Asset Management (gestion, trading, investment research), Commodities

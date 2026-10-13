@@ -7,7 +7,7 @@ import re
 import unicodedata
 
 # À incrémenter à chaque changement de règles : les offres déjà écartées sont alors réexaminées.
-FILTER_VERSION = 5
+FILTER_VERSION = 7
 
 
 def normalize(text):
@@ -39,6 +39,10 @@ INTERN_TITLE = _rx([
     r"placement analysts?", r"placement (?:year|programme|program|student)", r"industrial placement",
     # Allemand (Suisse alémanique)
     r"praktikums?", r"praktika", r"praktikant(?:in|innen|en)?",
+    # v7 : Hochschulpraktikum, Jahrespraktikum, Hochschulpraktikant/-in...
+    r"\w+praktik(?:um|ums|a|ant\w*)",
+    # v7 : "Summer Associate" (Goldman Sachs, Capital Group...) = stage d'été
+    r"summer associates?",
 ])
 SUMMER_TITLE = _rx([r"summer"])
 # Contrats explicitement exclus
@@ -48,6 +52,8 @@ CONTRACT_EXCLUDE = _rx([
     r"contrat pro", r"contrat de professionnalisation", r"work ?study", r"phd", r"doctorat",
     # Allemand : étudiant salarié, apprentissage (Lehre / Lernende)
     r"werkstudent\w*", r"lehrstelle\w*", r"lernende[nr]?", r"lehrling\w*",
+    # v7 : "Working Student" (J.P. Morgan, Swiss Life AM) = Werkstudent, pas un stage
+    r"working students?",
 ])
 # Titres de postes confirmés ou de programmes graduate : jamais un stage si le titre ne dit pas "stage"/"intern"
 NOT_INTERN_TITLE = _rx([
@@ -62,7 +68,7 @@ NOT_INTERN_TITLE = _rx([
 ASSISTANT_TITLE = _rx([r"assistante?s?", r"assistant e"])
 # "(with commodities/bank internship or work experience)" : l'expérience demandée n'est pas le contrat
 INTERN_EXPERIENCE = re.compile(
-    r"(?<![a-z0-9])(?:\w+ ){0,3}internships? (?:and |or )?(?:work |relevant )?experiences?(?![a-z0-9])")
+    r"(?<![a-z0-9])(?:\w+ ){0,3}internships? (?:and |or )?(?:work |relevant )?(?:experiences?|exposure|background)(?![a-z0-9])")
 # Faux positifs anglais/français de "stage" dans les descriptions (early stage, etc.)
 STAGE_FALSE = re.compile(
     r"(?<![a-z0-9])(?:early|growth|late|later|seed|any|every|all|this|that|next|first|"
@@ -88,6 +94,23 @@ PARIS_LOC = _rx([
     r"versailles", r"saint germain en laye", r"guyancourt", r"saint quentin en yvelines", r"velizy\w*",
     r"massy", r"palaiseau", r"saclay", r"evry", r"cergy", r"roissy", r"orly", r"rungis",
     r"greater paris", r"region de paris", r"paris et peripherie",
+    r"creteil", r"villejuif", r"vitry sur seine", r"maisons alfort", r"antony", r"le plessis robinson",
+    r"montigny le bretonneux", r"elancourt", r"plaisir", r"poissy", r"argenteuil", r"pontoise", r"osny",
+    r"aulnay sous bois", r"rosny sous bois", r"villepinte", r"tremblay en france", r"romainville", r"champigny sur marne",
+    r"fresnes", r"thiais", r"les ulis", r"orsay", r"bretigny sur orge", r"corbeil essonnes", r"lisses", r"melun",
+    r"serris", r"chessy", r"montevrain", r"collegien", r"torcy", r"rambouillet", r"le chesnay\w*", r"chambourcy",
+    r"les mureaux", r"les clayes sous bois", r"saint maur des fosses", r"ivry", r"le pre saint gervais", r"bagnolet",
+    r"les lilas", r"le kremlin bicetre", r"cachan", r"chatenay malabry", r"sceaux", r"bourg la reine", r"fontenay aux roses",
+    r"chaville", r"ville d avray", r"garches", r"vaucresson", r"marnes la coquette", r"la celle saint cloud",
+    r"le vesinet", r"chatou", r"croissy sur seine", r"houilles", r"sartrouville", r"maisons laffitte", r"bezons",
+    r"nogent", r"joinville le pont", r"saint denis la plaine", r"la plaine saint denis", r"epinay sur seine",
+    r"stains", r"drancy", r"le blanc mesnil", r"bondy", r"noisy le sec", r"villemomble", r"gagny", r"neuilly sur marne",
+    r"chelles", r"lognes", r"noisiel", r"bussy saint georges", r"cergy pontoise", r"eragny", r"herblay\w*",
+    r"franconville", r"ermont", r"eaubonne", r"sannois", r"enghien les bains", r"saint gratien", r"montmorency",
+    r"sarcelles", r"gonesse", r"goussainville", r"roissy en france", r"wissous", r"chilly mazarin", r"longjumeau",
+    r"savigny sur orge", r"juvisy sur orge", r"athis mons", r"viry chatillon", r"draveil", r"ris orangis",
+    r"courcouronnes", r"saint quentin", r"trappes", r"guyancourt", r"voisins le bretonneux", r"buc", r"jouy en josas",
+    r"velizy villacoublay", r"le chesnay rocquencourt",
     r"75\d{3}", r"77\d{3}", r"78\d{3}", r"91\d{3}", r"92\d{3}", r"93\d{3}", r"94\d{3}", r"95\d{3}",
 ])
 # Suisse : toutes les villes comptent (Genève surtout). Formes françaises, anglaises, allemandes, italiennes.
@@ -99,7 +122,16 @@ SWISS_LOC = _rx([
     r"vaud", r"pfaffikon", r"chiasso", r"carouge", r"plan les ouates", r"cointrin",
 ])
 SG_LOC = _rx([r"singapore", r"singapour", r"singapura"])
-REGIONS = (("France", PARIS_LOC), ("Suisse", SWISS_LOC), ("Singapour", SG_LOC))
+# Londres : la ville et ses quartiers d'affaires (pas tout le Royaume-Uni)
+LONDON_LOC = _rx([
+    r"london", r"londres", r"londra", r"greater london", r"city of london", r"canary wharf", r"liverpool street",
+    r"(?:ec|wc)[1-4][a-z]? \d[a-z]{2}", r"e14 \d[a-z]{2}",
+])
+# Quartiers de Londres : seulement avec un contexte britannique (Camden NJ, Westminster CO, Kensington MD existent)
+LONDON_BOROUGH = _rx([r"mayfair", r"westminster", r"holborn", r"farringdon", r"shoreditch", r"southwark",
+                      r"islington", r"camden", r"kensington", r"knightsbridge", r"belgravia", r"marylebone"])
+UK_CTX = _rx([r"england", r"united kingdom", r"uk", r"royaume uni", r"angleterre", r"great britain"])
+REGIONS = (("France", PARIS_LOC), ("Suisse", SWISS_LOC), ("Singapour", SG_LOC), ("Londres", LONDON_LOC))
 REGION_NAMES = tuple(r for r, _ in REGIONS)
 # Noms de ville affichés (premier motif trouvé dans le segment de lieu)
 CITY_NAMES = [(re.compile(r"(?<![a-z0-9])(?:%s)(?![a-z0-9])" % rx), name) for rx, name in [
@@ -110,6 +142,7 @@ CITY_NAMES = [(re.compile(r"(?<![a-z0-9])(?:%s)(?![a-z0-9])" % rx), name) for rx
     (r"winterthur|winterthour", "Winterthour"), (r"st gallen|sankt gallen|saint gall", "Saint-Gall"),
     (r"fribourg", "Fribourg"), (r"neuchatel", "Neuchâtel"), (r"pfaffikon", "Pfäffikon"),
     (r"switzerland|suisse|schweiz|svizzera|swiss", "Suisse"), (r"singapore|singapour|singapura", "Singapour"),
+    (r"canary wharf", "Canary Wharf"), (r"london|londres|londra|greater london|city of london", "Londres"),
 ]]
 
 # ---------- Métiers ----------
@@ -117,7 +150,7 @@ CAT_PATTERNS = {
     "M&A / IBD": [
         r"mna", r"fusions?", r"fusions? (?:et |and )?acquisitions?", r"mergers?", r"investment banking", r"ibd",
         r"banque d affaires", r"banque conseil", r"corporate finance", r"finance d entreprise",
-        r"ecm", r"dcm", r"equity capital markets", r"debt capital markets",
+        r"ecm", r"dcm", r"equity capital markets?", r"debt capital markets?",
         r"leveraged finance", r"levfin", r"acquisition finance", r"financements? d acquisition",
         r"debt advisory", r"conseil en financement", r"restructuring", r"restructuration financiere",
         r"corporate advisory", r"financial advisory", r"coverage", r"origination", r"global advisory",
@@ -132,6 +165,9 @@ CAT_PATTERNS = {
         r"financements? (?:aeronautiques?|aviation|d actifs|maritimes?|shipping)", r"aviation finance", r"asset finance",
         r"private capital advisory", r"primary capital advisory", r"private placements?", r"placements? prives",
         r"fundraising advisory", r"analyste fundraising", r"fundraising analysts?",
+        # v7
+        r"(?<!working )capital solutions", r"secondary advisory", r"aviation advisory",
+        r"fund finance",  # financement de fonds en banque (ING) ; exclu chez un gérant (voir BANKS dans categorize)
     ],
     "Private Equity": [
         r"private equity", r"capital investissement", r"capital developpement", r"capital transmission",
@@ -139,9 +175,11 @@ CAT_PATTERNS = {
         r"secondaries", r"fonds d investissement", r"investment analyst", r"analyste investissements?",
         r"charge d affaires (?:capital|investissement|private|fonds|pe|lbo|mezzanine)\w*", r"investment associate", r"investment team", r"equipe d investissement",
         r"investissement non cote", r"\bpe\b fund", r"gp stakes", r"gp solutions", r"gp led", r"continuation funds?",
+        # v7
+        r"private credit", r"real estate investments?(?! trusts?)", r"real estate private equity",
     ],
     "Private Equity (faible)": [
-        r"infrastructure", r"real assets", r"fund finance", r"primaries", r"co ?invest\w*",
+        r"infrastructure", r"real assets", r"primaries", r"co ?invest\w*",
         r"fund of funds", r"fonds de fonds", r"portfolio operations", r"value creation", r"private markets?",
     ],
     "Venture Capital": [
@@ -157,6 +195,9 @@ CAT_PATTERNS = {
         r"gestionnaire de portefeuilles?", r"investment solutions", r"fund selection", r"selection de fonds",
         r"investment research", r"buy ?side research", r"recherche (?:investissement|gestion)",
         r"high yield", r"multi ?gestion", r"multi ?management", r"fund analysts?",
+        # v7
+        r"investment managers?", r"portfolio construction", r"investment analysis",
+        r"(?:sustainable|responsible) investing",
     ],
     "Sales & Trading": [
         r"sales trading", r"sales and trading", r"sales traders?", r"traders?", r"trading",
@@ -166,7 +207,7 @@ CAT_PATTERNS = {
         r"obligataire", r"primary bonds", r"syndicate", r"syndication", r"primary markets?",
         r"marches? primaires?", r"prime brokerage", r"securities lending", r"repo",
         r"equity research", r"credit research", r"fixed income research", r"macro research",
-        r"recherche (?:actions|credit|macro\w*|economique|marches?|obligataire|taux)",
+        r"recherche (?:actions|credit|macro\w*|economique|marches?|obligataire|taux|obligations?)",
         r"exchange traded", r"etfs?", r"research analysts?",
     ],
 }
@@ -227,6 +268,11 @@ ROLE_EXCLUDE = _rx([
     r"product control", r"tax", r"fiscal\w*", r"strategy consulting",
     r"esg analyst", r"esg", r"trade finance", r"financement du commerce", r"commerce international",
     r"financement export", r"credit documentaire", r"trade services",
+    # v7 : faux positifs constatés (banque de transaction, surveillance/contrôle, IR, ESG, conseil, fund finance chez un GP)
+    r"cash management", r"transaction banking", r"surveillance", r"supervision", r"controls?", r"controles?",
+    r"investor relations", r"relations investisseurs",
+    r"sustainability(?! (?:investment|investing|investments|fund|funds|portfolio|equity|research|analyst))", r"connectivity", r"business management",
+    r"performance improvement", r"fund finance", r"asset manag\w* (?:bureaux|commerces?|residentiel\w*|logistique)",
 ] + ADMIN_ASSISTANT + SUPPORT_EXCLUDE)
 # Exceptions : ne pas exclure ces formulations utiles
 ROLE_EXCLUDE_EXCEPTIONS = re.compile(
@@ -235,8 +281,24 @@ ROLE_EXCLUDE_EXCEPTIONS = re.compile(
     r"structur\w* (?:lbo|d acquisition|acquisition|financ\w*)|(?:leveraged|acquisition) finance structur\w*|"
     r"financements? structures?|structured finance|"
     r"sales (?:and )?trading (?:and )?structur\w*|trading (?:and )?structur\w*|sales (?:and )?structur\w*|"
-    r"structur\w* (?:and )?(?:sales|trading)\w*)(?![a-z0-9])"
+    r"structur\w* (?:and )?(?:sales|trading)\w*|"
+    # v7 : syndication de crédits (IBD) ; immobilier côté investissement chez un investisseur
+    r"loans? structur\w*|real estate investments?(?! trusts?)|private equity real estate|real estate private equity|"
+    r"real estate fund manag\w*)(?![a-z0-9])"
 )
+
+
+def _zone(norm_text):
+    """Zone d'un texte. Londres passe après les autres zones (offre "London; Paris" rangée en France), et n'est
+    retenue que si le texte ne parle pas d'un autre London (Ontario, Connecticut...)."""
+    reg = _first_region(norm_text, ("France", "Suisse", "Singapour"))
+    if reg:
+        return reg
+    if NOT_LONDON.search(norm_text):
+        return None
+    if LONDON_LOC.search(norm_text) or (LONDON_BOROUGH.search(norm_text) and UK_CTX.search(norm_text)):
+        return "Londres"
+    return None
 
 
 def _first_region(norm_text, allowed=REGION_NAMES):
@@ -251,16 +313,21 @@ def _first_region(norm_text, allowed=REGION_NAMES):
     return best[1] if best else None
 
 
+# "New London, CT", "London, Ontario", "East London" (Afrique du Sud), "Camden, NJ"... : pas Londres
+NOT_LONDON = _rx([r"new london", r"east london", r"london ontario", r"ontario", r"canada", r"united states", r"usa",
+                  r"south africa", r"kentucky", r"ohio", r"connecticut", r"new jersey", r"colorado", r"london on"])
+
+
 def region_of(location, title=""):
-    """'France' (Paris et Île-de-France uniquement), 'Suisse', 'Singapour' ou None."""
+    """'France' (Paris et Île-de-France uniquement), 'Suisse', 'Singapour', 'Londres' ou None."""
     loc = normalize(location)
-    reg = _first_region(loc)
+    reg = _zone(loc)
     if reg:
         return reg
     # Lieu vide, télétravail ou juste "France" : on regarde si le titre nomme une ville d'une zone
     stripped = loc.strip()
     if stripped in ("", "remote", "hybrid", "teletravail", "on site"):
-        return _first_region(normalize(title))
+        return _zone(normalize(title))
     if stripped in ("france", "fr"):
         return _first_region(normalize(title), ("France",))
     return None
@@ -361,10 +428,12 @@ COMMO_HOUSES = _rx([
     r"bunge", r"olam", r"ofi", r"wilmar", r"axpo", r"castleton", r"hartree", r"litasco", r"socar", r"sucden",
     r"ameropa", r"alvean", r"engelhart", r"etg", r"bb energy", r"sinochem", r"unipec", r"petrochina", r"freepoint",
     r"edf trading", r"uniper", r"totalenergies trading", r"shell trading", r"bp trading", r"koch supply",
+    r"koch",  # v7 : "Koch" (Koch Supply & Trading, Singapour)
 ])
 COMMO_HOUSE_ROLE = _rx([
     r"analysts?", r"analyste", r"research", r"recherche", r"trading", r"traders?", r"operations?", r"operators?",
     r"freight", r"chartering", r"markets?", r"origination", r"scheduler\w*",
+    r"shipping", r"traffic",  # v7 : opérations physiques (traffic = logistique d'un négociant)
 ])
 HOUSE_EXCLUDE = _rx([r"risk", r"risks", r"control\w*", r"finance", r"treasury", r"tresorerie", r"credit", r"gen ?ai", r"ai",
                      r"digital", r"strategy", r"sustainability", r"esg", r"business analyst"])
@@ -383,6 +452,8 @@ COMMO_HARD_EXCLUDE = _rx([
     r"electricien\w*", r"installat\w*", r"bureau d etudes", r"btp", r"consultant\w*", r"consulting",
     r"superintend\w*", r"forwarding", r"transitaire", r"credit analysts?", r"analyste credit", r"customs",
     r"business develop\w*", r"bizdev", r"conseil en strategie", r"strategy", r"strategie",
+    # v7 : risque et contrôle exclus aussi côté matières premières ; "gestionnaire" = back/middle office
+    r"risk", r"risks", r"risques?", r"controls?", r"controles?", r"gestionnaires?(?! de portefeuilles?)",
 ] + ADMIN_ASSISTANT + SUPPORT_EXCLUDE)
 IBD_STRICT = _rx([r"mna", r"fusions?", r"mergers?", r"investment banking", r"ibd", r"banque d affaires",
                   r"corporate finance", r"private equity", r"capital investissement", r"lbo", r"buy ?out",
@@ -393,7 +464,11 @@ IBD_STRICT = _rx([r"mna", r"fusions?", r"mergers?", r"investment banking", r"ibd
 LEVFIN_RX = _rx([r"leveraged finance", r"levfin", r"acquisition finance", r"financements? d acquisitions?",
                  r"structured finance", r"financements? structures?", r"debt advisory"])
 # Assistant gérant : métier de gestion d'actifs, pas un poste d'assistanat
-AM_ASSISTANT_OK = re.compile(r"(?<![a-z0-9])assistante? (?:de |du |au |aux )?(?:gerants?|gerantes?|portfolio manag\w*|fund manag\w*)(?![a-z0-9])")
+AM_ASSISTANT_OK = re.compile(
+    r"(?<![a-z0-9])(?:assistante? (?:de |du |au |aux )?(?:gerants?|gerantes?|portfolio manag\w*|fund manag\w*)"
+    # v7 : "Assistant de Gestion Fixed Income", "Assistant Gestion de Portefeuilles Obligataires" (Lazard Frères Gestion)
+    r"|assistante? (?:de )?gestion(?= (?:de portefeuilles?|fixed income|obligataire|actions|taux|credit|diversifiee|"
+    r"multi|alternative|quantitative|flexible|convertibles?)(?![a-z0-9])))(?![a-z0-9])")
 
 
 # ---------- Langues exigées (allemand, mandarin) ----------
@@ -472,14 +547,110 @@ def language_required(description):
 
 
 # Exclusions qui ne valent pas pour un groupe sectoriel de banque d'affaires ou de la recherche actions
-SECTOR_WORDS = {"retail", "real estate", "immobilier", "media", "medias", "telecom"}
+SECTOR_WORDS = {"retail", "real estate", "immobilier", "media", "medias", "telecom", "network", "networks"}
 SECTOR_OK = _rx([r"investment banking", r"mna", r"ibd", r"coverage", r"equity research\w*", r"recherche actions",
                  r"corporate finance", r"consumer"])
+
+
+# ---------- v7 : règles fondées sur l'employeur ----------
+# Cabinets d'avocats : un "Stage Corporate M&A" y est un stage juridique
+LAW_FIRMS = _rx([
+    r"avocats?", r"law", r"law firm", r"eversheds\w*", r"dentons", r"linklaters", r"clifford chance", r"allen (?:and )?overy",
+    r"a and o shearman", r"freshfields", r"cms francis lefebvre", r"gide", r"bredin prat", r"darrois\w*",
+    r"white and case", r"latham\w*", r"kirkland\w*", r"skadden", r"hogan lovells", r"baker mckenzie", r"ashurst\w*",
+    r"herbert smith\w*", r"jones day", r"willkie\w*", r"weil gotshal\w*", r"sullivan and cromwell", r"cleary gottlieb\w*",
+    r"davis polk", r"simpson thacher", r"mayer brown", r"dla piper", r"norton rose\w*", r"fieldfisher", r"bird and bird",
+    r"osborne clarke", r"august debouzy", r"de pardieu\w*", r"jeantet", r"fidal", r"racine", r"mcdermott\w*", r"orrick",
+    r"gibson dunn", r"paul hastings", r"goodwin procter", r"proskauer", r"reed smith", r"watson farley\w*",
+    r"stephenson harwood", r"holman fenwick\w*", r"rajah and tann", r"allen and gledhill", r"wongpartnership",
+    r"drew and napier", r"lenz and staehelin", r"homburger", r"bar and karrer", r"baer and karrer", r"schellenberg wittmer",
+    r"niederer kraft\w*", r"walder wyss", r"pestalozzi", r"kellerhals\w*",
+])
+# Conseil : "Value Creation" chez PwC = conseil opérationnel ; cabinets d'économie (litiges) = conseil
+CONSULTING_FIRMS = _rx([r"pwc\w*", r"pricewaterhouse\w*", r"deloitte", r"ey", r"ernst and young", r"kpmg",
+                        r"alvarez and marsal", r"bcg", r"boston consulting\w*", r"mckinsey\w*", r"bain and company",
+                        r"accenture", r"oliver wyman", r"roland berger", r"kearney"])
+CONSULTING_ROLE = _rx([r"value creation", r"transformation", r"strategy", r"strategie"])
+ECON_CONSULTING = _rx([r"analysis group", r"compass lexecon", r"cornerstone research", r"nera economic\w*",
+                       r"charles river associates", r"oxera"])
+# Banques : "fund finance" y est un métier de financement (IBD) ; "Sales"/"Research" seul = marchés
+BANKS = _rx([
+    r"ing", r"ing bank", r"bnp paribas", r"societe generale", r"natixis", r"credit agricole cib", r"hsbc", r"barclays",
+    r"deutsche bank", r"j ?p ?morgan\w*", r"jpmorgan\w*", r"goldman sachs", r"morgan stanley", r"bank of america",
+    r"citi", r"citigroup", r"ubs", r"mufg", r"mizuho", r"smbc", r"nomura", r"dbs", r"ocbc", r"uob",
+    r"standard chartered", r"commerzbank\w*", r"rbc", r"jefferies", r"wells fargo", r"bbva", r"santander",
+    r"unicredit", r"abn amro", r"rabobank", r"macquarie",
+])
+# Gérants (AM, hedge funds, PE/VC) : intitulés génériques ou par secteur qui ne nomment pas le métier
+AM_COMPANY = _rx([r"asset management", r"asset managers", r"investment managers?", r"investment management",
+                  r"capital management", r"gestion"])
+INVEST_HOUSES = {  # employeur -> catégorie
+    "Asset Management": _rx([r"brevan howard", r"blackrock", r"comgest", r"tikehau\w*"]),
+    "Private Equity": _rx([r"partners group", r"clubfunding\w*"]),
+    "Venture Capital": _rx([r"sg growth capital"]),
+}
+# Banques d'affaires : intitulé réduit à une équipe sectorielle ("Industrials Team", "Telecom & Tech")
+IB_HOUSES = _rx([r"evercore", r"lazard", r"rothschild and co", r"houlihan lokey", r"pjt\w*", r"moelis\w*",
+                 r"perella\w*", r"centerview\w*", r"greenhill\w*", r"lincoln international",
+                 r"natixis corporate (?:and )?investment banking"])
+# Boutiques dont un stage "générique" est forcément en banque d'affaires
+IB_GENERIC_HOUSES = _rx([r"evercore", r"pjt\w*", r"moelis\w*", r"perella\w*", r"centerview\w*", r"greenhill\w*",
+                         r"lincoln international"])
+GENERIC_INVEST_HOUSES = _rx([r"brevan howard", r"blackrock", r"comgest", r"partners group"])
+INVEST_ROLE = _rx([r"financial analysts?", r"analystes? financi\w*", r"credit analysts?", r"analystes? credit"])
+VC_SECTORS = r"healthcare|life sciences?|green|bio|economy|hardware|next|gen|consumer|industrials?|deep ?tech|fintech|semiconductors?"
+IB_SECTORS = (r"industrials?|consumer|retail|healthcare|tmt|telecom\w*|media|technology|tech|energy|power|infrastructure|"
+              r"fig|financial|institutions?|real|estate|natural|resources|transport|environment|industry|groups?|"
+              r"generalist|sponsors?|chemicals|business|services|diversified")
+# Mots sans contenu métier : années, contrat, durée, lieux, "programme", "team"...
+TITLE_NOISE = re.compile(
+    r"(?<![a-z0-9])(?:\d+\w*|stages?|stagiaires?|interns?|internships?|off|cycle|offcycle|summer|spring|winter|autumn|"
+    r"fall|seasonal|programs?|programmes?|talent|team|students?|graduates?|offers?|offres?|opportunita|di|de|du|d|des|"
+    r"la|le|les|the|of|a|and|for|en|in|et|to|h|f|m|w|x|n|b|start|date|starting|year|years|months?|mois|jan\w*|feb\w*|"
+    r"mar\w*|apr\w*|may|jun\w*|jul\w*|aug\w*|sep\w*|oct\w*|nov\w*|dec\w*|janvier|fevrier|mars|avril|mai|juin|juillet|"
+    r"aout|septembre|octobre|novembre|decembre|paris|france|geneva|geneve|zurich|switzerland|suisse|singapore|"
+    r"singapour|london|londres|emea|apac|apej|asia|europe|i|ii)(?![a-z0-9])")
+
+
+def _title_core(t):
+    """Intitulé normalisé sans les mots vides (contrat, dates, lieux) ni la liste de lieux BlackRock."""
+    t = re.sub(r" location .*$", " ", t)
+    return re.sub(r"\s+", " ", TITLE_NOISE.sub(" ", t)).strip()
+
+
+def _only(core, words):
+    return bool(core) and re.fullmatch(r"(?:(?:%s) ?)+" % words, core) is not None
+
+
+def _house_category(t, company):
+    """Catégorie déduite de l'employeur quand l'intitulé ne nomme pas le métier (ou None)."""
+    if not company:
+        return None
+    c = normalize(company)
+    core = _title_core(t)
+    if BANKS.search(c) and core in ("sales", "research"):
+        return "Sales & Trading"
+    if IB_HOUSES.search(c) and _only(core, IB_SECTORS):
+        return "M&A / IBD"
+    if IB_GENERIC_HOUSES.search(c) and not core:
+        return "M&A / IBD"
+    for cat, rx in INVEST_HOUSES.items():
+        if rx.search(c) and (INVEST_ROLE.search(t) or _only(core, VC_SECTORS)
+                             or (not core and GENERIC_INVEST_HOUSES.search(c))):
+            return cat
+    if AM_COMPANY.search(c) and INVEST_ROLE.search(t):
+        return "Asset Management"
+    return None
 
 
 def categorize(title, company=""):
     """Renvoie (categorie, raison_exclusion). categorie=None si hors périmètre."""
     t = normalize(title)
+    c = normalize(company)
+    if company and LAW_FIRMS.search(c):
+        return None, "métier exclu (cabinet d avocats)"
+    if company and (ECON_CONSULTING.search(c) or (CONSULTING_FIRMS.search(c) and CONSULTING_ROLE.search(t))):
+        return None, "métier exclu (conseil)"
     if company and COMMO_HOUSES.search(normalize(company)) and COMMO_HOUSE_ROLE.search(t) \
             and not COMMO_HARD_EXCLUDE.search(t) and not HOUSE_EXCLUDE.search(t):
         return "Commodities", None
@@ -500,6 +671,8 @@ def categorize(title, company=""):
     if SECTOR_OK.search(t):  # "Investment Banking, Consumer Retail Group", "Equity Research Immobilier"
         for w in SECTOR_WORDS:
             t_for_excl = re.sub(r"(?<![a-z0-9])%s(?![a-z0-9])" % w, " ", t_for_excl)
+    if company and BANKS.search(c):  # "Fund Finance" en banque = financement de fonds (IBD), pas la finance d'un GP
+        t_for_excl = re.sub(r"(?<![a-z0-9])fund finance(?![a-z0-9])", " ", t_for_excl)
     m = ROLE_EXCLUDE.search(t_for_excl)
     if m:
         return None, "métier exclu (%s)" % m.group(0).strip()
@@ -513,6 +686,9 @@ def categorize(title, company=""):
             return ("Private Equity" if cat == "Private Equity (faible)" else cat), None
     if SALES_RX.search(t) and MARKET_CTX.search(t):
         return "Sales & Trading", None
+    house = _house_category(t, company)
+    if house:
+        return house, None
     return None, "métier hors périmètre"
 
 

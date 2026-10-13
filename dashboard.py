@@ -1,6 +1,6 @@
 """Tableau de bord : une page HTML autonome (aucune dépendance externe) + data.json pour les mises à jour.
 
-La page affiche les offres (onglets France / Suisse / Singapour), l'onglet Candidatures
+La page affiche les offres (onglets France / Suisse / Singapour / Londres), l'onglet Candidatures
 (synchronisé et chiffré dans le dépôt GitHub) et les réglages (synchronisation, entreprises prioritaires).
 """
 import json
@@ -119,6 +119,7 @@ main{position:relative;z-index:1;max-width:1140px;margin:0 auto;padding:22px 20p
 .hero{color:#fff;border:0;background:linear-gradient(130deg,#2f5bff 0%,#7b3cf5 58%,#e2489a 120%);min-height:170px;padding:20px 22px}
 .hero.r-Suisse{background:linear-gradient(130deg,#1e66ff 0%,#5b4bf0 50%,#ff4d6d 125%)}
 .hero.r-Singapour{background:linear-gradient(130deg,#5b3cf5 0%,#c13ad1 60%,#ff8a3d 125%)}
+.hero.r-Londres{background:linear-gradient(130deg,#1f4fd8 0%,#6a3cf0 55%,#d2366f 125%)}
 .hero .k{color:rgba(255,255,255,.82);font-size:13.5px}
 .hero .rg{font-size:21px;font-weight:800;letter-spacing:-.02em;color:#fff;margin-top:2px}
 .hero .v{font-size:52px}
@@ -301,8 +302,9 @@ hr.sep{border:0;border-top:1px solid var(--line);margin:18px 0}
   .pill .st{display:none}
   .pill{padding:8px 11px}
   main{padding:18px 16px 90px}
-  .seg{width:100%}
-  .reg{flex:1;justify-content:center;padding:9px 8px;font-size:14px;gap:6px}
+  .seg{width:100%;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch;border-radius:20px}
+  .seg::-webkit-scrollbar{display:none}
+  .reg{flex:1 1 0;min-width:0;flex-direction:column;justify-content:center;padding:7px 4px;font-size:13.5px;gap:3px;border-radius:15px}
   .reg .n{padding:1px 6px;min-width:20px}
   .stats{gap:10px;margin-bottom:18px}
   .stat{min-height:112px;padding:13px 13px;border-radius:20px;gap:10px}
@@ -367,6 +369,7 @@ hr.sep{border:0;border-top:1px solid var(--line);margin:18px 0}
     <button type="button" class="reg" data-region="France" aria-pressed="true">France <span class="n num">0</span></button>
     <button type="button" class="reg" data-region="Suisse" aria-pressed="false">Suisse <span class="n num">0</span></button>
     <button type="button" class="reg" data-region="Singapour" aria-pressed="false">Singapour <span class="n num">0</span></button>
+    <button type="button" class="reg" data-region="Londres" aria-pressed="false">Londres <span class="n num">0</span></button>
   </div>
   <div class="stats">
     <div class="stat hero" data-go="all" id="hero">
@@ -468,8 +471,8 @@ const STATUSES = [["a_postuler","À postuler","--mute"],["postule","Postulé","-
                   ["entretien","Entretiens","--acc2"],["offre","Offre reçue","--ok"],["refuse","Refusé","--err"],["abandon","Abandonné","--mute2"]];
 const ST = Object.fromEntries(STATUSES.map(s => [s[0], {label:s[1], v:s[2]}]));
 const IN_PROGRESS = new Set(["postule","test","entretien","offre"]);
-const REGIONS = ["France", "Suisse", "Singapour"];
-const REGDEF = {France:"Paris · Île-de-France", Suisse:"Genève · Zurich", Singapour:"Singapour"};
+const REGIONS = ["France", "Suisse", "Singapour", "Londres"];
+const REGDEF = {France:"Paris · Île-de-France", Suisse:"Genève · Zurich", Singapour:"Singapour", Londres:"City · Canary Wharf"};
 const icon = (id, cls) => '<svg class="ico' + (cls ? " " + cls : "") + '"><use href="#i-' + id + '"/></svg>';
 const regOf = o => REGIONS.includes(o && o.region) ? o.region : "France";
 const cityOf = o => o.city || o.location || "";
@@ -537,6 +540,16 @@ Singapour: '<svg viewBox="0 0 240 150" aria-hidden="true"><circle cx="40" cy="36
   '<rect x="0" y="128" width="240" height="22" fill="#fff" opacity=".16"/>' +
   '<g fill="#fff" opacity=".18"><rect x="72" y="131" width="16" height="3" rx="1.5"/><rect x="104" y="136" width="18" height="3" rx="1.5"/><rect x="138" y="132" width="16" height="3" rx="1.5"/></g></svg>'
 };
+ART.Londres = '<svg viewBox="0 0 240 150" aria-hidden="true"><circle cx="200" cy="34" r="17" fill="#fff" opacity=".16"/>' +
+  '<g fill="#fff" opacity=".14"><rect x="6" y="88" width="16" height="40" rx="3"/><rect x="26" y="74" width="14" height="54" rx="3"/>' +
+  '<path d="M178 128V70l10-14 10 14v58z"/><rect x="204" y="92" width="16" height="36" rx="3"/><rect x="224" y="100" width="16" height="28" rx="3"/></g>' +
+  '<g fill="#fff"><path d="M64 128V58h18v70z"/><rect x="61" y="50" width="24" height="9" rx="1.5"/><path d="M63 50l10-20 10 20z"/><rect x="72" y="16" width="2" height="15" rx="1"/></g>' +
+  '<circle cx="73" cy="70" r="6.5" fill="#4a3ad8" opacity=".35"/><path d="M73 66v4l3 2" stroke="#fff" stroke-width="1.4" fill="none" stroke-linecap="round"/>' +
+  '<g fill="#fff" opacity=".9"><path d="M108 128V66h12v62zM150 128V66h12v62z"/><path d="M106 66l8-12 8 12zM148 66l8-12 8 12z"/></g>' +
+  '<path d="M96 100q24-18 39 0t39 0" fill="none" stroke="#fff" stroke-opacity=".7" stroke-width="2.4"/>' +
+  '<rect x="96" y="104" width="78" height="5" rx="2" fill="#fff" opacity=".8"/><rect x="120" y="78" width="30" height="3" rx="1.5" fill="#fff" opacity=".7"/>' +
+  '<rect x="0" y="128" width="240" height="22" fill="#fff" opacity=".16"/>' +
+  '<path d="M12 138h34M70 143h46M140 137h40M196 144h34" stroke="#fff" stroke-opacity=".32" stroke-width="2" stroke-linecap="round"/></svg>';
 const EMPTY_ART = '<svg viewBox="0 0 160 110" aria-hidden="true"><defs><linearGradient id="eg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#3f6bff"/><stop offset=".55" stop-color="#8b5cf6"/><stop offset="1" stop-color="#ec4899"/></linearGradient></defs>' +
   '<rect x="30" y="18" width="88" height="62" rx="14" fill="currentColor" opacity=".06"/><rect x="20" y="28" width="96" height="66" rx="14" fill="var(--card2)" stroke="currentColor" stroke-opacity=".14"/>' +
   '<rect x="32" y="42" width="18" height="18" rx="6" fill="url(#eg)"/><rect x="56" y="44" width="44" height="6" rx="3" fill="currentColor" opacity=".18"/><rect x="56" y="54" width="30" height="5" rx="2.5" fill="currentColor" opacity=".1"/>' +
@@ -698,7 +711,7 @@ function cardHTML(r, i, animate){
 let firstPaint = true, artRegion = null;
 function renderOffers(){
   const all = DATA.offers || [];
-  const regCount = {France:0, Suisse:0, Singapour:0}, open = [];
+  const regCount = {France:0, Suisse:0, Singapour:0, Londres:0}, open = [];
   for (const o of all) if (!o.closed) { const rg = regOf(o); regCount[rg]++; if (rg === REGION) open.push(o); }
   $$("#regions .reg").forEach(b => { b.setAttribute("aria-pressed", String(b.dataset.region === REGION)); b.querySelector(".n").textContent = regCount[b.dataset.region]; });
   const counts = {Toutes: open.length}; for (const o of open) counts[o.category] = (counts[o.category] || 0) + 1;
@@ -732,7 +745,7 @@ function renderOffers(){
   const nFresh = open.filter(isFresh).length;
   $("#heroNew").textContent = nFresh ? "dont " + nFresh + " nouvelle" + (nFresh > 1 ? "s" : "") : "";
   countUp($("#sAll"), open.length); countUp($("#sFresh"), nFresh); countUp($("#sPrio"), open.filter(isPrio).length);
-  $("#cntOffres").textContent = regCount.France + regCount.Suisse + regCount.Singapour;
+  $("#cntOffres").textContent = regCount.France + regCount.Suisse + regCount.Singapour + regCount.Londres;
 }
 function renderSources(){
   const S = (DATA.sources || []).slice().sort((a, b) => (b.ok - a.ok) || a.name.localeCompare(b.name));

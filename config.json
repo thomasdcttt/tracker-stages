@@ -15,8 +15,8 @@
     ],
     "detail_limit_per_cycle": 30,
     "sweep_all": true,
-    "sweep_all_seconds": 7200,
-    "sweep_all_pages": 8,
+    "sweep_all_seconds": 21600,
+    "sweep_all_pages": 10,
     "sweep_seconds": 86400,
     "sweep_pages": 2,
     "sweeps": [
@@ -41,7 +41,7 @@
       "analyst",
       "fund"
     ],
-    "max_search_requests": 70,
+    "max_search_requests": 80,
     "queries": [
       "stage M&A",
       "M&A internship",
@@ -107,8 +107,8 @@
         "enabled": true,
         "location": "Switzerland",
         "sweep_all": true,
-        "sweep_all_seconds": 7200,
-        "sweep_all_pages": 4,
+        "sweep_all_seconds": 21600,
+        "sweep_all_pages": 5,
         "queries": [
           "investment banking intern",
           "M&A intern",
@@ -126,6 +126,17 @@
           "hedge fund intern",
           "equity research intern",
           "corporate finance intern",
+          "investment analyst intern",
+          "buy side intern",
+          "investment management summer internship",
+          "asset management summer internship",
+          "equity analyst intern",
+          "fixed income intern",
+          "private credit intern",
+          "infrastructure investment intern",
+          "investment intern",
+          "private markets intern",
+          "fund management intern",
           "stage M&A Genève",
           "stage trading Genève",
           "stage finance Genève",
@@ -139,8 +150,8 @@
         "enabled": true,
         "location": "Singapore",
         "sweep_all": true,
-        "sweep_all_seconds": 7200,
-        "sweep_all_pages": 4,
+        "sweep_all_seconds": 21600,
+        "sweep_all_pages": 5,
         "queries": [
           "investment banking intern",
           "M&A intern",
@@ -157,7 +168,58 @@
           "portfolio management intern",
           "hedge fund intern",
           "equity research intern",
-          "corporate finance intern"
+          "corporate finance intern",
+          "investment analyst intern",
+          "buy side intern",
+          "investment management summer internship",
+          "asset management summer internship",
+          "equity analyst intern",
+          "fixed income intern",
+          "private credit intern",
+          "infrastructure investment intern",
+          "investment intern",
+          "private markets intern",
+          "fund management intern"
+        ]
+      },
+      "Londres": {
+        "enabled": true,
+        "location": "London, England, United Kingdom",
+        "sweep_all": true,
+        "sweep_all_seconds": 21600,
+        "sweep_all_pages": 6,
+        "backfill_pages": 40,
+        "queries": [
+          "investment banking intern",
+          "investment banking summer analyst",
+          "M&A intern",
+          "off-cycle internship",
+          "summer internship 2027",
+          "private equity intern",
+          "venture capital intern",
+          "sales and trading intern",
+          "global markets summer analyst",
+          "commodities intern",
+          "commodity trading intern",
+          "energy trading intern",
+          "asset management intern",
+          "portfolio management intern",
+          "hedge fund intern",
+          "equity research intern",
+          "corporate finance intern",
+          "leveraged finance intern",
+          "debt capital markets intern",
+          "investment analyst intern",
+          "buy side intern",
+          "investment management summer internship",
+          "asset management summer internship",
+          "equity analyst intern",
+          "fixed income intern",
+          "private credit intern",
+          "infrastructure investment intern",
+          "investment intern",
+          "private markets intern",
+          "fund management intern"
         ]
       }
     }
@@ -274,7 +336,10 @@
       "intern Geneva",
       "intern Zurich",
       "intern Singapore",
-      "summer intern Singapore"
+      "summer intern Singapore",
+      "intern London",
+      "summer intern London",
+      "summer analyst"
     ],
     "tenants": [
       {
@@ -543,11 +608,12 @@
     },
     {
       "company": "Citi",
-      "label": "Citi (Suisse et Singapour)",
+      "label": "Citi (Suisse, Singapour, Londres)",
       "type": "html",
       "urls": [
         "https://jobs.citi.com/location/switzerland-jobs/287/2658434/2",
-        "https://jobs.citi.com/location/singapore-jobs/287/1880251/4"
+        "https://jobs.citi.com/location/singapore-jobs/287/1880251/4",
+        "https://jobs.citi.com/employment/london-england-united-kingdom-student-and-grad-programs-jobs/287/9378912/2635167-6269131-2648110-2643743/4"
       ],
       "link_regex": "/job/[^/\\\"]+/[^/\\\"]+/287/\\d+"
     },
@@ -727,8 +793,189 @@
       "company": "Castleton Commodities",
       "type": "workday",
       "host": "osv-cci.wd1.myworkdayjobs.com",
-      "tenant": "osv-cci",
+      "tenant": "osv_cci",
       "site": "CCICareers"
+    },
+    {
+      "company": "PJT Partners",
+      "label": "PJT Partners (students)",
+      "type": "workday",
+      "host": "pjtpartners.wd1.myworkdayjobs.com",
+      "tenant": "pjtpartners",
+      "site": "Students"
+    },
+    {
+      "company": "PJT Partners",
+      "label": "PJT Partners (careers)",
+      "type": "workday",
+      "host": "pjtpartners.wd1.myworkdayjobs.com",
+      "tenant": "pjtpartners",
+      "site": "Careers"
+    },
+    {
+      "company": "Guggenheim Securities",
+      "type": "workday",
+      "host": "guggenheim.wd1.myworkdayjobs.com",
+      "tenant": "guggenheim",
+      "site": "Guggenheim_Careers_Campus"
+    },
+    {
+      "company": "Wellington Management",
+      "label": "Wellington Management (campus)",
+      "type": "workday",
+      "host": "wellington.wd5.myworkdayjobs.com",
+      "tenant": "wellington",
+      "site": "Campus"
+    },
+    {
+      "company": "Wellington Management",
+      "label": "Wellington Management (external)",
+      "type": "workday",
+      "host": "wellington.wd5.myworkdayjobs.com",
+      "tenant": "wellington",
+      "site": "External"
+    },
+    {
+      "company": "T. Rowe Price",
+      "type": "workday",
+      "host": "troweprice.wd5.myworkdayjobs.com",
+      "tenant": "troweprice",
+      "site": "TRowePriceInternational"
+    },
+    {
+      "company": "Carlyle",
+      "type": "workday",
+      "host": "carlyle.wd1.myworkdayjobs.com",
+      "tenant": "carlyle",
+      "site": "Carlyle"
+    },
+    {
+      "company": "Apollo",
+      "type": "workday",
+      "host": "athene.wd5.myworkdayjobs.com",
+      "tenant": "athene",
+      "site": "Apollo_Careers"
+    },
+    {
+      "company": "ICG",
+      "type": "workday",
+      "host": "icg.wd3.myworkdayjobs.com",
+      "tenant": "icg",
+      "site": "external_careers"
+    },
+    {
+      "company": "LSEG",
+      "label": "LSEG (graduates & interns)",
+      "type": "workday",
+      "host": "lseg.wd3.myworkdayjobs.com",
+      "tenant": "lseg",
+      "site": "Graduate_Careers"
+    },
+    {
+      "company": "RBC Capital Markets",
+      "label": "RBC (early talent)",
+      "type": "workday",
+      "host": "rbc.wd3.myworkdayjobs.com",
+      "tenant": "rbc",
+      "site": "RBCEARLYTALENT1"
+    },
+    {
+      "company": "Wells Fargo",
+      "type": "workday",
+      "host": "wf.wd1.myworkdayjobs.com",
+      "tenant": "wf",
+      "site": "WellsFargoJobs"
+    },
+    {
+      "company": "Invesco",
+      "type": "workday",
+      "host": "invesco.wd1.myworkdayjobs.com",
+      "tenant": "invesco",
+      "site": "IVZ"
+    },
+    {
+      "company": "abrdn",
+      "type": "workday",
+      "host": "abrdn.wd3.myworkdayjobs.com",
+      "tenant": "abrdn",
+      "site": "abrdn"
+    },
+    {
+      "company": "Lincoln International",
+      "type": "greenhouse",
+      "board": "lincolninternational"
+    },
+    {
+      "company": "Man Group",
+      "type": "greenhouse",
+      "board": "mangroup"
+    },
+    {
+      "company": "Schonfeld",
+      "type": "greenhouse",
+      "board": "schonfeld"
+    },
+    {
+      "company": "Marshall Wace",
+      "type": "greenhouse",
+      "board": "mwinternshipprogram"
+    },
+    {
+      "company": "EQT",
+      "type": "greenhouse",
+      "board": "eqtpartners"
+    },
+    {
+      "company": "Warburg Pincus",
+      "type": "greenhouse",
+      "board": "warburgpincusllc"
+    },
+    {
+      "company": "Raine",
+      "type": "lever",
+      "account": "raine"
+    },
+    {
+      "company": "Millennium",
+      "type": "eightfold",
+      "host": "mlp.eightfold.ai",
+      "domain": "mlp.com"
+    },
+    {
+      "company": "Capula Investment Management",
+      "type": "workable",
+      "account": "capula-investment-management-ltd"
+    },
+    {
+      "company": "Marex",
+      "type": "html",
+      "url": "https://marex.breezy.hr/",
+      "link_regex": "/p/[0-9a-f]{10,}-[a-z0-9-]+"
+    },
+    {
+      "company": "StoneX",
+      "type": "html",
+      "url": "https://uk-stonex.icims.com/jobs/search?ss=1&in_iframe=1",
+      "link_regex": "/jobs/\\d+/[^/\"]+/job",
+      "default_location": "London, United Kingdom"
+    },
+    {
+      "company": "RWE Supply & Trading",
+      "type": "html",
+      "urls": [
+        "https://jobs.rwe.com/RWE/search/?q=&locationsearch=London",
+        "https://jobs.rwe.com/RWE/search/?q=placement",
+        "https://jobs.rwe.com/RWE/search/?q=intern&locationsearch=Singapore"
+      ],
+      "link_regex": "/RWE/job/[^\"]+/\\d+/?"
+    },
+    {
+      "company": "Mizuho",
+      "label": "Mizuho (EMEA internships)",
+      "type": "html",
+      "url": "https://www.mizuhogroup.com/emea/careers/internship-programme/internship-roles",
+      "link_regex": "grb\\.uk\\.com/internships/mizuho-[a-z0-9-]+",
+      "default_location": "London, United Kingdom"
     }
   ],
   "mcf": {
@@ -776,7 +1023,7 @@
     "Société Générale"
   ],
   "closed_checks_per_run": 20,
-  "parallel_sources": 6,
+  "parallel_sources": 8,
   "description_checks_per_run": 40,
   "verify_checks_per_run": 30,
   "verify_linkedin_per_run": 8,

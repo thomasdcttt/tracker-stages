@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Tracker de stages off-cycle / césure à Paris, en Suisse et à Singapour : IBD (M&A, PE, VC), S&T, AM, Commodities.
+"""Tracker de stages off-cycle / césure à Paris, en Suisse, à Singapour et à Londres : IBD (M&A, PE, VC), S&T, AM, Commodities.
 
 Usage :
     python tracker.py              surveillance continue (notifications + tableau de bord)
@@ -61,8 +61,8 @@ DEFAULT_CONFIG = {
         "detail_limit_per_cycle": 30,
         # Balayage de TOUS les stages publiés à Paris (filtre LinkedIn « Stage »), à chaque passage
         "sweep_all": True,
-        "sweep_all_seconds": 7200,
-        "sweep_all_pages": 8,
+        "sweep_all_seconds": 21600,
+        "sweep_all_pages": 10,
         # Balayages par thème, sur les stages publiés depuis 24 h
         "sweep_seconds": 86400,
         "sweep_pages": 2,
@@ -72,7 +72,7 @@ DEFAULT_CONFIG = {
             "commodities", "énergie", "energy", "analyste", "analyst", "fund",
         ],
         # Nombre maximal de requêtes de recherche par passage (les recherches restantes passent au suivant)
-        "max_search_requests": 70,
+        "max_search_requests": 80,
         "queries": [
             "stage M&A", "M&A internship", "stage fusions acquisitions", "stage banque d'affaires",
             "investment banking intern", "stage investment banking", "stage corporate finance",
@@ -96,13 +96,17 @@ DEFAULT_CONFIG = {
             "France": {"enabled": True, "location": "Paris, Île-de-France, France"},
             "Suisse": {
                 "enabled": True, "location": "Switzerland",
-                "sweep_all": True, "sweep_all_seconds": 7200, "sweep_all_pages": 4,
+                "sweep_all": True, "sweep_all_seconds": 21600, "sweep_all_pages": 5,
                 "queries": [
                     "investment banking intern", "M&A intern", "private equity intern", "venture capital intern",
                     "sales and trading intern", "global markets intern", "summer analyst", "off-cycle internship",
                     "commodities intern", "commodity trading intern", "energy trading intern",
                     "asset management intern", "portfolio management intern", "hedge fund intern",
                     "equity research intern", "corporate finance intern",
+                    "investment analyst intern", "buy side intern", "investment management summer internship",
+                    "asset management summer internship", "equity analyst intern", "fixed income intern",
+                    "private credit intern", "infrastructure investment intern", "investment intern",
+                    "private markets intern", "fund management intern",
                     "stage M&A Genève", "stage trading Genève", "stage finance Genève",
                     "Praktikum Investment Banking", "Praktikum Trading", "Praktikum Asset Management",
                     "Praktikum Rohstoffhandel",
@@ -110,13 +114,33 @@ DEFAULT_CONFIG = {
             },
             "Singapour": {
                 "enabled": True, "location": "Singapore",
-                "sweep_all": True, "sweep_all_seconds": 7200, "sweep_all_pages": 4,
+                "sweep_all": True, "sweep_all_seconds": 21600, "sweep_all_pages": 5,
                 "queries": [
                     "investment banking intern", "M&A intern", "private equity intern", "venture capital intern",
                     "sales and trading intern", "global markets intern", "summer analyst", "off-cycle internship",
                     "commodities intern", "commodity trading intern", "energy trading intern",
                     "asset management intern", "portfolio management intern", "hedge fund intern",
                     "equity research intern", "corporate finance intern",
+                    "investment analyst intern", "buy side intern", "investment management summer internship",
+                    "asset management summer internship", "equity analyst intern", "fixed income intern",
+                    "private credit intern", "infrastructure investment intern", "investment intern",
+                    "private markets intern", "fund management intern",
+                ],
+            },
+            "Londres": {
+                "enabled": True, "location": "London, England, United Kingdom",
+                "sweep_all": True, "sweep_all_seconds": 21600, "sweep_all_pages": 6, "backfill_pages": 40,
+                "queries": [
+                    "investment banking intern", "investment banking summer analyst", "M&A intern",
+                    "off-cycle internship", "summer internship 2027", "private equity intern", "venture capital intern",
+                    "sales and trading intern", "global markets summer analyst", "commodities intern",
+                    "commodity trading intern", "energy trading intern", "asset management intern",
+                    "portfolio management intern", "hedge fund intern", "equity research intern",
+                    "corporate finance intern", "leveraged finance intern", "debt capital markets intern",
+                    "investment analyst intern", "buy side intern", "investment management summer internship",
+                    "asset management summer internship", "equity analyst intern", "fixed income intern",
+                    "private credit intern", "infrastructure investment intern", "investment intern",
+                    "private markets intern", "fund management intern",
                 ],
             },
         },
@@ -149,7 +173,7 @@ DEFAULT_CONFIG = {
     "workday": {
         "enabled": True,
         "queries": ["intern Paris", "stage Paris", "off-cycle", "intern Geneva", "intern Zurich", "intern Singapore",
-                    "summer intern Singapore"],
+                    "summer intern Singapore", "intern London", "summer intern London", "summer analyst"],
         "tenants": [
             {"company": "Barclays", "host": "barclays.wd3.myworkdayjobs.com", "tenant": "barclays",
              "site": "External_Career_Site_Barclays", "enabled": True},
@@ -193,7 +217,7 @@ DEFAULT_CONFIG = {
         {"company": "SGX Group", "type": "html", "url": "https://careers.sgx.com/search/?q=intern", "link_regex": "/job/[^\\\"]+/\\d+/"},
         {"company": "Julius Baer", "type": "workday", "host": "juliusbaer.wd3.myworkdayjobs.com", "tenant": "juliusbaer", "site": "External"},
         {"company": "UBP", "type": "oracle", "host": "iaadtu.fa.ocs.oraclecloud.eu", "site": "CX_1"},
-        {"company": "Citi", "label": "Citi (Suisse et Singapour)", "type": "html", "urls": ["https://jobs.citi.com/location/switzerland-jobs/287/2658434/2", "https://jobs.citi.com/location/singapore-jobs/287/1880251/4"], "link_regex": "/job/[^/\\\"]+/[^/\\\"]+/287/\\d+"},
+        {"company": "Citi", "label": "Citi (Suisse, Singapour, Londres)", "type": "html", "urls": ["https://jobs.citi.com/location/switzerland-jobs/287/2658434/2", "https://jobs.citi.com/location/singapore-jobs/287/1880251/4", "https://jobs.citi.com/employment/london-england-united-kingdom-student-and-grad-programs-jobs/287/9378912/2635167-6269131-2648110-2643743/4"], "link_regex": "/job/[^/\\\"]+/[^/\\\"]+/287/\\d+"},
         {"company": "Partners Group", "type": "html", "url": "https://jobs.partnersgroup.com/search/?q=intern", "link_regex": "/job/[^/\\\"]+/\\d+/"},
         {"company": "Swiss Re", "type": "html", "url": "https://careers.swissre.com/search/?q=intern", "link_regex": "/job/[^/\\\"]+/\\d+/"},
         {"company": "Vontobel", "type": "html", "default_location": "Zurich, Switzerland", "url": "https://www.vontobel.com/en/about-vontobel/careers/open-positions/", "link_regex": "/careers/open-positions/\\d+-[a-z0-9-]+/?"},
@@ -218,7 +242,34 @@ DEFAULT_CONFIG = {
         {"company": "Capital Group", "type": "workday", "host": "capgroup.wd1.myworkdayjobs.com", "tenant": "capgroup", "site": "capitalgroupcareers"},
         {"company": "MUFG", "type": "workday", "host": "mufgub.wd3.myworkdayjobs.com", "tenant": "mufgub", "site": "MUFG-Careers"},
         {"company": "SMBC", "label": "SMBC (Asie)", "type": "html", "default_location": "Singapore", "urls": ["https://careerasia.smbc.co.jp/SMBC/search/?q=&locationsearch=Singapore&startrow=0", "https://careerasia.smbc.co.jp/SMBC/search/?q=&locationsearch=Singapore&startrow=25", "https://careerasia.smbc.co.jp/SMBC/search/?q=&locationsearch=Singapore&startrow=50", "https://careerasia.smbc.co.jp/SMBC/search/?q=&locationsearch=Singapore&startrow=75", "https://careerasia.smbc.co.jp/SMBC/search/?q=&locationsearch=Singapore&startrow=100", "https://careerasia.smbc.co.jp/SMBC/search/?q=&locationsearch=Singapore&startrow=125"], "link_regex": "/SMBC/job/[^\\\"]+/\\d+/"},
-        {"company": "Castleton Commodities", "type": "workday", "host": "osv-cci.wd1.myworkdayjobs.com", "tenant": "osv-cci", "site": "CCICareers"},
+        {"company": "Castleton Commodities", "type": "workday", "host": "osv-cci.wd1.myworkdayjobs.com", "tenant": "osv_cci", "site": "CCICareers"},
+        {"company": "PJT Partners", "label": "PJT Partners (students)", "type": "workday", "host": "pjtpartners.wd1.myworkdayjobs.com", "tenant": "pjtpartners", "site": "Students"},
+        {"company": "PJT Partners", "label": "PJT Partners (careers)", "type": "workday", "host": "pjtpartners.wd1.myworkdayjobs.com", "tenant": "pjtpartners", "site": "Careers"},
+        {"company": "Guggenheim Securities", "type": "workday", "host": "guggenheim.wd1.myworkdayjobs.com", "tenant": "guggenheim", "site": "Guggenheim_Careers_Campus"},
+        {"company": "Wellington Management", "label": "Wellington Management (campus)", "type": "workday", "host": "wellington.wd5.myworkdayjobs.com", "tenant": "wellington", "site": "Campus"},
+        {"company": "Wellington Management", "label": "Wellington Management (external)", "type": "workday", "host": "wellington.wd5.myworkdayjobs.com", "tenant": "wellington", "site": "External"},
+        {"company": "T. Rowe Price", "type": "workday", "host": "troweprice.wd5.myworkdayjobs.com", "tenant": "troweprice", "site": "TRowePriceInternational"},
+        {"company": "Carlyle", "type": "workday", "host": "carlyle.wd1.myworkdayjobs.com", "tenant": "carlyle", "site": "Carlyle"},
+        {"company": "Apollo", "type": "workday", "host": "athene.wd5.myworkdayjobs.com", "tenant": "athene", "site": "Apollo_Careers"},
+        {"company": "ICG", "type": "workday", "host": "icg.wd3.myworkdayjobs.com", "tenant": "icg", "site": "external_careers"},
+        {"company": "LSEG", "label": "LSEG (graduates & interns)", "type": "workday", "host": "lseg.wd3.myworkdayjobs.com", "tenant": "lseg", "site": "Graduate_Careers"},
+        {"company": "RBC Capital Markets", "label": "RBC (early talent)", "type": "workday", "host": "rbc.wd3.myworkdayjobs.com", "tenant": "rbc", "site": "RBCEARLYTALENT1"},
+        {"company": "Wells Fargo", "type": "workday", "host": "wf.wd1.myworkdayjobs.com", "tenant": "wf", "site": "WellsFargoJobs"},
+        {"company": "Invesco", "type": "workday", "host": "invesco.wd1.myworkdayjobs.com", "tenant": "invesco", "site": "IVZ"},
+        {"company": "abrdn", "type": "workday", "host": "abrdn.wd3.myworkdayjobs.com", "tenant": "abrdn", "site": "abrdn"},
+        {"company": "Lincoln International", "type": "greenhouse", "board": "lincolninternational"},
+        {"company": "Man Group", "type": "greenhouse", "board": "mangroup"},
+        {"company": "Schonfeld", "type": "greenhouse", "board": "schonfeld"},
+        {"company": "Marshall Wace", "type": "greenhouse", "board": "mwinternshipprogram"},
+        {"company": "EQT", "type": "greenhouse", "board": "eqtpartners"},
+        {"company": "Warburg Pincus", "type": "greenhouse", "board": "warburgpincusllc"},
+        {"company": "Raine", "type": "lever", "account": "raine"},
+        {"company": "Millennium", "type": "eightfold", "host": "mlp.eightfold.ai", "domain": "mlp.com"},
+        {"company": "Capula Investment Management", "type": "workable", "account": "capula-investment-management-ltd"},
+        {"company": "Marex", "type": "html", "url": "https://marex.breezy.hr/", "link_regex": "/p/[0-9a-f]{10,}-[a-z0-9-]+"},
+        {"company": "StoneX", "type": "html", "url": "https://uk-stonex.icims.com/jobs/search?ss=1&in_iframe=1", "link_regex": "/jobs/\\d+/[^/\"]+/job", "default_location": "London, United Kingdom"},
+        {"company": "RWE Supply & Trading", "type": "html", "urls": ["https://jobs.rwe.com/RWE/search/?q=&locationsearch=London", "https://jobs.rwe.com/RWE/search/?q=placement", "https://jobs.rwe.com/RWE/search/?q=intern&locationsearch=Singapore"], "link_regex": "/RWE/job/[^\"]+/\\d+/?"},
+        {"company": "Mizuho", "label": "Mizuho (EMEA internships)", "type": "html", "url": "https://www.mizuhogroup.com/emea/careers/internship-programme/internship-roles", "link_regex": "grb\\.uk\\.com/internships/mizuho-[a-z0-9-]+", "default_location": "London, United Kingdom"},
     ],
     # Portail officiel de l'emploi à Singapour (offres « Internship/Attachment »)
     "mcf": {
@@ -244,7 +295,7 @@ DEFAULT_CONFIG = {
     "priority_companies": ["Morgan Stanley", "Goldman Sachs", "J.P. Morgan", "Lazard", "Rothschild",
                            "BNP Paribas", "Bank of America", "Société Générale"],
     "closed_checks_per_run": 20,
-    "parallel_sources": 6,
+    "parallel_sources": 8,
     "description_checks_per_run": 40,  # descriptions lues avant de notifier (offres hors LinkedIn)
     "verify_checks_per_run": 30,       # offres déjà affichées recontrôlées par passage (hors LinkedIn)
     "verify_linkedin_per_run": 8,      # idem pour LinkedIn  # sites interrogés en même temps (un seul fil par site web)
@@ -388,7 +439,41 @@ class Tracker:
             self.store.set_meta("filter_version", cur)
             if n:
                 log("Règles de filtrage mises à jour : %d offres écartées seront réexaminées." % n)
+            merged = self.migrate_site_keys()
+            if merged:
+                log("%d doublon(s) de sites carrières (adresses à jeton de session) supprimé(s)." % merged)
             self.refilter_offers()
+            try:
+                self.store.db.execute("VACUUM")  # la base est versionnée dans GitHub : on la garde compacte
+            except Exception:
+                pass
+
+    def migrate_site_keys(self):
+        """Offres de sites carrières enregistrées avec une adresse à jeton de session (tal.net : /xf-.../) : on passe à
+        l'identifiant stable et on supprime les copies de la même offre créées à chaque passage."""
+        db, removed = self.store.db, 0
+        rows = [dict(r) for r in db.execute("SELECT uid, company, url, duplicate_of, first_seen FROM offers "
+                                            "WHERE source='Site carrière' ORDER BY first_seen")]
+        for o in rows:
+            prefix = "Site carrière:%s:" % o["company"]
+            if not o["uid"].startswith(prefix) or not o["uid"][len(prefix):].startswith("http"):
+                continue
+            new_uid = prefix + sources.stable_job_key(o["uid"][len(prefix):])
+            if new_uid == o["uid"]:
+                continue
+            if db.execute("SELECT 1 FROM offers WHERE uid=?", (new_uid,)).fetchone():
+                # copie plus récente de la même offre : supprimée, ses doublons rattachés à l'offre gardée
+                db.execute("UPDATE offers SET duplicate_of=? WHERE duplicate_of=?", (new_uid, o["uid"]))
+                db.execute("DELETE FROM offers WHERE uid=?", (o["uid"],))
+                removed += 1
+            else:
+                db.execute("UPDATE offers SET uid=?, ext_id=? WHERE uid=?",
+                           (new_uid, new_uid[len("Site carrière:"):], o["uid"]))
+                db.execute("UPDATE offers SET duplicate_of=? WHERE duplicate_of=?", (new_uid, o["uid"]))
+        # une offre rattachée à elle-même après fusion redevient principale
+        db.execute("UPDATE offers SET duplicate_of=NULL WHERE duplicate_of=uid")
+        db.commit()
+        return removed
 
     def refilter_offers(self):
         """Les offres déjà retenues repassent dans le filtre (par l'intitulé) ; celles qui n'y répondent plus sont
@@ -542,7 +627,10 @@ class Tracker:
         c = self.cfg
         tasks = []  # (nom, groupe, fonction réseau, fonction de fin ou None)
         if c["linkedin"]["enabled"]:
-            st = {"offset": int(self.store.get_meta("li_offset", 0) or 0)}
+            st = {"offset": int(self.store.get_meta("li_offset", 0) or 0),
+                  "known_ids": {r[0] for r in self.store.db.execute(
+                      "SELECT ext_id FROM offers WHERE source='LinkedIn' UNION "
+                      "SELECT substr(uid, 10) FROM rejected WHERE uid LIKE 'LinkedIn:%'")}}
             tasks.append(("LinkedIn", "linkedin", lambda st=st: sources.collect_linkedin(c, log, st),
                           lambda st=st: self._linkedin_finish(st)))
         if c["wttj"]["enabled"]:
@@ -868,7 +956,7 @@ class Tracker:
         return True
 
 
-REGION_IN = {"France": "à Paris", "Suisse": "en Suisse", "Singapour": "à Singapour"}
+REGION_IN = {"France": "à Paris", "Suisse": "en Suisse", "Singapour": "à Singapour", "Londres": "à Londres"}
 
 
 def place_label(location, title=""):
@@ -925,8 +1013,15 @@ def write_dashboard(store, cfg, next_run=None):
         r["closed"] = bool(o.get("closed"))
         r["summer"] = bool(o.get("summer"))
         others = store.other_links(o["uid"])
-        if others:
-            r["others"] = [{"source": x["source"], "url": x.get("apply_url") or x["url"]} for x in others]
+        # Autres sources de la même offre : une seule par source, jamais la source déjà affichée, 3 au plus
+        links, seen_src = [], {o["source"]}
+        for x in others:
+            if x["source"] in seen_src:
+                continue
+            seen_src.add(x["source"])
+            links.append({"source": x["source"], "url": x.get("apply_url") or x["url"]})
+        if links:
+            r["others"] = links[:3]
         rows.append(r)
     active = {"LinkedIn", "Welcome to the Jungle", "Sites carrières Workday"} | {
         "Site · %s" % x.get("label", x["company"]) for x in cfg.get("sites") or [] if x.get("enabled", True)} | (

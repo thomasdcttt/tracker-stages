@@ -259,6 +259,7 @@ def collect_linkedin(cfg, log, state=None):
     offset = int(state.get("offset", 0)) % n if n else 0
     order = first + [rest[(offset + i) % n] for i in range(n)]
     out, errors, used, done_rest, fails_in_row = {}, [], 0, 0, 0
+    known = state.get("known_ids") or set()
     for idx, task in enumerate(order):
         if used >= budget:
             break
@@ -282,6 +283,8 @@ def collect_linkedin(cfg, log, state=None):
                 page_len = page_len or len(res)
                 if not res or not fresh or len(res) < page_len:
                     break  # page vide, déjà vue, ou incomplète (= dernière page)
+                if task["q"] == "" and task.get("start", 0) == 0 and known and all(j["ext_id"] in known for j in res):
+                    break  # balayage trié par date : toute la page est déjà connue, la suite aussi
                 start += len(res)  # pagination par nombre de résultats reçus (taille de page variable)
                 _pause(*li.get("pause_between_pages", [1.5, 3]))
         except RateLimited:
@@ -536,14 +539,14 @@ def collect_workday(cfg, log):
         try:
             seen = {}
             for q in cfg["workday"]["queries"]:
-                status, txt = http("https://%s/wday/cxs/%s/%s/jobs" % (host, tenant, site), method="POST",
-                                   data={"appliedFacets": {}, "limit": 20, "offset": 0, "searchText": q},
-                                   headers={"Accept": "application/json"})
+                status, txt = _wd_search(host, tenant, site, q)
                 if status != 200:
                     raise SourceError("HTTP %d" % status)
-                for j in parse_workday(json.loads(txt), host, site):
-                    j["company"] = company
-                    seen[j["ext_id"]] = j
+                first = json.loads(txt)
+                for data in [first] + _wd_more_pages(host, tenant, site, q, first):
+                    for j in parse_workday(data, host, site):
+                        j["company"] = company
+                        seen[j["ext_id"]] = j
                 _pause(0.5, 1.5)
             for j in seen.values():
                 # "3 Locations" : on va chercher la liste exacte
@@ -570,10 +573,30 @@ def _job(company, ext, title, location, url, posted=""):
                 location=location or "", url=url, apply_url=url, posted=norm_posted(posted))
 
 
-def _wd_search(host, tenant, site, q):
+def _wd_search(host, tenant, site, q, offset=0):
     return http("https://%s/wday/cxs/%s/%s/jobs" % (host, tenant, site), method="POST",
-                data={"appliedFacets": {}, "limit": 20, "offset": 0, "searchText": q},
+                data={"appliedFacets": {}, "limit": 20, "offset": offset, "searchText": q},
                 headers={"Accept": "application/json"})
+
+
+WD_MAX_RESULTS = 100  # par recherche : 5 pages de 20 (Workday ne renvoie que 20 offres par page)
+
+
+def _wd_more_pages(host, tenant, site, q, first_data):
+    """Pages suivantes d'une recherche Workday (la 1re page ne contient que 20 offres)."""
+    total = int(first_data.get("total") or 0)
+    offset, pages = 20, []
+    while offset < min(total, WD_MAX_RESULTS):
+        _pause(0.3, 0.8)
+        status, txt = _wd_search(host, tenant, site, q, offset)
+        if status != 200:
+            break
+        data = json.loads(txt)
+        if not data.get("jobPostings"):
+            break
+        pages.append(data)
+        offset += 20
+    return pages
 
 
 def _wd_discover(s):
@@ -588,6 +611,15 @@ def _wd_discover(s):
         cap + "_Careers", cap + "Careers", tenant.upper() + "_Careers", cap + "_External", "Campus",
         "EarlyCareers", "Early_Careers", "Students", "University") if x != s["site"]]
     tried = 0
+    if "-" in tenant and not s.get("_tenant_variant"):
+        alt = dict(s, tenant=tenant.replace("-", "_"), _tenant_variant=True)
+        try:
+            st, _ = _wd_search(s["host"], alt["tenant"], s["site"], "intern")
+            if st == 200:
+                s["tenant"] = alt["tenant"]
+                return s["host"], s["site"]
+        except SourceError:
+            pass
     for host in hosts:
         for site in sites:
             tried += 1
@@ -604,10 +636,12 @@ def _wd_discover(s):
 
 # Recherches par défaut des sites carrières : Paris, puis Genève, Zurich et Singapour
 SITE_QUERIES = ["intern Paris", "stage Paris", "off-cycle", "intern Geneva", "stage Genève", "intern Zurich",
-                "intern Singapore", "summer intern Singapore"]
+                "intern Singapore", "summer intern Singapore", "intern London", "summer intern London",
+                "summer analyst", "placement London"]
 ORACLE_QUERIES = ["intern Paris", "internship Paris", "stage Paris", "off-cycle", "internship Geneva",
-                  "internship Zurich", "internship Singapore", "summer Singapore"]
-EIGHTFOLD_LOCATIONS = ["Paris", "Geneva", "Zurich", "Singapore"]
+                  "internship Zurich", "internship Singapore", "summer Singapore", "internship London",
+                  "summer London", "summer analyst"]
+EIGHTFOLD_LOCATIONS = ["Paris", "Geneva", "Zurich", "Singapore", "London"]
 EIGHTFOLD_QUERIES = ["intern", "internship", "stage", "off-cycle"]
 
 
@@ -619,17 +653,22 @@ def collect_workday_site(s):
         status, txt = _wd_search(host, tenant, site, q)
         if status in (404, 422) and not s.get("_discovered"):
             host, site = _wd_discover(s)
+            tenant = s["tenant"]  # la découverte peut corriger le tenant (osv-cci -> osv_cci)
             s["_host"], s["_site"], s["_discovered"] = host, site, True
             status, txt = _wd_search(host, tenant, site, q)
         if status != 200:
             raise SourceError("HTTP %d" % status)
-        for j in parse_workday(json.loads(txt), host, site):
-            if re.search(r"\d+\s+(locations|sites|lieux)", j["location"], re.I):
-                try:
-                    j["location"] = workday_detail_locations(host, tenant, site, j["wd_path"]) or j["location"]
-                except Exception:
-                    pass
-            seen[j["ext_id"]] = _job(s["company"], j["ext_id"], j["title"], j["location"], j["url"], j["posted"])
+        first = json.loads(txt)
+        for data in [first] + _wd_more_pages(host, tenant, site, q, first):
+            for j in parse_workday(data, host, site):
+                if j["ext_id"] in seen:
+                    continue
+                if re.search(r"\d+\s+(locations|sites|lieux)", j["location"], re.I):
+                    try:
+                        j["location"] = workday_detail_locations(host, tenant, site, j["wd_path"]) or j["location"]
+                    except Exception:
+                        pass
+                seen[j["ext_id"]] = _job(s["company"], j["ext_id"], j["title"], j["location"], j["url"], j["posted"])
         _pause(0.5, 1.5)
     return list(seen.values())
 
@@ -649,8 +688,10 @@ def parse_oracle(data, host, site_url):
     return jobs
 
 
-def _oracle_query(host, site_number, keyword):
+def _oracle_query(host, site_number, keyword, offset=0):
     finder = "findReqs;siteNumber=%s,keyword=\"%s\",limit=25,sortBy=POSTING_DATES_DESC" % (site_number, keyword)
+    if offset:
+        finder += ",offset=%d" % offset
     url = ("https://%s/hcmRestApi/resources/latest/recruitingCEJobRequisitions?onlyData=true"
            "&expand=requisitionList.secondaryLocations&finder=%s" % (host, urllib.parse.quote(finder, safe=";=,")))
     return http(url, headers={"Accept": "application/json"})
@@ -677,8 +718,19 @@ def collect_oracle_site(s):
             status, txt = _oracle_query(host, site_number, q)
         if status != 200:
             raise SourceError("HTTP %d" % status)
-        for j in parse_oracle(json.loads(txt), host, site_url):
-            out[j["id"]] = _job(s["company"], j["id"], j["title"], j["location"], j["url"], j["posted"])
+        data = json.loads(txt)
+        total = max([int((it or {}).get("TotalJobsCount") or 0) for it in data.get("items") or [{}]] or [0])
+        pages, offset = [data], 25
+        while offset < min(total, 100):  # 4 pages de 25 au plus par recherche
+            _pause(0.3, 0.8)
+            st2, txt2 = _oracle_query(host, site_number, q, offset)
+            if st2 != 200:
+                break
+            pages.append(json.loads(txt2))
+            offset += 25
+        for d in pages:
+            for j in parse_oracle(d, host, site_url):
+                out[j["id"]] = _job(s["company"], j["id"], j["title"], j["location"], j["url"], j["posted"])
         _pause(0.5, 1.5)
     return list(out.values())
 
@@ -725,7 +777,8 @@ def collect_eightfold_site(s):
 LOCATION_HINT = re.compile(
     r"(?<![A-Za-zÀ-ÿ])(Paris|La D[ée]fense|Puteaux|Courbevoie|Neuilly|Levallois|Boulogne|Montrouge|Saint-Denis|"
     r"Nanterre|[ÎI]le-de-France|Gen[eè]ve|Geneva|Genf|Z[uü]rich|Lausanne|Zug|Zoug|Baar|Basel|B[âa]le|Lugano|Bern|"
-    r"Berne|Nyon|Lucerne|Luzern|Switzerland|Suisse|Schweiz|Singapore|Singapour)(?![A-Za-zÀ-ÿ])", re.I)
+    r"Berne|Nyon|Lucerne|Luzern|Switzerland|Suisse|Schweiz|Singapore|Singapour|London|Londres|Canary Wharf)"
+    r"(?![A-Za-zÀ-ÿ])", re.I)
 PARIS_HINT = LOCATION_HINT  # ancien nom
 
 
@@ -768,6 +821,21 @@ def parse_html_listing(page, base_url, link_regex):
     return jobs
 
 
+def stable_job_key(href):
+    """Identifiant stable d'une offre : certaines adresses contiennent un jeton de session qui change à chaque visite
+    (tal.net : /xf-3615c5833f75/, ;jsessionid=...), ce qui ferait réapparaître la même offre à chaque passage."""
+    m = re.search(r"\.tal\.net/.*?/opp/(\d+)", href)
+    if m:
+        return "%s:opp:%s" % (urllib.parse.urlparse(href).netloc, m.group(1))
+    h = re.sub(r";jsessionid=[^/?#]*", "", href, flags=re.I)
+    h = re.sub(r"/xf-[0-9a-f]{8,}(?=/)", "", h)
+    u = urllib.parse.urlparse(h)
+    q = [(k, v) for k, v in urllib.parse.parse_qsl(u.query, keep_blank_values=True)
+         if k.lower() not in ("sid", "session", "sessionid", "token", "utm_source", "utm_medium", "utm_campaign", "src",
+                              "source", "ref", "codes")]
+    return urllib.parse.urlunparse(u._replace(query=urllib.parse.urlencode(q), fragment=""))
+
+
 def collect_html_site(s):
     """Page d'offres HTML. Options : link_regex (adresse des offres) ou text_regex (texte du lien),
     default_location (lieu supposé si le bloc n'en indique pas, pour les entreprises basées à Paris)."""
@@ -789,7 +857,8 @@ def collect_html_site(s):
             found = [j for j in parse_html_listing(page, u, r".") if trx.search(j["title"])]
         for j in found:
             loc = j["location"] or s.get("default_location", "")
-            out[j["href"]] = _job(s["company"], j["href"], j["title"], loc, j["href"])
+            key = stable_job_key(j["href"])
+            out[key] = _job(s["company"], key, j["title"], loc, j["href"])
         _pause(0.5, 1.5)
     if not out:
         raise SourceError("aucune offre lisible (%s)" % ("; ".join(errors[:2]) or "page chargée en JavaScript ou modifiée"))
@@ -945,6 +1014,32 @@ def collect_lever_site(s):
     return parse_lever(json.loads(txt), s["company"])
 
 
+# ---------------------------------------------------------------- Workable (widget public des offres)
+def parse_workable(data, company):
+    jobs = []
+    for p in (data or {}).get("jobs", []) or []:
+        url = p.get("url") or p.get("shortlink") or ""
+        key = p.get("shortcode") or p.get("id") or url
+        if not url or not key:
+            continue
+        loc = ", ".join(x for x in [p.get("city") or "", p.get("state") or "", p.get("country") or ""] if x)
+        locs = [", ".join(x for x in [(l or {}).get("city") or "", (l or {}).get("country") or ""] if x)
+                for l in (p.get("locations") or []) if isinstance(l, dict)]
+        loc = "; ".join(dict.fromkeys([loc] + locs if loc else locs))
+        j = _job(company, key, p.get("title") or "", loc, url, p.get("published_on") or p.get("created_at") or "")
+        j["employment_type"] = p.get("employment_type") or ""
+        jobs.append(j)
+    return jobs
+
+
+def collect_workable_site(s):
+    status, txt = http("https://apply.workable.com/api/v1/widget/accounts/%s" % urllib.parse.quote(s["account"]),
+                       headers={"Accept": "application/json"})
+    if status != 200:
+        raise SourceError("HTTP %d" % status)
+    return parse_workable(json.loads(txt), s["company"])
+
+
 SITE_COLLECTORS = {
     "workday": collect_workday_site,
     "oracle": collect_oracle_site,
@@ -953,6 +1048,7 @@ SITE_COLLECTORS = {
     "smartrecruiters": collect_smartrecruiters_site,
     "greenhouse": collect_greenhouse_site,
     "lever": collect_lever_site,
+    "workable": collect_workable_site,
 }
 
 
