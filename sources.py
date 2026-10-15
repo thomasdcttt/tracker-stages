@@ -2,9 +2,11 @@
 
 Uniquement la bibliothèque standard (urllib) pour que l'installation soit triviale.
 """
+import base64
 import gzip
 import html
 import json
+import os
 import random
 import re
 import ssl
@@ -255,15 +257,24 @@ def collect_linkedin(cfg, log, state=None):
     li = cfg["linkedin"]
     budget = int(li.get("max_search_requests", 70))
     first, rest = linkedin_tasks(cfg)
+    # LinkedIn coupe vite (429) depuis les serveurs de GitHub : la 1re page de chaque zone passe avant les suivantes
+    heads = [dict(t, pages=1) for t in first]
+    tails = [dict(t, pages=t["pages"] - 1, cont=t["label"], label=t["label"] + " (suite)") for t in first if t["pages"] > 1]
+    first = heads + tails
     n = len(rest)
     offset = int(state.get("offset", 0)) % n if n else 0
     order = first + [rest[(offset + i) % n] for i in range(n)]
     out, errors, used, done_rest, fails_in_row = {}, [], 0, 0, 0
     known = state.get("known_ids") or set()
+    resume = {}
     for idx, task in enumerate(order):
         if used >= budget:
             break
         start, seen_task, page_len = int(task.get("start", 0)), set(), 0
+        if task.get("cont"):  # suite d'un balayage : reprend là où la 1re page s'est arrêtée (si elle était pleine)
+            if task["cont"] not in resume:
+                continue
+            start, page_len = resume[task["cont"]]
         try:
             for _ in range(task["pages"]):
                 if used >= budget:
@@ -281,11 +292,13 @@ def collect_linkedin(cfg, log, state=None):
                         j["employment_type"] = prev["employment_type"]
                     out[j["ext_id"]] = j
                 page_len = page_len or len(res)
+                resume.pop(task["label"], None)
                 if not res or not fresh or len(res) < page_len:
                     break  # page vide, déjà vue, ou incomplète (= dernière page)
-                if task["q"] == "" and task.get("start", 0) == 0 and known and all(j["ext_id"] in known for j in res):
+                if task["q"] == "" and task["past"] <= 86400 and known and all(j["ext_id"] in known for j in res):
                     break  # balayage trié par date : toute la page est déjà connue, la suite aussi
                 start += len(res)  # pagination par nombre de résultats reçus (taille de page variable)
+                resume[task["label"]] = (start, page_len)
                 _pause(*li.get("pause_between_pages", [1.5, 3]))
         except RateLimited:
             if out:  # on garde ce qui a déjà été trouvé, la pause sera gérée au passage suivant
@@ -635,12 +648,14 @@ def _wd_discover(s):
 
 
 # Recherches par défaut des sites carrières : Paris, puis Genève, Zurich et Singapour
-SITE_QUERIES = ["intern Paris", "stage Paris", "off-cycle", "intern Geneva", "stage Genève", "intern Zurich",
-                "intern Singapore", "summer intern Singapore", "intern London", "summer intern London",
-                "summer analyst", "placement London"]
-ORACLE_QUERIES = ["intern Paris", "internship Paris", "stage Paris", "off-cycle", "internship Geneva",
-                  "internship Zurich", "internship Singapore", "summer Singapore", "internship London",
-                  "summer London", "summer analyst"]
+# Recherches génériques d'abord (le moteur de recherche des sites ne fait pas toujours le lien entre "intern" et
+# "internship", ni entre "London" et "Greater London") ; le lieu et le métier sont ensuite triés par le filtre.
+SITE_QUERIES = ["internship", "intern", "summer internship", "summer analyst", "off-cycle", "off cycle", "placement",
+                "stage", "stagiaire", "praktikum", "internship London", "internship Paris", "internship Singapore",
+                "internship Geneva", "internship Zurich"]
+ORACLE_QUERIES = ["internship", "intern", "summer internship", "summer analyst", "off-cycle", "placement", "stage",
+                  "internship London", "internship Paris", "internship Singapore", "internship Geneva",
+                  "internship Zurich"]
 EIGHTFOLD_LOCATIONS = ["Paris", "Geneva", "Zurich", "Singapore", "London"]
 EIGHTFOLD_QUERIES = ["intern", "internship", "stage", "off-cycle"]
 
@@ -1038,6 +1053,151 @@ def collect_workable_site(s):
     if status != 200:
         raise SourceError("HTTP %d" % status)
     return parse_workable(json.loads(txt), s["company"])
+
+
+# =====================================================================
+# API officielles d'agrégateurs d'offres (The Muse, Adzuna, Reed)
+# =====================================================================
+MUSE_LOCATIONS = ["London, United Kingdom", "Paris, France", "Zurich, Switzerland", "Geneva, Switzerland",
+                  "Singapore, Singapore"]
+
+
+def parse_muse(data):
+    jobs = []
+    for r in (data or {}).get("results", []) or []:
+        url = ((r.get("refs") or {}).get("landing_page") or "")
+        if not r.get("id") or not url:
+            continue
+        locs = "; ".join(l.get("name") or "" for l in (r.get("locations") or []) if isinstance(l, dict))
+        levels = " ".join(l.get("name") or "" for l in (r.get("levels") or []) if isinstance(l, dict))
+        jobs.append(dict(source="The Muse", ext_id=str(r["id"]), title=r.get("name") or "",
+                         company=(r.get("company") or {}).get("name") or "", location=locs, url=url, apply_url=url,
+                         posted=norm_posted(r.get("publication_date") or ""), employment_type=levels))
+    return jobs
+
+
+def collect_muse(cfg, log):
+    """The Muse : API publique, filtre « Internship » par ville (clé facultative MUSE_API_KEY)."""
+    m = cfg.get("muse") or {}
+    key = os.environ.get("MUSE_API_KEY", "")
+    out, errors = {}, []
+    for loc in m.get("locations", MUSE_LOCATIONS):
+        for page in range(int(m.get("max_pages", 15))):
+            params = [("page", page), ("level", "Internship"), ("location", loc)]
+            if key:
+                params.append(("api_key", key))
+            status, txt = http("https://www.themuse.com/api/public/jobs?" + urllib.parse.urlencode(params),
+                               headers={"Accept": "application/json"})
+            if status != 200:
+                errors.append("%s : HTTP %d" % (loc, status))
+                break
+            data = json.loads(txt)
+            for j in parse_muse(data):
+                out[j["ext_id"]] = j
+            if page + 1 >= int(data.get("page_count") or 0):
+                break
+            _pause(0.3, 0.8)
+    if errors and not out:
+        raise SourceError("; ".join(errors[:3]))
+    return list(out.values()), errors
+
+
+ADZUNA_PLAN = [  # (pays, lieu, pages) : 12 appels par passage, un passage toutes les 4 h (quota gratuit 2 500/mois)
+    ("gb", "London", 5), ("fr", "Ile-de-France", 3), ("ch", "", 2), ("sg", "", 2)]
+
+
+def parse_adzuna(data, country):
+    jobs = []
+    for r in (data or {}).get("results", []) or []:
+        if not r.get("id") or not r.get("redirect_url"):
+            continue
+        loc = (r.get("location") or {}).get("display_name") or ""
+        area = [x for x in ((r.get("location") or {}).get("area") or []) if x]
+        # "Central" seul ne dit rien : on ajoute la hiérarchie Adzuna (pays, région, ville) pour situer l'offre
+        extra = ", ".join(reversed([x for x in area if x.lower() not in loc.lower()]))
+        loc = ", ".join(x for x in [loc, extra] if x)
+        jobs.append(dict(source="Adzuna", ext_id="%s:%s" % (country, r["id"]), title=_text(r.get("title") or ""),
+                         company=(r.get("company") or {}).get("display_name") or "", location=loc,
+                         url=r["redirect_url"], apply_url=r["redirect_url"], posted=norm_posted(r.get("created") or ""),
+                         employment_type=" ".join(x for x in [r.get("contract_type") or "", r.get("contract_time") or ""] if x)))
+    return jobs
+
+
+def collect_adzuna(cfg, log):
+    """Adzuna : API officielle (clés ADZUNA_APP_ID / ADZUNA_APP_KEY). Stages récents, triés par date."""
+    app_id, app_key = os.environ.get("ADZUNA_APP_ID", ""), os.environ.get("ADZUNA_APP_KEY", "")
+    if not app_id or not app_key:
+        raise SourceError("clés Adzuna absentes (secrets ADZUNA_APP_ID et ADZUNA_APP_KEY)")
+    a = cfg.get("adzuna") or {}
+    out, errors = {}, []
+    for country, where, pages in a.get("plan", ADZUNA_PLAN):
+        for page in range(1, int(pages) + 1):
+            params = {"app_id": app_id, "app_key": app_key, "results_per_page": 50, "sort_by": "date",
+                      "max_days_old": a.get("max_days_old", 3),
+                      "what_or": a.get("what_or", "intern internship internships stage stagiaire praktikum placement "
+                                                  "off-cycle summer")}
+            if where:
+                params["where"] = where
+            status, txt = http("https://api.adzuna.com/v1/api/jobs/%s/search/%d?%s"
+                               % (country, page, urllib.parse.urlencode(params)), headers={"Accept": "application/json"})
+            if status != 200:
+                errors.append("%s : HTTP %d" % (country, status))
+                break
+            data = json.loads(txt)
+            jobs = parse_adzuna(data, country)
+            for j in jobs:
+                out[j["ext_id"]] = j
+            if len(jobs) < 50:
+                break
+            _pause(2.5, 3.5)  # 25 appels par minute au plus
+    if errors and not out:
+        raise SourceError("; ".join(errors[:3]))
+    return list(out.values()), errors
+
+
+def parse_reed(data):
+    jobs = []
+    for r in (data or {}).get("results", []) or []:
+        jid = r.get("jobId") or r.get("id")
+        url = r.get("jobUrl") or (("https://www.reed.co.uk/jobs/%s" % jid) if jid else "")
+        if not jid or not r.get("jobTitle"):
+            continue
+        posted = r.get("date") or ""
+        m = re.match(r"(\d{2})/(\d{2})/(\d{4})", posted)
+        if m:
+            posted = "%s-%s-%s" % (m.group(3), m.group(2), m.group(1))
+        jobs.append(dict(source="Reed", ext_id=str(jid), title=r.get("jobTitle") or "", company=r.get("employerName") or "",
+                         location=(r.get("locationName") or "") + ", United Kingdom", url=url, apply_url=url,
+                         posted=norm_posted(posted), employment_type=""))
+    return jobs
+
+
+def collect_reed(cfg, log):
+    """Reed.co.uk : API officielle (clé REED_API_KEY), stages à Londres."""
+    key = os.environ.get("REED_API_KEY", "")
+    if not key:
+        raise SourceError("clé Reed absente (secret REED_API_KEY)")
+    r = cfg.get("reed") or {}
+    auth = "Basic " + base64.b64encode((key + ":").encode()).decode()
+    out = {}
+    for kw in r.get("keywords", ["internship", "intern", "summer internship", "placement"]):
+        for page in range(int(r.get("max_pages", 2))):
+            params = {"keywords": kw, "locationName": "London", "distanceFromLocation": 15, "resultsToTake": 100,
+                      "resultsToSkip": page * 100}
+            status, txt = http("https://www.reed.co.uk/api/1.0/search?" + urllib.parse.urlencode(params),
+                               headers={"Accept": "application/json", "Authorization": auth})
+            if status != 200:
+                raise SourceError("HTTP %d" % status)
+            data = json.loads(txt)
+            jobs = parse_reed(data)
+            if not jobs and int(data.get("totalResults") or 0) > 0 and page == 0:
+                raise SourceError("format de réponse inattendu")
+            for j in jobs:
+                out[j["ext_id"]] = j
+            if len(jobs) < 100:
+                break
+            _pause(0.5, 1.0)
+    return list(out.values())
 
 
 SITE_COLLECTORS = {

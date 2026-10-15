@@ -209,6 +209,16 @@
           "corporate finance intern",
           "leveraged finance intern",
           "debt capital markets intern",
+          "bp summer internship trading",
+          "supply trading shipping internship",
+          "energy trading summer internship",
+          "BNP Paribas internship London",
+          "Societe Generale internship London",
+          "Morgan Stanley summer analyst",
+          "UBS internship London",
+          "Standard Chartered internship",
+          "Citadel internship",
+          "Brevan Howard internship",
           "investment analyst intern",
           "buy side intern",
           "investment management summer internship",
@@ -330,16 +340,17 @@
   "workday": {
     "enabled": true,
     "queries": [
-      "intern Paris",
-      "stage Paris",
+      "internship",
+      "intern",
+      "summer internship",
+      "summer analyst",
       "off-cycle",
-      "intern Geneva",
-      "intern Zurich",
-      "intern Singapore",
-      "summer intern Singapore",
-      "intern London",
-      "summer intern London",
-      "summer analyst"
+      "placement",
+      "stage",
+      "internship London",
+      "internship Paris",
+      "internship Singapore",
+      "internship Zurich"
     ],
     "tenants": [
       {
@@ -976,6 +987,328 @@
       "url": "https://www.mizuhogroup.com/emea/careers/internship-programme/internship-roles",
       "link_regex": "grb\\.uk\\.com/internships/mizuho-[a-z0-9-]+",
       "default_location": "London, United Kingdom"
+    },
+    {
+      "company": "Nomura",
+      "type": "html",
+      "urls": [
+        "https://careers.nomura.com/Nomura/search/?q=intern&locationsearch=London",
+        "https://careers.nomura.com/Nomura/search/?q=intern&locationsearch=Singapore",
+        "https://careers.nomura.com/Nomura/search/?q=analyst&locationsearch=London"
+      ],
+      "link_regex": "/Nomura/job/[^\"]+/\\d+/?"
+    },
+    {
+      "company": "Nomura",
+      "type": "html",
+      "url": "https://nomuracampus.tal.net/vx/lang-en-GB/mobile-0/appcentre-ext/brand-4/xf-3348347fc789/candidate/jobboard/vacancy/1/adv/",
+      "link_regex": "/candidate/so/pm/\\d+/pl/\\d+/opp/\\d+",
+      "label": "Nomura (campus)"
+    },
+    {
+      "company": "Moelis",
+      "type": "html",
+      "url": "https://moelis-careers.tal.net/vx/lang-en-GB/mobile-0/appcentre-1/brand-4/candidate/jobboard/vacancy/1/adv/",
+      "link_regex": "/candidate/so/pm/\\d+/pl/\\d+/opp/\\d+"
+    },
+    {
+      "company": "BNP Paribas",
+      "type": "html",
+      "urls": [
+        "https://group.bnpparibas/en/careers/all-job-offers/trainee-internship",
+        "https://group.bnpparibas/en/careers/all-job-offers/trainee-internship?page=2",
+        "https://group.bnpparibas/en/careers/all-job-offers/trainee-internship?page=3",
+        "https://group.bnpparibas/en/careers/all-job-offers/trainee-internship?page=4",
+        "https://group.bnpparibas/en/careers/all-job-offers/trainee-internship?page=5",
+        "https://group.bnpparibas/en/careers/all-job-offers/trainee-internship?page=6",
+        "https://group.bnpparibas/en/careers/all-job-offers/trainee-internship?page=7",
+        "https://group.bnpparibas/en/careers/all-job-offers/trainee-internship?page=8",
+        "https://group.bnpparibas/en/careers/all-job-offers/trainee-internship?page=9",
+        "https://group.bnpparibas/en/careers/all-job-offers/trainee-internship?page=10",
+        "https://group.bnpparibas/en/careers/all-job-offers/trainee-internship?page=11",
+        "https://group.bnpparibas/en/careers/all-job-offers/trainee-internship?page=12",
+        "https://group.bnpparibas/en/careers/all-job-offers/trainee-internship?page=13",
+        "https://group.bnpparibas/en/careers/all-job-offers/trainee-internship?page=14",
+        "https://group.bnpparibas/en/careers/all-job-offers/trainee-internship?page=15",
+        "https://group.bnpparibas/en/careers/all-job-offers/trainee-internship?page=16",
+        "https://group.bnpparibas/en/careers/all-job-offers/trainee-internship?page=17",
+        "https://group.bnpparibas/en/careers/all-job-offers/trainee-internship?page=18",
+        "https://group.bnpparibas/en/careers/all-job-offers/trainee-internship?page=19",
+        "https://group.bnpparibas/en/careers/all-job-offers/trainee-internship?page=20",
+        "https://group.bnpparibas/en/careers/all-job-offers/trainee-internship?page=21",
+        "https://group.bnpparibas/en/careers/all-job-offers/trainee-internship?page=22",
+        "https://group.bnpparibas/en/careers/all-job-offers/trainee-internship?page=23",
+        "https://group.bnpparibas/en/careers/all-job-offers/trainee-internship?page=24",
+        "https://group.bnpparibas/en/careers/all-job-offers/trainee-internship?page=25",
+        "https://group.bnpparibas/en/careers/all-job-offers/trainee-internship?page=26",
+        "https://group.bnpparibas/en/careers/all-job-offers/trainee-internship?page=27",
+        "https://group.bnpparibas/en/careers/all-job-offers/trainee-internship?page=28",
+        "https://group.bnpparibas/en/careers/all-job-offers/trainee-internship?page=29",
+        "https://group.bnpparibas/en/careers/all-job-offers/trainee-internship?page=30",
+        "https://group.bnpparibas/en/careers/all-job-offers/graduate-programme",
+        "https://group.bnpparibas/en/careers/all-job-offers/graduate-programme?page=2",
+        "https://group.bnpparibas/en/careers/all-job-offers/graduate-programme?page=3"
+      ],
+      "link_regex": "/en/careers/job-offer/[a-z0-9-]+"
+    },
+    {
+      "company": "Vitol",
+      "type": "html",
+      "url": "https://www.vitol.com/open-roles/",
+      "link_regex": "jobs\\.smartrecruiters\\.com/Vitol/\\d+-[a-z0-9-]+"
+    },
+    {
+      "company": "Louis Dreyfus Company",
+      "type": "html",
+      "url": "https://www.ldc.com/careers/join-ldc/",
+      "link_regex": "/careers/join-ldc/job-details/(?:\\?id=[0-9a-f-]+|[a-z0-9-]+/)"
+    },
+    {
+      "company": "G-Research",
+      "type": "html",
+      "url": "https://www.gresearch.com/join-us/",
+      "link_regex": "/vacancies/[a-z0-9-]+/?$",
+      "default_location": "London, United Kingdom"
+    },
+    {
+      "company": "M&G",
+      "type": "workday",
+      "host": "mgpru.wd3.myworkdayjobs.com",
+      "tenant": "mgpru",
+      "site": "mandgprudential"
+    },
+    {
+      "company": "Ares",
+      "type": "workday",
+      "host": "aresmgmt.wd1.myworkdayjobs.com",
+      "tenant": "aresmgmt",
+      "site": "External"
+    },
+    {
+      "company": "Neuberger Berman",
+      "type": "workday",
+      "host": "nb.wd1.myworkdayjobs.com",
+      "tenant": "nb",
+      "site": "NBCareers"
+    },
+    {
+      "company": "Northern Trust",
+      "type": "workday",
+      "host": "ntrs.wd1.myworkdayjobs.com",
+      "tenant": "ntrs",
+      "site": "ntcampus"
+    },
+    {
+      "company": "TD Securities",
+      "type": "workday",
+      "host": "td.wd3.myworkdayjobs.com",
+      "tenant": "td",
+      "site": "TD_Bank_Careers"
+    },
+    {
+      "company": "CIBC",
+      "type": "workday",
+      "host": "cibc.wd3.myworkdayjobs.com",
+      "tenant": "cibc",
+      "site": "campus"
+    },
+    {
+      "company": "State Street",
+      "type": "workday",
+      "host": "statestreet.wd1.myworkdayjobs.com",
+      "tenant": "statestreet",
+      "site": "Global"
+    },
+    {
+      "company": "CME Group",
+      "type": "workday",
+      "host": "cmegroup.wd1.myworkdayjobs.com",
+      "tenant": "cmegroup",
+      "site": "cme_careers"
+    },
+    {
+      "company": "DRW",
+      "type": "greenhouse",
+      "board": "drweng"
+    },
+    {
+      "company": "Hudson River Trading",
+      "type": "greenhouse",
+      "board": "wehrtyou"
+    },
+    {
+      "company": "Squarepoint",
+      "type": "greenhouse",
+      "board": "squarepointcapital"
+    },
+    {
+      "company": "Jump Trading",
+      "type": "greenhouse",
+      "board": "jumptrading"
+    },
+    {
+      "company": "IMC",
+      "type": "greenhouse",
+      "board": "imc"
+    },
+    {
+      "company": "Bridgewater",
+      "type": "greenhouse",
+      "board": "bridgewater89"
+    },
+    {
+      "company": "Flow Traders",
+      "type": "greenhouse",
+      "board": "flowtraders"
+    },
+    {
+      "company": "UOB",
+      "type": "workday",
+      "host": "uobgroup.wd3.myworkdayjobs.com",
+      "tenant": "uobgroup",
+      "site": "UOBExternal"
+    },
+    {
+      "company": "Centrica",
+      "type": "html",
+      "urls": [
+        "https://www.lifeatcentrica.com/jobs/",
+        "https://www.lifeatcentrica.com/jobs?page=2",
+        "https://www.lifeatcentrica.com/jobs?page=3"
+      ],
+      "link_regex": "/jobs/r\\d+/[a-z0-9-]+/?"
+    },
+    {
+      "company": "Peel Hunt",
+      "type": "html",
+      "url": "https://careersat.peelhunt.com/jobs",
+      "link_regex": "/jobs/\\d+-[a-z0-9-]+",
+      "default_location": "London, United Kingdom"
+    },
+    {
+      "company": "Perella Weinberg",
+      "type": "html",
+      "url": "https://pwpcareers.tal.net/vx/lang-en-GB/mobile-0/appcentre-1/brand-4/candidate/jobboard/vacancy/1/adv/",
+      "link_regex": "/candidate/so/pm/\\d+/pl/\\d+/opp/\\d+",
+      "label": "Perella Weinberg (campus)"
+    },
+    {
+      "company": "Perella Weinberg",
+      "type": "workday",
+      "host": "pwp.wd1.myworkdayjobs.com",
+      "tenant": "pwp",
+      "site": "PWP_Experienced_Opportunities",
+      "label": "Perella Weinberg (Workday)"
+    },
+    {
+      "company": "AllianceBernstein",
+      "type": "workday",
+      "host": "abglobal.wd1.myworkdayjobs.com",
+      "tenant": "abglobal",
+      "site": "alliancebernsteincareers"
+    },
+    {
+      "company": "3i",
+      "type": "workday",
+      "host": "3i.wd103.myworkdayjobs.com",
+      "tenant": "3i",
+      "site": "Intern_Career"
+    },
+    {
+      "company": "Oaktree",
+      "type": "workday",
+      "host": "oaktree.wd1.myworkdayjobs.com",
+      "tenant": "oaktree",
+      "site": "Oaktree"
+    },
+    {
+      "company": "Zurich Insurance",
+      "type": "html",
+      "urls": [
+        "https://www.careers.zurich.com/search/?q=intern&locationsearch=Zurich",
+        "https://www.careers.zurich.com/search/?q=praktikum&locationsearch=Zurich",
+        "https://www.careers.zurich.com/search/?q=intern&locationsearch=London"
+      ],
+      "link_regex": "/job/[^\"]+/\\d+/?"
+    },
+    {
+      "company": "ExxonMobil",
+      "type": "html",
+      "urls": [
+        "https://jobs.exxonmobil.com/ExxonMobil/search/?q=intern&locationsearch=Singapore",
+        "https://jobs.exxonmobil.com/ExxonMobil/search/?q=intern&locationsearch=London"
+      ],
+      "link_regex": "/ExxonMobil/job/[^\"]+/\\d+/?"
+    },
+    {
+      "company": "Chevron",
+      "type": "workday",
+      "host": "chevron.wd5.myworkdayjobs.com",
+      "tenant": "chevron",
+      "site": "University"
+    },
+    {
+      "company": "Kpler",
+      "type": "lever",
+      "account": "kpler"
+    },
+    {
+      "company": "General Atlantic",
+      "type": "greenhouse",
+      "board": "generalatlantic"
+    },
+    {
+      "company": "HPS Investment Partners",
+      "type": "greenhouse",
+      "board": "hpsinvestmentpartners"
+    },
+    {
+      "company": "Blue Owl",
+      "type": "workday",
+      "host": "blueowl.wd1.myworkdayjobs.com",
+      "tenant": "blueowl",
+      "site": "blueowl"
+    },
+    {
+      "company": "Alpiq",
+      "type": "html",
+      "url": "https://www.alpiq.com/career/open-jobs",
+      "link_regex": "/career/open-jobs/your-application/\\d+"
+    },
+    {
+      "company": "Lloyds Banking Group",
+      "type": "workday",
+      "host": "lbg.wd3.myworkdayjobs.com",
+      "tenant": "lbg",
+      "site": "Undergraduate_careers"
+    },
+    {
+      "company": "Columbia Threadneedle",
+      "type": "workday",
+      "host": "ameriprise.wd5.myworkdayjobs.com",
+      "tenant": "ameriprise",
+      "site": "Ameriprise"
+    },
+    {
+      "company": "Nuveen",
+      "type": "workday",
+      "host": "tiaa.wd1.myworkdayjobs.com",
+      "tenant": "tiaa",
+      "site": "Search"
+    },
+    {
+      "company": "Vanguard",
+      "type": "workday",
+      "host": "vanguard.wd5.myworkdayjobs.com",
+      "tenant": "vanguard",
+      "site": "vanguard_external"
+    },
+    {
+      "company": "Cboe",
+      "type": "workday",
+      "host": "cboe.wd1.myworkdayjobs.com",
+      "tenant": "cboe",
+      "site": "External_Career_CBOE"
     }
   ],
   "mcf": {
@@ -1002,7 +1335,7 @@
     ]
   },
   "filters": {
-    "max_age_days": 60,
+    "max_age_days": 200,
     "extra_include": [],
     "extra_exclude": [],
     "include_summer": true
@@ -1023,7 +1356,28 @@
     "Société Générale"
   ],
   "closed_checks_per_run": 20,
-  "parallel_sources": 8,
+  "parallel_sources": 12,
+  "muse": {
+    "enabled": true,
+    "max_pages": 15,
+    "locations": [
+      "London, United Kingdom",
+      "Paris, France",
+      "Zurich, Switzerland",
+      "Geneva, Switzerland",
+      "Singapore, Singapore"
+    ]
+  },
+  "adzuna": {
+    "enabled": true,
+    "every_minutes": 240,
+    "max_days_old": 3
+  },
+  "reed": {
+    "enabled": true,
+    "every_minutes": 60,
+    "max_pages": 2
+  },
   "description_checks_per_run": 40,
   "verify_checks_per_run": 30,
   "verify_linkedin_per_run": 8,

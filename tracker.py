@@ -137,6 +137,9 @@ DEFAULT_CONFIG = {
                     "commodity trading intern", "energy trading intern", "asset management intern",
                     "portfolio management intern", "hedge fund intern", "equity research intern",
                     "corporate finance intern", "leveraged finance intern", "debt capital markets intern",
+                    "bp summer internship trading", "supply trading shipping internship", "energy trading summer internship",
+                    "BNP Paribas internship London", "Societe Generale internship London", "Morgan Stanley summer analyst",
+                    "UBS internship London", "Standard Chartered internship", "Citadel internship", "Brevan Howard internship",
                     "investment analyst intern", "buy side intern", "investment management summer internship",
                     "asset management summer internship", "equity analyst intern", "fixed income intern",
                     "private credit intern", "infrastructure investment intern", "investment intern",
@@ -172,8 +175,8 @@ DEFAULT_CONFIG = {
     },
     "workday": {
         "enabled": True,
-        "queries": ["intern Paris", "stage Paris", "off-cycle", "intern Geneva", "intern Zurich", "intern Singapore",
-                    "summer intern Singapore", "intern London", "summer intern London", "summer analyst"],
+        "queries": ["internship", "intern", "summer internship", "summer analyst", "off-cycle", "placement", "stage",
+                    "internship London", "internship Paris", "internship Singapore", "internship Zurich"],
         "tenants": [
             {"company": "Barclays", "host": "barclays.wd3.myworkdayjobs.com", "tenant": "barclays",
              "site": "External_Career_Site_Barclays", "enabled": True},
@@ -270,6 +273,49 @@ DEFAULT_CONFIG = {
         {"company": "StoneX", "type": "html", "url": "https://uk-stonex.icims.com/jobs/search?ss=1&in_iframe=1", "link_regex": "/jobs/\\d+/[^/\"]+/job", "default_location": "London, United Kingdom"},
         {"company": "RWE Supply & Trading", "type": "html", "urls": ["https://jobs.rwe.com/RWE/search/?q=&locationsearch=London", "https://jobs.rwe.com/RWE/search/?q=placement", "https://jobs.rwe.com/RWE/search/?q=intern&locationsearch=Singapore"], "link_regex": "/RWE/job/[^\"]+/\\d+/?"},
         {"company": "Mizuho", "label": "Mizuho (EMEA internships)", "type": "html", "url": "https://www.mizuhogroup.com/emea/careers/internship-programme/internship-roles", "link_regex": "grb\\.uk\\.com/internships/mizuho-[a-z0-9-]+", "default_location": "London, United Kingdom"},
+        {"company": "Nomura", "type": "html", "urls": ["https://careers.nomura.com/Nomura/search/?q=intern&locationsearch=London", "https://careers.nomura.com/Nomura/search/?q=intern&locationsearch=Singapore", "https://careers.nomura.com/Nomura/search/?q=analyst&locationsearch=London"], "link_regex": "/Nomura/job/[^\"]+/\\d+/?"},
+        {"company": "Nomura", "type": "html", "url": "https://nomuracampus.tal.net/vx/lang-en-GB/mobile-0/appcentre-ext/brand-4/xf-3348347fc789/candidate/jobboard/vacancy/1/adv/", "link_regex": "/candidate/so/pm/\\d+/pl/\\d+/opp/\\d+", "label": "Nomura (campus)"},
+        {"company": "Moelis", "type": "html", "url": "https://moelis-careers.tal.net/vx/lang-en-GB/mobile-0/appcentre-1/brand-4/candidate/jobboard/vacancy/1/adv/", "link_regex": "/candidate/so/pm/\\d+/pl/\\d+/opp/\\d+"},
+        {"company": "BNP Paribas", "type": "html", "urls": ["https://group.bnpparibas/en/careers/all-job-offers/trainee-internship", "https://group.bnpparibas/en/careers/all-job-offers/trainee-internship?page=2", "https://group.bnpparibas/en/careers/all-job-offers/trainee-internship?page=3", "https://group.bnpparibas/en/careers/all-job-offers/trainee-internship?page=4", "https://group.bnpparibas/en/careers/all-job-offers/trainee-internship?page=5", "https://group.bnpparibas/en/careers/all-job-offers/trainee-internship?page=6", "https://group.bnpparibas/en/careers/all-job-offers/trainee-internship?page=7", "https://group.bnpparibas/en/careers/all-job-offers/trainee-internship?page=8", "https://group.bnpparibas/en/careers/all-job-offers/trainee-internship?page=9", "https://group.bnpparibas/en/careers/all-job-offers/trainee-internship?page=10", "https://group.bnpparibas/en/careers/all-job-offers/trainee-internship?page=11", "https://group.bnpparibas/en/careers/all-job-offers/trainee-internship?page=12", "https://group.bnpparibas/en/careers/all-job-offers/trainee-internship?page=13", "https://group.bnpparibas/en/careers/all-job-offers/trainee-internship?page=14", "https://group.bnpparibas/en/careers/all-job-offers/trainee-internship?page=15", "https://group.bnpparibas/en/careers/all-job-offers/trainee-internship?page=16", "https://group.bnpparibas/en/careers/all-job-offers/trainee-internship?page=17", "https://group.bnpparibas/en/careers/all-job-offers/trainee-internship?page=18", "https://group.bnpparibas/en/careers/all-job-offers/trainee-internship?page=19", "https://group.bnpparibas/en/careers/all-job-offers/trainee-internship?page=20", "https://group.bnpparibas/en/careers/all-job-offers/trainee-internship?page=21", "https://group.bnpparibas/en/careers/all-job-offers/trainee-internship?page=22", "https://group.bnpparibas/en/careers/all-job-offers/trainee-internship?page=23", "https://group.bnpparibas/en/careers/all-job-offers/trainee-internship?page=24", "https://group.bnpparibas/en/careers/all-job-offers/trainee-internship?page=25", "https://group.bnpparibas/en/careers/all-job-offers/trainee-internship?page=26", "https://group.bnpparibas/en/careers/all-job-offers/trainee-internship?page=27", "https://group.bnpparibas/en/careers/all-job-offers/trainee-internship?page=28", "https://group.bnpparibas/en/careers/all-job-offers/trainee-internship?page=29", "https://group.bnpparibas/en/careers/all-job-offers/trainee-internship?page=30", "https://group.bnpparibas/en/careers/all-job-offers/graduate-programme", "https://group.bnpparibas/en/careers/all-job-offers/graduate-programme?page=2", "https://group.bnpparibas/en/careers/all-job-offers/graduate-programme?page=3"], "link_regex": "/en/careers/job-offer/[a-z0-9-]+"},
+        {"company": "Vitol", "type": "html", "url": "https://www.vitol.com/open-roles/", "link_regex": "jobs\\.smartrecruiters\\.com/Vitol/\\d+-[a-z0-9-]+"},
+        {"company": "Louis Dreyfus Company", "type": "html", "url": "https://www.ldc.com/careers/join-ldc/", "link_regex": "/careers/join-ldc/job-details/(?:\\?id=[0-9a-f-]+|[a-z0-9-]+/)"},
+        {"company": "G-Research", "type": "html", "url": "https://www.gresearch.com/join-us/", "link_regex": "/vacancies/[a-z0-9-]+/?$", "default_location": "London, United Kingdom"},
+        {"company": "M&G", "type": "workday", "host": "mgpru.wd3.myworkdayjobs.com", "tenant": "mgpru", "site": "mandgprudential"},
+        {"company": "Ares", "type": "workday", "host": "aresmgmt.wd1.myworkdayjobs.com", "tenant": "aresmgmt", "site": "External"},
+        {"company": "Neuberger Berman", "type": "workday", "host": "nb.wd1.myworkdayjobs.com", "tenant": "nb", "site": "NBCareers"},
+        {"company": "Northern Trust", "type": "workday", "host": "ntrs.wd1.myworkdayjobs.com", "tenant": "ntrs", "site": "ntcampus"},
+        {"company": "TD Securities", "type": "workday", "host": "td.wd3.myworkdayjobs.com", "tenant": "td", "site": "TD_Bank_Careers"},
+        {"company": "CIBC", "type": "workday", "host": "cibc.wd3.myworkdayjobs.com", "tenant": "cibc", "site": "campus"},
+        {"company": "State Street", "type": "workday", "host": "statestreet.wd1.myworkdayjobs.com", "tenant": "statestreet", "site": "Global"},
+        {"company": "CME Group", "type": "workday", "host": "cmegroup.wd1.myworkdayjobs.com", "tenant": "cmegroup", "site": "cme_careers"},
+        {"company": "DRW", "type": "greenhouse", "board": "drweng"},
+        {"company": "Hudson River Trading", "type": "greenhouse", "board": "wehrtyou"},
+        {"company": "Squarepoint", "type": "greenhouse", "board": "squarepointcapital"},
+        {"company": "Jump Trading", "type": "greenhouse", "board": "jumptrading"},
+        {"company": "IMC", "type": "greenhouse", "board": "imc"},
+        {"company": "Bridgewater", "type": "greenhouse", "board": "bridgewater89"},
+        {"company": "Flow Traders", "type": "greenhouse", "board": "flowtraders"},
+        {"company": "UOB", "type": "workday", "host": "uobgroup.wd3.myworkdayjobs.com", "tenant": "uobgroup", "site": "UOBExternal"},
+        {"company": "Centrica", "type": "html", "urls": ["https://www.lifeatcentrica.com/jobs/", "https://www.lifeatcentrica.com/jobs?page=2", "https://www.lifeatcentrica.com/jobs?page=3"], "link_regex": "/jobs/r\\d+/[a-z0-9-]+/?"},
+        {"company": "Peel Hunt", "type": "html", "url": "https://careersat.peelhunt.com/jobs", "link_regex": "/jobs/\\d+-[a-z0-9-]+", "default_location": "London, United Kingdom"},
+        {"company": "Perella Weinberg", "type": "html", "url": "https://pwpcareers.tal.net/vx/lang-en-GB/mobile-0/appcentre-1/brand-4/candidate/jobboard/vacancy/1/adv/", "link_regex": "/candidate/so/pm/\\d+/pl/\\d+/opp/\\d+", "label": "Perella Weinberg (campus)"},
+        {"company": "Perella Weinberg", "type": "workday", "host": "pwp.wd1.myworkdayjobs.com", "tenant": "pwp", "site": "PWP_Experienced_Opportunities", "label": "Perella Weinberg (Workday)"},
+        {"company": "AllianceBernstein", "type": "workday", "host": "abglobal.wd1.myworkdayjobs.com", "tenant": "abglobal", "site": "alliancebernsteincareers"},
+        {"company": "3i", "type": "workday", "host": "3i.wd103.myworkdayjobs.com", "tenant": "3i", "site": "Intern_Career"},
+        {"company": "Oaktree", "type": "workday", "host": "oaktree.wd1.myworkdayjobs.com", "tenant": "oaktree", "site": "Oaktree"},
+        {"company": "Zurich Insurance", "type": "html", "urls": ["https://www.careers.zurich.com/search/?q=intern&locationsearch=Zurich", "https://www.careers.zurich.com/search/?q=praktikum&locationsearch=Zurich", "https://www.careers.zurich.com/search/?q=intern&locationsearch=London"], "link_regex": "/job/[^\"]+/\\d+/?"},
+        {"company": "ExxonMobil", "type": "html", "urls": ["https://jobs.exxonmobil.com/ExxonMobil/search/?q=intern&locationsearch=Singapore", "https://jobs.exxonmobil.com/ExxonMobil/search/?q=intern&locationsearch=London"], "link_regex": "/ExxonMobil/job/[^\"]+/\\d+/?"},
+        {"company": "Chevron", "type": "workday", "host": "chevron.wd5.myworkdayjobs.com", "tenant": "chevron", "site": "University"},
+        {"company": "Kpler", "type": "lever", "account": "kpler"},
+        {"company": "General Atlantic", "type": "greenhouse", "board": "generalatlantic"},
+        {"company": "HPS Investment Partners", "type": "greenhouse", "board": "hpsinvestmentpartners"},
+        {"company": "Blue Owl", "type": "workday", "host": "blueowl.wd1.myworkdayjobs.com", "tenant": "blueowl", "site": "blueowl"},
+        {"company": "Alpiq", "type": "html", "url": "https://www.alpiq.com/career/open-jobs", "link_regex": "/career/open-jobs/your-application/\\d+"},
+        {"company": "Lloyds Banking Group", "type": "workday", "host": "lbg.wd3.myworkdayjobs.com", "tenant": "lbg", "site": "Undergraduate_careers"},
+        {"company": "Columbia Threadneedle", "type": "workday", "host": "ameriprise.wd5.myworkdayjobs.com", "tenant": "ameriprise", "site": "Ameriprise"},
+        {"company": "Nuveen", "type": "workday", "host": "tiaa.wd1.myworkdayjobs.com", "tenant": "tiaa", "site": "Search"},
+        {"company": "Vanguard", "type": "workday", "host": "vanguard.wd5.myworkdayjobs.com", "tenant": "vanguard", "site": "vanguard_external"},
+        {"company": "Cboe", "type": "workday", "host": "cboe.wd1.myworkdayjobs.com", "tenant": "cboe", "site": "External_Career_CBOE"},
     ],
     # Portail officiel de l'emploi à Singapour (offres « Internship/Attachment »)
     "mcf": {
@@ -281,7 +327,7 @@ DEFAULT_CONFIG = {
                     "portfolio", "sales", "markets", "energy"],
     },
     "filters": {
-        "max_age_days": 60,
+        "max_age_days": 200,  # programmes de stage publiés tôt et ouverts des mois : on ne les écarte pas
         "extra_include": [],
         "extra_exclude": [],
         "include_summer": True,
@@ -295,7 +341,13 @@ DEFAULT_CONFIG = {
     "priority_companies": ["Morgan Stanley", "Goldman Sachs", "J.P. Morgan", "Lazard", "Rothschild",
                            "BNP Paribas", "Bank of America", "Société Générale"],
     "closed_checks_per_run": 20,
-    "parallel_sources": 8,
+    "parallel_sources": 12,
+    # Agrégateurs à API officielle : The Muse (sans clé), Adzuna et Reed (clés gratuites dans les secrets GitHub)
+    "muse": {"enabled": True, "max_pages": 15,
+             "locations": ["London, United Kingdom", "Paris, France", "Zurich, Switzerland", "Geneva, Switzerland",
+                           "Singapore, Singapore"]},
+    "adzuna": {"enabled": True, "every_minutes": 240, "max_days_old": 3},
+    "reed": {"enabled": True, "every_minutes": 60, "max_pages": 2},
     "description_checks_per_run": 40,  # descriptions lues avant de notifier (offres hors LinkedIn)
     "verify_checks_per_run": 30,       # offres déjà affichées recontrôlées par passage (hors LinkedIn)
     "verify_linkedin_per_run": 8,      # idem pour LinkedIn  # sites interrogés en même temps (un seul fil par site web)
@@ -397,8 +449,10 @@ class Tracker:
     def __init__(self, cfg, store):
         self.cfg = cfg
         self.store = store
+        self.li_blocked = False  # LinkedIn a limité ce passage : pas d'autres requêtes LinkedIn jusqu'au suivant
         self.backoff = {}      # source -> timestamp avant lequel on ne réessaie pas
         self.backoff_len = {}  # source -> durée actuelle du backoff (s)
+        store.set_meta("backoff:LinkedIn", 0)  # plus de pause LinkedIn entre les passages (voir _linkedin_finish)
         for name in ("LinkedIn", "Welcome to the Jungle", "Sites carrières Workday"):
             try:
                 self.backoff[name] = float(store.get_meta("backoff:" + name, 0))
@@ -552,6 +606,10 @@ class Tracker:
             self.store.set_source(name, not (errs and not res), msg, len(res))
             return res
         except sources.RateLimited as e:
+            if name == "LinkedIn":
+                log("LinkedIn : limité dès la première requête (%s), nouvel essai au prochain passage" % e)
+                self.store.set_source(name, False, "Limité par LinkedIn sur ce passage, nouvel essai au suivant")
+                return []
             d = min(max(self.backoff_len.get(name, 600) * 2, 900), 7200)
             self.backoff_len[name] = d
             self.backoff[name] = now + d
@@ -607,10 +665,11 @@ class Tracker:
             self._linkedin_finish(state)
 
     def _linkedin_finish(self, state):
+        # Pas de pause après une limitation : chaque passage GitHub tourne sur une machine (et une adresse IP)
+        # différente, une pause ne ferait que sauter des passages qui auraient pu aboutir.
         self.store.set_meta("li_offset", state.get("offset", 0))
-        if state.get("rate_limited"):  # résultats partiels : courte pause avant le prochain passage
-            self.backoff["LinkedIn"] = time.time() + 600
-            self._save_backoff("LinkedIn")
+        if state.get("rate_limited"):
+            self.li_blocked = True
 
     @staticmethod
     def _host_of(site):
@@ -639,6 +698,19 @@ class Tracker:
             tasks.append(("Sites carrières Workday", "workday-tenants", lambda: sources.collect_workday(c, log), None))
         if (c.get("mcf") or {}).get("enabled"):
             tasks.append(("MyCareersFuture", "mcf", lambda: sources.collect_mcf(c, log), None))
+        if (c.get("muse") or {}).get("enabled"):
+            tasks.append(("The Muse", "muse", lambda: sources.collect_muse(c, log), None))
+        # API à quota (clés dans les secrets GitHub) : appelées moins souvent, seulement si la clé existe
+        for name, key_env, fn, every in (("Adzuna", "ADZUNA_APP_KEY", sources.collect_adzuna, "adzuna"),
+                                         ("Reed", "REED_API_KEY", sources.collect_reed, "reed")):
+            conf = c.get(every) or {}
+            if not conf.get("enabled") or not os.environ.get(key_env):
+                continue
+            last = float(self.store.get_meta("last_run:" + name, 0) or 0)
+            if time.time() - last < float(conf.get("every_minutes", 240)) * 60 - 120:
+                continue
+            tasks.append((name, every, lambda fn=fn: fn(c, log),
+                          lambda name=name: self.store.set_meta("last_run:" + name, time.time())))
         for site in c.get("sites") or []:
             fn = sources.SITE_COLLECTORS.get(site.get("type"))
             if not fn or not site.get("enabled", True):
@@ -704,6 +776,7 @@ class Tracker:
                 new_list.append(j)
 
     def cycle(self):
+        self.li_blocked = False  # nouvelle tentative LinkedIn à chaque passage
         new_list, seeded_now = [], []
         details_budget = self.cfg["linkedin"]["detail_limit_per_cycle"]
         detail_queue, desc_queue = [], []
@@ -735,7 +808,7 @@ class Tracker:
         # Offres LinkedIn retenues d'abord, puis celles à confirmer
         detail_queue.sort(key=lambda x: x[0])
         for i, (prio, j, r, seed) in enumerate(detail_queue):
-            if details_budget <= 0 or self.backoff.get("LinkedIn", 0) > time.time():
+            if details_budget <= 0 or self.li_blocked:
                 if prio == 0:  # stage certain : on notifie avec le lien LinkedIn, sans attendre
                     self._accept(j, r, seed, new_list)
                 elif seed:
@@ -754,8 +827,7 @@ class Tracker:
                 else:
                     self.store.add_rejected(j["uid"], r2["reason"] or "?", j)
             except sources.RateLimited as e:
-                self.backoff["LinkedIn"] = time.time() + 900
-                self._save_backoff("LinkedIn")
+                self.li_blocked = True  # pour la suite de ce passage seulement
                 log("LinkedIn (détails) : limité (%s), reprise dans 15 min" % e)
                 if prio == 0:
                     self._accept(j, r, seed, new_list)
@@ -829,7 +901,7 @@ class Tracker:
         for o in todo:
             is_li = o["source"] == "LinkedIn"
             if is_li:
-                if li_budget <= 0 or self.backoff.get("LinkedIn", 0) > time.time():
+                if li_budget <= 0 or self.li_blocked:
                     continue
                 li_budget -= 1
             else:
@@ -840,8 +912,7 @@ class Tracker:
                 d = sources.fetch_description(o)
             except sources.RateLimited:
                 if is_li:
-                    self.backoff["LinkedIn"] = time.time() + 900
-                    self._save_backoff("LinkedIn")
+                    self.li_blocked = True
                 continue
             if d is None:
                 self.store.set_desc_checked(o["uid"], 2)
@@ -907,7 +978,7 @@ class Tracker:
         for o in self.store.offers_to_check(int(self.cfg.get("closed_checks_per_run", 20))):
             is_li = o["source"] == "LinkedIn"
             if is_li:
-                if li_budget <= 0 or self.backoff.get("LinkedIn", 0) > time.time():
+                if li_budget <= 0 or self.li_blocked:
                     continue
                 li_budget -= 1
             try:
@@ -997,10 +1068,11 @@ def write_dashboard(store, cfg, next_run=None):
         o["title"] = sources._text(o["title"])  # corrige les titres déjà enregistrés avec &amp;
         o["company"] = sources._text(o.get("company") or "")
         region = filters.region_of(o.get("location"), o["title"])
-        if too_old(o.get("posted"), cfg) or region is None:
-            continue
+        if region is None:
+            continue  # (pas de limite d'âge ici : une offre retenue reste affichée tant qu'elle est ouverte)
         o["region"], o["city"] = region, filters.city_of(o.get("location"), o["title"])
-        cat, _ = filters.categorize(o["title"])  # applique aussi les corrections de filtre aux offres déjà vues
+        # Même décision qu'à l'arrivée de l'offre (avec l'employeur) : une offre notifiée est toujours affichée
+        cat, _ = filters.categorize(o["title"], o.get("company") or "")
         if cat is None and o["category"] != "Autre (mot-clé perso)":
             continue
         o["category"] = cat or o["category"]
@@ -1025,7 +1097,10 @@ def write_dashboard(store, cfg, next_run=None):
         rows.append(r)
     active = {"LinkedIn", "Welcome to the Jungle", "Sites carrières Workday"} | {
         "Site · %s" % x.get("label", x["company"]) for x in cfg.get("sites") or [] if x.get("enabled", True)} | (
-        {"MyCareersFuture"} if (cfg.get("mcf") or {}).get("enabled") else set())
+        {"MyCareersFuture"} if (cfg.get("mcf") or {}).get("enabled") else set()) | (
+        {"The Muse"} if (cfg.get("muse") or {}).get("enabled") else set()) | {
+        n for n, k, e in (("Adzuna", "ADZUNA_APP_KEY", "adzuna"), ("Reed", "REED_API_KEY", "reed"))
+        if (cfg.get(e) or {}).get("enabled") and os.environ.get(k)}
     repo = os.environ.get("GITHUB_REPOSITORY", "")
     payload = {
         "generated": time.time(),
