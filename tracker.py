@@ -146,6 +146,16 @@ DEFAULT_CONFIG = {
                     "private markets intern", "fund management intern",
                 ],
             },
+            "Dublin": {
+                "enabled": True, "location": "Dublin, County Dublin, Ireland",
+                "sweep_all": True, "sweep_all_seconds": 21600, "sweep_all_pages": 3, "backfill_pages": 15,
+                "queries": [
+                    "investment banking intern", "summer analyst", "off-cycle internship", "summer internship 2027",
+                    "private equity intern", "sales and trading intern", "global markets intern", "asset management intern",
+                    "fund management intern", "investment analyst intern", "aviation finance intern", "aircraft leasing intern",
+                    "commodities intern", "energy trading intern", "corporate finance intern", "hedge fund intern",
+                ],
+            },
         },
     },
     "wttj": {
@@ -176,7 +186,8 @@ DEFAULT_CONFIG = {
     "workday": {
         "enabled": True,
         "queries": ["internship", "intern", "summer internship", "summer analyst", "off-cycle", "placement", "stage",
-                    "internship London", "internship Paris", "internship Singapore", "internship Zurich"],
+                    "internship London", "internship Paris", "internship Singapore", "internship Zurich",
+                    "internship Dublin"],
         "tenants": [
             {"company": "Barclays", "host": "barclays.wd3.myworkdayjobs.com", "tenant": "barclays",
              "site": "External_Career_Site_Barclays", "enabled": True},
@@ -345,7 +356,7 @@ DEFAULT_CONFIG = {
     # Agrégateurs à API officielle : The Muse (sans clé), Adzuna et Reed (clés gratuites dans les secrets GitHub)
     "muse": {"enabled": True, "max_pages": 15,
              "locations": ["London, United Kingdom", "Paris, France", "Zurich, Switzerland", "Geneva, Switzerland",
-                           "Singapore, Singapore"]},
+                           "Singapore, Singapore", "Dublin, Ireland"]},
     "adzuna": {"enabled": True, "every_minutes": 240, "max_days_old": 3},
     "reed": {"enabled": True, "every_minutes": 60, "max_pages": 2},
     "description_checks_per_run": 40,  # descriptions lues avant de notifier (offres hors LinkedIn)
@@ -938,14 +949,15 @@ class Tracker:
         for j in prio:
             _send(SEND, "⭐ %s · %s" % (j.get("company") or "Entreprise prioritaire", j["category"]),
                   "%s\n📍 %s · %s" % (j["title"], place_label(j.get("location"), j["title"]), j["source"]),
-                  j.get("apply_url") or j["url"], priority=5, tags=["star"])
+                  j.get("apply_url") or j["url"], priority=5, tags=["star"],
+                  extra=[("Voir dans le tableau", offer_link(j))])
             time.sleep(1)
         mx = self.cfg["notifications"]["max_individual"]
         if len(rest) <= mx:
             for j in rest:
                 _send(SEND, "%s · %s" % (j.get("company") or "Nouvelle offre", j["category"]),
                       "%s\n📍 %s · %s" % (j["title"], place_label(j.get("location"), j["title"]), j["source"]),
-                      j.get("apply_url") or j["url"])
+                      j.get("apply_url") or j["url"], extra=[("Voir dans le tableau", offer_link(j))])
                 time.sleep(1)
         else:
             counts = region_counts(rest)
@@ -957,7 +969,7 @@ class Tracker:
             body = ", ".join(sorted({"%s (%s)" % (j.get("company") or "?",
                                                   filters.city_of(j.get("location"), j["title"]) or "?")
                                      for j in rest}))
-            _send(SEND, title.strip(), body[:300], dash_link(), button="Voir le tableau")
+            _send(SEND, title.strip(), body[:300], dash_link() + "#nouvelles", button="Voir les nouvelles offres")
 
     def announce_regions(self):
         """Une notification quand de nouvelles zones sont ajoutées à un tracker déjà en service."""
@@ -1023,11 +1035,13 @@ class Tracker:
             lines.append("… et %d autres" % (len(recent) - 5))
         _send(SEND, "Récap du matin · %d nouvelle%s offre%s" % (len(recent), "s" if len(recent) > 1 else "",
                                                                "s" if len(recent) > 1 else ""),
-              "\n".join(lines), dash_link(), button="Voir le tableau", priority=3, tags=["sunrise"])
+              "\n".join(lines), dash_link() + "#nouvelles", button="Voir les nouvelles offres", priority=3,
+              tags=["sunrise"])
         return True
 
 
-REGION_IN = {"France": "à Paris", "Suisse": "en Suisse", "Singapour": "à Singapour", "Londres": "à Londres"}
+REGION_IN = {"France": "à Paris", "Suisse": "en Suisse", "Singapour": "à Singapour", "Londres": "à Londres",
+             "Dublin": "à Dublin"}
 
 
 def place_label(location, title=""):
@@ -1049,12 +1063,23 @@ def region_counts(offers):
     return [(k, c[k]) for k in order if k in c]
 
 
-def _send(fn, title, message, url=None, button="Postuler", priority=4, tags=None):
+def _send(fn, title, message, url=None, button="Postuler", priority=4, tags=None, extra=None):
     """Appelle la fonction de notification avec les options qu'elle accepte (ntfy en a plus que le bureau)."""
+    import inspect
     try:
-        return fn(title, message, url, button=button, priority=priority, tags=tags)
-    except TypeError:
-        return fn(title, message, url, button=button)
+        params = inspect.signature(fn).parameters
+    except (TypeError, ValueError):
+        params = {}
+    kw = {"button": button}
+    for k, v in (("priority", priority), ("tags", tags), ("extra", extra)):
+        if k in params:
+            kw[k] = v
+    return fn(title, message, url, **kw)
+
+
+def offer_link(j):
+    """Lien vers l'offre dans le tableau de bord (onglet de sa zone, carte mise en évidence)."""
+    return dash_link() + "#o=" + urllib.parse.quote(j["uid"], safe="")
 
 
 # ----------------------------------------------------------------------------- modes
@@ -1078,12 +1103,13 @@ def write_dashboard(store, cfg, next_run=None):
         o["category"] = cat or o["category"]
         offers.append(o)
     keep = ("uid", "company", "title", "category", "location", "url", "apply_url", "posted", "posted_plus",
-            "first_seen", "source", "summer", "closed", "closed_at", "region", "city")
+            "first_seen", "source", "summer", "closed", "closed_at", "region", "city", "notified")
     rows = []
     for o in offers:
         r = {k: o.get(k) for k in keep}
         r["closed"] = bool(o.get("closed"))
         r["summer"] = bool(o.get("summer"))
+        r["notified"] = bool(o.get("notified"))
         others = store.other_links(o["uid"])
         # Autres sources de la même offre : une seule par source, jamais la source déjà affichée, 3 au plus
         links, seen_src = [], {o["source"]}

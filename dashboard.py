@@ -120,6 +120,16 @@ main{position:relative;z-index:1;max-width:1140px;margin:0 auto;padding:22px 20p
 .hero.r-Suisse{background:linear-gradient(130deg,#1e66ff 0%,#5b4bf0 50%,#ff4d6d 125%)}
 .hero.r-Singapour{background:linear-gradient(130deg,#5b3cf5 0%,#c13ad1 60%,#ff8a3d 125%)}
 .hero.r-Londres{background:linear-gradient(130deg,#1f4fd8 0%,#6a3cf0 55%,#d2366f 125%)}
+.hero.r-Dublin{background:linear-gradient(130deg,#0f8a6a 0%,#2f5bff 60%,#8b5cf6 125%)}
+.newbar{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:0 0 16px;padding:12px 14px;border-radius:18px;
+  background:color-mix(in srgb,var(--acc) 14%,var(--card));border:1px solid color-mix(in srgb,var(--acc) 40%,var(--line))}
+.newbar b{font-weight:800;margin-right:4px}
+.newbar button{appearance:none;border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:999px;
+  padding:6px 12px;font-weight:700;font-size:13px;cursor:pointer}
+.newbar button.on{background:var(--ink);color:var(--bg)}
+.newbar .seen{margin-left:auto;background:none;border:0;color:var(--mute);text-decoration:underline}
+.card.flash{animation:flash 2.4s ease 1}
+@keyframes flash{0%,40%{box-shadow:0 0 0 3px var(--acc)}100%{box-shadow:0 0 0 0 transparent}}
 .hero .k{color:rgba(255,255,255,.82);font-size:13.5px}
 .hero .rg{font-size:21px;font-weight:800;letter-spacing:-.02em;color:#fff;margin-top:2px}
 .hero .v{font-size:52px}
@@ -304,7 +314,7 @@ hr.sep{border:0;border-top:1px solid var(--line);margin:18px 0}
   main{padding:18px 16px 90px}
   .seg{width:100%;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch;border-radius:20px}
   .seg::-webkit-scrollbar{display:none}
-  .reg{flex:1 1 0;min-width:0;flex-direction:column;justify-content:center;padding:7px 4px;font-size:13.5px;gap:3px;border-radius:15px}
+  .reg{flex:1 1 0;min-width:0;flex-direction:column;justify-content:center;padding:7px 2px;font-size:12.5px;gap:3px;border-radius:15px}
   .reg .n{padding:1px 6px;min-width:20px}
   .stats{gap:10px;margin-bottom:18px}
   .stat{min-height:112px;padding:13px 13px;border-radius:20px;gap:10px}
@@ -370,7 +380,9 @@ hr.sep{border:0;border-top:1px solid var(--line);margin:18px 0}
     <button type="button" class="reg" data-region="Suisse" aria-pressed="false">Suisse <span class="n num">0</span></button>
     <button type="button" class="reg" data-region="Singapour" aria-pressed="false">Singapour <span class="n num">0</span></button>
     <button type="button" class="reg" data-region="Londres" aria-pressed="false">Londres <span class="n num">0</span></button>
+    <button type="button" class="reg" data-region="Dublin" aria-pressed="false">Dublin <span class="n num">0</span></button>
   </div>
+  <div id="newbar" class="newbar" hidden></div>
   <div class="stats">
     <div class="stat hero" data-go="all" id="hero">
       <div class="txt"><div class="k">Offres actives</div><div class="rg" id="heroReg">France</div></div>
@@ -378,7 +390,7 @@ hr.sep{border:0;border-top:1px solid var(--line);margin:18px 0}
         <div class="cities"><svg class="ico"><use href="#i-pin"/></svg><span id="heroCities"></span></div></div>
       <div class="art" id="heroArt"></div>
     </div>
-    <div class="stat" data-go="fresh"><span class="sq" style="--c:var(--acc3)"><svg class="ico"><use href="#i-bolt"/></svg></span><div><div class="v num" id="sFresh">0</div><div class="k">Publiées&nbsp;&lt;&nbsp;48&nbsp;h</div></div></div>
+    <div class="stat" data-go="fresh"><span class="sq" style="--c:var(--acc3)"><svg class="ico"><use href="#i-bolt"/></svg></span><div><div class="v num" id="sFresh">0</div><div class="k">Nouvelles&nbsp;&lt;&nbsp;48&nbsp;h</div></div></div>
     <div class="stat" data-go="prio"><span class="sq" style="--c:var(--star)"><svg class="ico"><use href="#i-star"/></svg></span><div><div class="v num" id="sPrio">0</div><div class="k">Prioritaires</div></div></div>
     <div class="stat" data-go="cand"><span class="sq" style="--c:var(--acc)"><svg class="ico"><use href="#i-bag"/></svg></span><div><div class="v num" id="sCand">0</div><div class="k">Candidatures en cours</div></div></div>
   </div>
@@ -387,7 +399,7 @@ hr.sep{border:0;border-top:1px solid var(--line);margin:18px 0}
     <div class="search"><svg class="ico"><use href="#i-search"/></svg>
       <input id="q" type="search" placeholder="Entreprise, poste, ville…" autocomplete="off"></div>
     <div class="toggles">
-      <button class="chip" data-t="fresh">Publiées &lt; 48 h</button>
+      <button class="chip" data-t="fresh">Nouvelles &lt; 48 h</button>
       <button class="chip" data-t="prio">★ Prioritaires</button>
       <button class="chip" data-t="hideTracked">Masquer suivies</button>
       <button class="chip" data-t="hideSummer">Masquer summer</button>
@@ -471,8 +483,8 @@ const STATUSES = [["a_postuler","À postuler","--mute"],["postule","Postulé","-
                   ["entretien","Entretiens","--acc2"],["offre","Offre reçue","--ok"],["refuse","Refusé","--err"],["abandon","Abandonné","--mute2"]];
 const ST = Object.fromEntries(STATUSES.map(s => [s[0], {label:s[1], v:s[2]}]));
 const IN_PROGRESS = new Set(["postule","test","entretien","offre"]);
-const REGIONS = ["France", "Suisse", "Singapour", "Londres"];
-const REGDEF = {France:"Paris · Île-de-France", Suisse:"Genève · Zurich", Singapour:"Singapour", Londres:"City · Canary Wharf"};
+const REGIONS = ["France", "Suisse", "Singapour", "Londres", "Dublin"];
+const REGDEF = {France:"Paris · Île-de-France", Suisse:"Genève · Zurich", Singapour:"Singapour", Londres:"City · Canary Wharf", Dublin:"IFSC · Docklands"};
 const icon = (id, cls) => '<svg class="ico' + (cls ? " " + cls : "") + '"><use href="#i-' + id + '"/></svg>';
 const regOf = o => REGIONS.includes(o && o.region) ? o.region : "France";
 const cityOf = o => o.city || o.location || "";
@@ -480,7 +492,13 @@ const cityOf = o => o.city || o.location || "";
 const compact = s => String(s || "").normalize("NFKD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/[^a-z0-9]/g, "");
 function pubTs(o){ if (o.posted && /^\d{4}-\d{2}-\d{2}/.test(o.posted)) return Date.parse(o.posted.slice(0,10) + "T12:00:00") / 1000; return o.first_seen; }
 const nowS = () => Date.now() / 1000;
-const isFresh = o => nowS() - pubTs(o) < 2 * DAY;
+// Date de détection par le tracker : une offre publiée il y a 3 semaines mais trouvée aujourd'hui est une nouveauté.
+// Les offres ajoutées sans notification (premier passage d'une source) gardent leur date de publication.
+function detTs(o){ return o.notified === false ? Math.min(o.first_seen, pubTs(o)) : o.first_seen; }
+const isFresh = o => nowS() - detTs(o) < 2 * DAY;
+const SEEN_KEY = "ts_seen", LOADED_AT = nowS();
+let SEEN = LS.get(SEEN_KEY, 0) || (LOADED_AT - 2 * DAY);
+const isNewSince = o => !o.closed && o.notified !== false && o.first_seen > SEEN;
 const ageDays = o => Math.floor((nowS() - pubTs(o) + DAY / 2) / DAY);
 function pubLabel(o){ if (!o.posted) return "";
   const d = ageDays(o);
@@ -550,6 +568,15 @@ ART.Londres = '<svg viewBox="0 0 240 150" aria-hidden="true"><circle cx="200" cy
   '<rect x="96" y="104" width="78" height="5" rx="2" fill="#fff" opacity=".8"/><rect x="120" y="78" width="30" height="3" rx="1.5" fill="#fff" opacity=".7"/>' +
   '<rect x="0" y="128" width="240" height="22" fill="#fff" opacity=".16"/>' +
   '<path d="M12 138h34M70 143h46M140 137h40M196 144h34" stroke="#fff" stroke-opacity=".32" stroke-width="2" stroke-linecap="round"/></svg>';
+ART.Dublin = '<svg viewBox="0 0 240 150" aria-hidden="true"><circle cx="46" cy="34" r="16" fill="#fff" opacity=".16"/>' +
+  '<g fill="#fff" opacity=".14"><rect x="170" y="84" width="16" height="44" rx="3"/><rect x="190" y="70" width="18" height="58" rx="3"/><rect x="212" y="92" width="22" height="36" rx="3"/></g>' +
+  '<path d="M150 128L152.6 6 155.2 128z" fill="#fff" opacity=".9"/>' +
+  '<path d="M40 112q55-44 110 0" fill="none" stroke="#fff" stroke-width="5" stroke-linecap="round"/>' +
+  '<path d="M44 109q51-38 102 0" fill="none" stroke="#fff" stroke-opacity=".45" stroke-width="1.6"/>' +
+  '<g stroke="#fff" stroke-opacity=".55" stroke-width="1.4"><path d="M62 98v14M78 90v22M95 86v26M112 90v22M128 98v14"/></g>' +
+  '<rect x="34" y="111" width="122" height="4" rx="2" fill="#fff" opacity=".85"/>' +
+  '<rect x="0" y="116" width="240" height="34" fill="#fff" opacity=".15"/>' +
+  '<path d="M10 128h40M70 136h46M150 130h38M200 140h30" stroke="#fff" stroke-opacity=".32" stroke-width="2" stroke-linecap="round"/></svg>';
 const EMPTY_ART = '<svg viewBox="0 0 160 110" aria-hidden="true"><defs><linearGradient id="eg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#3f6bff"/><stop offset=".55" stop-color="#8b5cf6"/><stop offset="1" stop-color="#ec4899"/></linearGradient></defs>' +
   '<rect x="30" y="18" width="88" height="62" rx="14" fill="currentColor" opacity=".06"/><rect x="20" y="28" width="96" height="66" rx="14" fill="var(--card2)" stroke="currentColor" stroke-opacity=".14"/>' +
   '<rect x="32" y="42" width="18" height="18" rx="6" fill="url(#eg)"/><rect x="56" y="44" width="44" height="6" rx="3" fill="currentColor" opacity=".18"/><rect x="56" y="54" width="30" height="5" rx="2.5" fill="currentColor" opacity=".1"/>' +
@@ -558,7 +585,8 @@ const EMPTY_ART = '<svg viewBox="0 0 160 110" aria-hidden="true"><defs><linearGr
 /* ---------- état ---------- */
 let F = Object.assign({cat:"Toutes", fresh:false, prio:false, hideTracked:false, hideSummer:false, showClosed:false}, LS.get("ts_filters", {}));
 F.q = "";
-const saveF = () => { const c = Object.assign({}, F); delete c.q; LS.set("ts_filters", c); };
+const saveF = () => { const c = Object.assign({}, F); delete c.q; delete c.since; LS.set("ts_filters", c); };
+F.since = false;
 let REGION = LS.get("ts_region", "France"); if (!REGIONS.includes(REGION)) REGION = "France";
 let LIMIT = 60;
 let PRIO = (LS.get("ts_prio_local", null) || DATA.priority || []).slice();
@@ -671,19 +699,19 @@ const Sync = (() => {
 })();
 
 /* ---------- rendu : offres ---------- */
-const GROUPS = {prio:["Entreprises prioritaires", "star"], today:["Aujourd'hui", ""], yday:["Hier", "clock"], week:["Cette semaine", "clock"],
-                old:["Plus ancien", "clock"], closed:["Offres fermées", ""]};
+const GROUPS = {prio:["Entreprises prioritaires", "star"], today:["Trouvées aujourd'hui", ""], yday:["Trouvées hier", "clock"],
+                week:["Trouvées cette semaine", "clock"], old:["Plus anciennes", "clock"], closed:["Offres fermées", ""]};
 function bucketOf(o, p){ if (o.closed) return "closed"; if (p) return "prio";
-  const d = ageDays(o); return d <= 0 ? "today" : d === 1 ? "yday" : d < 7 ? "week" : "old"; }
+  const d = Math.floor((nowS() - detTs(o) + DAY / 2) / DAY); return d <= 0 ? "today" : d === 1 ? "yday" : d < 7 ? "week" : "old"; }
 function filtered(){
   const ql = F.q.trim().toLowerCase();
   const rows = [];
   for (const o of (DATA.offers || [])) {
-    if (regOf(o) !== REGION || (F.cat !== "Toutes" && o.category !== F.cat) || (!F.showClosed && o.closed) || (F.fresh && !isFresh(o)) ||
+    if (regOf(o) !== REGION || (F.cat !== "Toutes" && o.category !== F.cat) || (!F.showClosed && o.closed) || (F.fresh && !isFresh(o)) || (F.since && !isNewSince(o)) ||
         (F.hideTracked && candFor(o.uid)) || (F.hideSummer && o.summer)) continue;
     if (ql && !(o.title + " " + o.company + " " + cityOf(o) + " " + o.location + " " + o.source).toLowerCase().includes(ql)) continue;
     const p = isPrio(o); if (F.prio && !p) continue;
-    rows.push({o, p, t:pubTs(o)});
+    rows.push({o, p, t:detTs(o)});
   }
   rows.sort((a, b) => ((a.o.closed ? 1 : 0) - (b.o.closed ? 1 : 0)) || ((b.p ? 1 : 0) - (a.p ? 1 : 0)) ||
       (b.t - a.t) || (b.o.first_seen - a.o.first_seen));
@@ -711,7 +739,7 @@ function cardHTML(r, i, animate){
 let firstPaint = true, artRegion = null;
 function renderOffers(){
   const all = DATA.offers || [];
-  const regCount = {France:0, Suisse:0, Singapour:0, Londres:0}, open = [];
+  const regCount = {France:0, Suisse:0, Singapour:0, Londres:0, Dublin:0}, open = [];
   for (const o of all) if (!o.closed) { const rg = regOf(o); regCount[rg]++; if (rg === REGION) open.push(o); }
   $$("#regions .reg").forEach(b => { b.setAttribute("aria-pressed", String(b.dataset.region === REGION)); b.querySelector(".n").textContent = regCount[b.dataset.region]; });
   const counts = {Toutes: open.length}; for (const o of open) counts[o.category] = (counts[o.category] || 0) + 1;
@@ -745,7 +773,8 @@ function renderOffers(){
   const nFresh = open.filter(isFresh).length;
   $("#heroNew").textContent = nFresh ? "dont " + nFresh + " nouvelle" + (nFresh > 1 ? "s" : "") : "";
   countUp($("#sAll"), open.length); countUp($("#sFresh"), nFresh); countUp($("#sPrio"), open.filter(isPrio).length);
-  $("#cntOffres").textContent = regCount.France + regCount.Suisse + regCount.Singapour + regCount.Londres;
+  $("#cntOffres").textContent = REGIONS.reduce((n, r) => n + regCount[r], 0);
+  renderNewBar();
 }
 function renderSources(){
   const S = (DATA.sources || []).slice().sort((a, b) => (b.ok - a.ok) || a.name.localeCompare(b.name));
@@ -791,6 +820,38 @@ function renderCand(){
   countUp($("#sCand"), all.filter(x => IN_PROGRESS.has(x.status)).length); $("#cntCand").textContent = all.length;
 }
 function renderAll(){ renderHeader(); renderOffers(); renderCand(); }
+function renderNewBar(){
+  const nb = $("#newbar"), by = {}; let n = 0;
+  for (const o of (DATA.offers || [])) if (isNewSince(o)) { by[regOf(o)] = (by[regOf(o)] || 0) + 1; n++; }
+  if (!n) { nb.hidden = true; F.since = false; return; }
+  nb.hidden = false;
+  nb.innerHTML = '<b>' + n + (n > 1 ? " nouvelles offres" : " nouvelle offre") + ' depuis ta dernière visite</b>' +
+    REGIONS.filter(r => by[r]).map(r => '<button type="button" data-nr="' + r + '" class="' + (F.since && REGION === r ? "on" : "") + '">' +
+      esc(r) + ' · ' + by[r] + '</button>').join("") + '<button type="button" class="seen" data-seen="1">Tout marquer comme vu</button>';
+}
+function showNew(region){
+  const by = {}; for (const o of (DATA.offers || [])) if (isNewSince(o)) by[regOf(o)] = (by[regOf(o)] || 0) + 1;
+  const rg = region || REGIONS.slice().sort((a, b) => (by[b] || 0) - (by[a] || 0))[0];
+  if (!by[rg]) { F.fresh = true; } else { F.since = true; }
+  REGION = rg; LS.set("ts_region", REGION); F.cat = "Toutes"; F.q = ""; $("#q").value = ""; LIMIT = 100000;
+  go("offres"); renderOffers(); renderRejected(); window.scrollTo({top:0, behavior:"smooth"});
+}
+function showOffer(uid){
+  const o = (DATA.offers || []).find(x => x.uid === uid); if (!o) { toast("Cette offre n'est plus dans le tableau"); return; }
+  REGION = regOf(o); LS.set("ts_region", REGION);
+  Object.assign(F, {cat:"Toutes", fresh:false, prio:false, hideTracked:false, hideSummer:false, since:false, q:""});
+  F.showClosed = !!o.closed; $("#q").value = ""; LIMIT = 100000;
+  go("offres"); renderOffers(); renderRejected();
+  const el = document.querySelector('.card[data-uid="' + (window.CSS && CSS.escape ? CSS.escape(uid) : uid) + '"]');
+  if (el) { el.scrollIntoView({block:"center", behavior:"smooth"}); el.classList.remove("flash"); void el.offsetWidth; el.classList.add("flash"); }
+}
+function handleHash(){
+  const h = decodeURIComponent(location.hash.slice(1));
+  if (!h) return;
+  if (h === "nouvelles") showNew();
+  else if (h.startsWith("o=")) showOffer(h.slice(2));
+  history.replaceState(null, "", location.pathname + location.search);
+}
 
 /* ---------- navigation ---------- */
 function moveInk(){ const b = $('.tab[aria-selected="true"]'), ink = $("#ink"); if (!b) return;
@@ -927,6 +988,14 @@ document.addEventListener("visibilitychange", () => { if (!document.hidden) { re
 prioKeys();
 renderAll(); renderSources(); renderRejected();
 go(LS.get("ts_view", "offres") === "cand" ? "cand" : "offres");
+$("#newbar").onclick = e => {
+  const b = e.target.closest("[data-nr]"); if (b) { if (F.since && REGION === b.dataset.nr) { F.since = false; renderOffers(); } else showNew(b.dataset.nr); return; }
+  if (e.target.closest("[data-seen]")) { SEEN = nowS(); LS.set(SEEN_KEY, SEEN); F.since = false; renderOffers(); }
+};
+// La visite compte comme « vue » quand on quitte la page après au moins 20 s (le bandeau reste affiché pendant la visite)
+document.addEventListener("visibilitychange", () => { if (document.hidden && nowS() - LOADED_AT > 20) LS.set(SEEN_KEY, LOADED_AT); });
+window.addEventListener("hashchange", handleHash);
+setTimeout(handleHash, 0);
 requestAnimationFrame(moveInk);
 if (document.fonts && document.fonts.ready) document.fonts.ready.then(moveInk);
 Sync.show(Sync.enabled() ? "busy" : "off", Sync.enabled() ? "Synchronisation…" : "Local");

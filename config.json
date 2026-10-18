@@ -231,6 +231,32 @@
           "private markets intern",
           "fund management intern"
         ]
+      },
+      "Dublin": {
+        "enabled": true,
+        "location": "Dublin, County Dublin, Ireland",
+        "sweep_all": true,
+        "sweep_all_seconds": 21600,
+        "sweep_all_pages": 3,
+        "backfill_pages": 15,
+        "queries": [
+          "investment banking intern",
+          "summer analyst",
+          "off-cycle internship",
+          "summer internship 2027",
+          "private equity intern",
+          "sales and trading intern",
+          "global markets intern",
+          "asset management intern",
+          "fund management intern",
+          "investment analyst intern",
+          "aviation finance intern",
+          "aircraft leasing intern",
+          "commodities intern",
+          "energy trading intern",
+          "corporate finance intern",
+          "hedge fund intern"
+        ]
       }
     }
   },
@@ -350,7 +376,8 @@
       "internship London",
       "internship Paris",
       "internship Singapore",
-      "internship Zurich"
+      "internship Zurich",
+      "internship Dublin"
     ],
     "tenants": [
       {
@@ -1365,7 +1392,8 @@
       "Paris, France",
       "Zurich, Switzerland",
       "Geneva, Switzerland",
-      "Singapore, Singapore"
+      "Singapore, Singapore",
+      "Dublin, Ireland"
     ]
   },
   "adzuna": {

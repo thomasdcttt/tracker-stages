@@ -7,7 +7,7 @@ import re
 import unicodedata
 
 # À incrémenter à chaque changement de règles : les offres déjà écartées sont alors réexaminées.
-FILTER_VERSION = 8
+FILTER_VERSION = 9
 
 
 def normalize(text):
@@ -131,7 +131,13 @@ LONDON_LOC = _rx([
 LONDON_BOROUGH = _rx([r"mayfair", r"westminster", r"holborn", r"farringdon", r"shoreditch", r"southwark",
                       r"islington", r"camden", r"kensington", r"knightsbridge", r"belgravia", r"marylebone"])
 UK_CTX = _rx([r"england", r"united kingdom", r"uk", r"royaume uni", r"angleterre", r"great britain"])
-REGIONS = (("France", PARIS_LOC), ("Suisse", SWISS_LOC), ("Singapour", SG_LOC), ("Londres", LONDON_LOC))
+# Dublin : la ville et son comté (pas Dublin, Ohio / Californie)
+DUBLIN_LOC = _rx([r"dublin", r"county dublin", r"co dublin", r"dun laoghaire", r"sandyford", r"ballsbridge",
+                  r"irish financial services centre", r"ifsc"])
+NOT_DUBLIN = _rx([r"united states", r"usa", r"ohio", r"california", r"virginia", r"georgia", r"pennsylvania",
+                  r"texas", r"oh", r"ca"])
+REGIONS = (("France", PARIS_LOC), ("Suisse", SWISS_LOC), ("Singapour", SG_LOC), ("Londres", LONDON_LOC),
+           ("Dublin", DUBLIN_LOC))
 REGION_NAMES = tuple(r for r, _ in REGIONS)
 # Noms de ville affichés (premier motif trouvé dans le segment de lieu)
 CITY_NAMES = [(re.compile(r"(?<![a-z0-9])(?:%s)(?![a-z0-9])" % rx), name) for rx, name in [
@@ -143,6 +149,7 @@ CITY_NAMES = [(re.compile(r"(?<![a-z0-9])(?:%s)(?![a-z0-9])" % rx), name) for rx
     (r"fribourg", "Fribourg"), (r"neuchatel", "Neuchâtel"), (r"pfaffikon", "Pfäffikon"),
     (r"switzerland|suisse|schweiz|svizzera|swiss", "Suisse"), (r"singapore|singapour|singapura", "Singapour"),
     (r"canary wharf", "Canary Wharf"), (r"london|londres|londra|greater london|city of london", "Londres"),
+    (r"dublin|county dublin|co dublin|ifsc", "Dublin"),
 ]]
 
 # ---------- Métiers ----------
@@ -174,7 +181,7 @@ CAT_PATTERNS = {
         r"lbo", r"buy ?out", r"growth equity", r"private debt", r"dette privee", r"secondaires?",
         r"secondaries", r"fonds d investissement", r"investment analyst", r"analyste investissements?",
         r"charge d affaires (?:capital|investissement|private|fonds|pe|lbo|mezzanine)\w*", r"investment associate", r"investment team", r"equipe d investissement",
-        r"investissement non cote", r"\bpe\b fund", r"gp stakes", r"gp solutions", r"gp led", r"continuation funds?",
+        r"investissement non cote", r"\bpe\b fund", r"charge e? d investissements?", r"chargee? d investissements?", r"gp stakes", r"gp solutions", r"gp led", r"continuation funds?",
         # v7
         r"private credit", r"real estate investments?(?! trusts?)", r"real estate private equity",
     ],
@@ -294,10 +301,11 @@ def _zone(norm_text):
     reg = _first_region(norm_text, ("France", "Suisse", "Singapour"))
     if reg:
         return reg
-    if NOT_LONDON.search(norm_text):
-        return None
-    if LONDON_LOC.search(norm_text) or (LONDON_BOROUGH.search(norm_text) and UK_CTX.search(norm_text)):
+    if not NOT_LONDON.search(norm_text) and (
+            LONDON_LOC.search(norm_text) or (LONDON_BOROUGH.search(norm_text) and UK_CTX.search(norm_text))):
         return "Londres"
+    if DUBLIN_LOC.search(norm_text) and not NOT_DUBLIN.search(norm_text):
+        return "Dublin"
     return None
 
 
@@ -586,7 +594,7 @@ AM_COMPANY = _rx([r"asset management", r"asset managers", r"investment managers?
                   r"capital management", r"gestion"])
 INVEST_HOUSES = {  # employeur -> catégorie
     "Asset Management": _rx([r"brevan howard", r"blackrock", r"comgest", r"tikehau\w*"]),
-    "Private Equity": _rx([r"partners group", r"clubfunding\w*"]),
+    "Private Equity": _rx([r"partners group", r"clubfunding\w*", r"la caisse", r"cdpq"]),
     "Venture Capital": _rx([r"sg growth capital"]),
 }
 # Banques d'affaires : intitulé réduit à une équipe sectorielle ("Industrials Team", "Telecom & Tech")
@@ -596,7 +604,7 @@ IB_HOUSES = _rx([r"evercore", r"lazard", r"rothschild and co", r"houlihan lokey"
 # Boutiques dont un stage "générique" est forcément en banque d'affaires
 IB_GENERIC_HOUSES = _rx([r"evercore", r"pjt\w*", r"moelis\w*", r"perella\w*", r"centerview\w*", r"greenhill\w*",
                          r"lincoln international"])
-GENERIC_INVEST_HOUSES = _rx([r"brevan howard", r"blackrock", r"comgest", r"partners group"])
+GENERIC_INVEST_HOUSES = _rx([r"brevan howard", r"blackrock", r"comgest", r"partners group", r"la caisse", r"cdpq"])
 INVEST_ROLE = _rx([r"financial analysts?", r"analystes? financi\w*", r"credit analysts?", r"analystes? credit"])
 VC_SECTORS = r"healthcare|life sciences?|green|bio|economy|hardware|next|gen|consumer|industrials?|deep ?tech|fintech|semiconductors?"
 IB_SECTORS = (r"industrials?|consumer|retail|healthcare|tmt|telecom\w*|media|technology|tech|energy|power|infrastructure|"

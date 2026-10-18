@@ -91,7 +91,7 @@ def backend_name():
 NTFY_TOPIC = None  # défini par tracker.py en mode --cloud
 
 
-def ntfy(title, message, url=None, button="Postuler", tags=None, priority=4):
+def ntfy(title, message, url=None, button="Postuler", tags=None, priority=4, extra=None):
     """Notification push via ntfy.sh (application ntfy sur téléphone ou navigateur)."""
     import sources
     print("🔔 %s — %s%s" % (title, message, ("\n   → " + url) if url else ""), flush=True)
@@ -102,6 +102,8 @@ def ntfy(title, message, url=None, button="Postuler", tags=None, priority=4):
     if url:
         body["click"] = url
         body["actions"] = [{"action": "view", "label": button, "url": url}]
+    for label, link in (extra or [])[:2]:  # ex. « Voir dans le tableau »
+        body.setdefault("actions", []).append({"action": "view", "label": label, "url": link})
     try:
         status, txt = sources.http("https://ntfy.sh/", method="POST", data=body)
         if status != 200:

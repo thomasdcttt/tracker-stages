@@ -652,11 +652,11 @@ def _wd_discover(s):
 # "internship", ni entre "London" et "Greater London") ; le lieu et le métier sont ensuite triés par le filtre.
 SITE_QUERIES = ["internship", "intern", "summer internship", "summer analyst", "off-cycle", "off cycle", "placement",
                 "stage", "stagiaire", "praktikum", "internship London", "internship Paris", "internship Singapore",
-                "internship Geneva", "internship Zurich"]
+                "internship Geneva", "internship Zurich", "internship Dublin"]
 ORACLE_QUERIES = ["internship", "intern", "summer internship", "summer analyst", "off-cycle", "placement", "stage",
                   "internship London", "internship Paris", "internship Singapore", "internship Geneva",
-                  "internship Zurich"]
-EIGHTFOLD_LOCATIONS = ["Paris", "Geneva", "Zurich", "Singapore", "London"]
+                  "internship Zurich", "internship Dublin"]
+EIGHTFOLD_LOCATIONS = ["Paris", "Geneva", "Zurich", "Singapore", "London", "Dublin"]
 EIGHTFOLD_QUERIES = ["intern", "internship", "stage", "off-cycle"]
 
 
@@ -792,7 +792,7 @@ def collect_eightfold_site(s):
 LOCATION_HINT = re.compile(
     r"(?<![A-Za-zÀ-ÿ])(Paris|La D[ée]fense|Puteaux|Courbevoie|Neuilly|Levallois|Boulogne|Montrouge|Saint-Denis|"
     r"Nanterre|[ÎI]le-de-France|Gen[eè]ve|Geneva|Genf|Z[uü]rich|Lausanne|Zug|Zoug|Baar|Basel|B[âa]le|Lugano|Bern|"
-    r"Berne|Nyon|Lucerne|Luzern|Switzerland|Suisse|Schweiz|Singapore|Singapour|London|Londres|Canary Wharf)"
+    r"Berne|Nyon|Lucerne|Luzern|Switzerland|Suisse|Schweiz|Singapore|Singapour|London|Londres|Canary Wharf|Dublin)"
     r"(?![A-Za-zÀ-ÿ])", re.I)
 PARIS_HINT = LOCATION_HINT  # ancien nom
 
@@ -1059,7 +1059,7 @@ def collect_workable_site(s):
 # API officielles d'agrégateurs d'offres (The Muse, Adzuna, Reed)
 # =====================================================================
 MUSE_LOCATIONS = ["London, United Kingdom", "Paris, France", "Zurich, Switzerland", "Geneva, Switzerland",
-                  "Singapore, Singapore"]
+                  "Singapore, Singapore", "Dublin, Ireland"]
 
 
 def parse_muse(data):
