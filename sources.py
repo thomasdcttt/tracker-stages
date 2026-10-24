@@ -862,22 +862,44 @@ def parse_html_listing(page, base_url, link_regex):
         elif len(txt) > len(texts[href]):
             texts[href] = txt
     jobs = []
+    prev_end = 0
     for pos, href in firsts:
         end = pos + 1500
         for p2, h2, _, _ in all_links:
             if p2 > pos and h2 != href:
                 end = min(end, p2)
                 break
-        block = _text(page[pos:end])
         title = texts[href]
-        if len(title) < 6:  # lien sans texte (image) : titre tiré de l'adresse
-            slug = urllib.parse.urlparse(href).path.rstrip("/").split("/")[-1]
-            title = re.sub(r"[-_]+", " ", re.sub(r"\.(aspx|html?)$", "", slug)).strip()
-        m = LOCATION_HINT.search(block)
-        if not m:  # lieu souvent présent dans l'adresse de l'offre (/job/geneva/..., /job/Singapore-...)
-            m = LOCATION_HINT.search(re.sub(r"[-_/+]+", " ", urllib.parse.unquote(urllib.parse.urlparse(href).path)))
+        slug_text = re.sub(r"[-_/+]+", " ", urllib.parse.unquote(urllib.parse.urlparse(href).path))
+        if len(title) < 6 or GENERIC_LINK_TEXT.fullmatch(title.strip()):
+            # Lien sans texte (image) ou texte générique ("Learn more", "En savoir plus") : titre tiré de l'adresse,
+            # et le bloc de l'offre est ce qui PRÉCÈDE le lien (le bouton est en bas de la carte)
+            before = page[max(prev_end, pos - 1500):pos]
+            heads = [_text(h) for h in re.findall(r'<h[1-6][^>]*>(.*?)</h[1-6]>|<[^>]+class="[^"]*title[^"]*"[^>]*>(.*?)</',
+                                                    before, re.S | re.I) for h in h if h]
+            heads = [h for h in heads if len(h) >= 6 and not GENERIC_LINK_TEXT.fullmatch(h)]
+            if heads:
+                title = heads[-1]
+            else:
+                slug = urllib.parse.urlparse(href).path.rstrip("/").split("/")[-1]
+                title = re.sub(r"\s+", " ", re.sub(r"[-_]+", " ", re.sub(r"\.(aspx|html?)$", "", slug))).strip()
+                title = title[:1].upper() + title[1:]
+            block = _text(before)[-600:]
+            m = LOCATION_HINT.search(slug_text) or LOCATION_HINT.search(block)
+        else:
+            block = _text(page[pos:end])
+            m = LOCATION_HINT.search(block)
+            if not m:  # lieu souvent présent dans l'adresse de l'offre (/job/geneva/..., /job/Singapore-...)
+                m = LOCATION_HINT.search(slug_text)
+        prev_end = pos
         jobs.append(dict(href=href, title=title, location=m.group(1) if m else "", block=block[:400]))
     return jobs
+
+
+GENERIC_LINK_TEXT = re.compile(
+    r"(?i)(?:learn|read|find out|see|view|show)(?: more)?(?: details?)?|more(?: info(?:rmation)?| details)?|details?|"
+    r"apply(?: now| here)?|view (?:job|role|position|opportunity|offer)|en savoir plus|voir (?:l[’'])?(?:offre|plus|le poste)|"
+    r"postuler|candidater|d[ée]couvrir|plus d[’']infos?|mehr(?: erfahren)?|details anzeigen|>|→|»|\+")
 
 
 def stable_job_key(href):
