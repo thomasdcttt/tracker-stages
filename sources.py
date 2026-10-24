@@ -14,6 +14,8 @@ import time
 import urllib.error
 import urllib.parse
 import urllib.request
+import urllib.robotparser
+import threading
 import zlib
 
 UA = ("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
@@ -31,6 +33,28 @@ class SourceError(Exception):
 class Unavailable(SourceError):
     """Panne passagère (maintenance hebdomadaire Workday, page d'erreur, 5xx) : ne compte pas comme un échec durable."""
     pass
+
+
+# Respect de robots.txt : lu une fois par hôte et par passage, avant toute lecture d'un site carrière
+_robots_cache, _robots_lock = {}, threading.Lock()
+
+
+def robots_allowed(url):
+    p = urllib.parse.urlparse(url)
+    host = p.netloc
+    with _robots_lock:
+        rp = _robots_cache.get(host)
+    if rp is None:
+        rp = urllib.robotparser.RobotFileParser()
+        try:
+            status, txt = http("https://%s/robots.txt" % host, headers={"Accept": "text/plain"}, timeout=15)
+            lines = txt.splitlines() if status == 200 and isinstance(txt, str) else []
+        except Exception:  # noqa: BLE001  robots.txt illisible : pas de règle connue
+            lines = []
+        rp.parse(lines)
+        with _robots_lock:
+            _robots_cache[host] = rp
+    return rp.can_fetch(UA, url) and rp.can_fetch("*", url)
 
 
 def _json_or_unavailable(status, txt, host):
@@ -680,6 +704,9 @@ EIGHTFOLD_QUERIES = ["intern", "internship", "stage", "off-cycle"]
 def collect_workday_site(s):
     """Un site Workday isolé. Si l'adresse configurée ne répond pas, la bonne est recherchée et mémorisée."""
     host, tenant, site = s.get("_host") or s["host"], s["tenant"], s.get("_site") or s["site"]
+    for u in ("https://%s/%s/" % (host, site), "https://%s/wday/cxs/%s/%s/jobs" % (host, tenant, site)):
+        if not robots_allowed(u):
+            raise SourceError("robots.txt du site interdit la lecture automatique (%s)" % urllib.parse.urlparse(u).path)
     seen = {}
     for q in s.get("queries", SITE_QUERIES):
         status, txt = _wd_search(host, tenant, site, q)
@@ -872,8 +899,17 @@ def collect_html_site(s):
     """Page d'offres HTML. Options : link_regex (adresse des offres) ou text_regex (texte du lien),
     default_location (lieu supposé si le bloc n'en indique pas, pour les entreprises basées à Paris)."""
     out, errors = {}, []
-    urls = s["urls"] if "urls" in s else [s["url"]]
-    for u in urls:
+    urls = list(s["urls"] if "urls" in s else [s["url"]])
+    max_pages = int(s.get("max_pages", 12))
+    done, extra = set(), 0
+    while urls:
+        u = urls.pop(0)
+        if u in done:
+            continue
+        done.add(u)
+        if not robots_allowed(u):
+            errors.append("robots.txt interdit %s" % urllib.parse.urlparse(u).path)
+            continue
         try:
             status, page = http(u, headers={"Accept": "text/html"})
         except SourceError as e:
@@ -887,14 +923,44 @@ def collect_html_site(s):
         else:
             trx = re.compile(s.get("text_regex", r"(?i)\b(stage|stagiaire|intern|internship|off.?cycle)\b"))
             found = [j for j in parse_html_listing(page, u, r".") if trx.search(j["title"])]
+        n_before = len(out)
         for j in found:
             loc = j["location"] or s.get("default_location", "")
             key = stable_job_key(j["href"])
             out[key] = _job(s["company"], key, j["title"], loc, j["href"])
+        # Pages suivantes de la même liste (SuccessFactors : startrow=, autres : page=), si la page a apporté du neuf
+        if len(out) > n_before and extra < max_pages - 1 and s.get("paginate", True):
+            for nxt in _next_pages(page, u):
+                if nxt not in done and nxt not in urls and extra < max_pages - 1:
+                    urls.append(nxt)
+                    extra += 1
         _pause(0.5, 1.5)
     if not out:
         raise SourceError("aucune offre lisible (%s)" % ("; ".join(errors[:2]) or "page chargée en JavaScript ou modifiée"))
     return list(out.values())
+
+
+def _next_pages(page, base):
+    """Liens de pagination d'une page liste, sur la même adresse (paramètre startrow= ou page= qui augmente)."""
+    b = urllib.parse.urlparse(base)
+    cur = urllib.parse.parse_qs(b.query)
+    out = []
+    for href in re.findall(r'href="([^"]+)"', page):
+        href = html.unescape(href)
+        if "startrow=" not in href and not re.search(r"[?&](?:page|pg)=\d+", href):
+            continue
+        full = urllib.parse.urljoin(base, href)
+        p = urllib.parse.urlparse(full)
+        if p.netloc != b.netloc or p.path.rstrip("/") != b.path.rstrip("/"):
+            continue
+        q = urllib.parse.parse_qs(p.query)
+        if any(q.get(k) != cur.get(k) for k in set(q) | set(cur) if k not in ("startrow", "page", "pg")):
+            continue  # autre filtre ou autre tri : ce n'est pas la suite de cette liste
+        for k in ("startrow", "page", "pg"):
+            if k in q and int((q[k] or ["0"])[0] or 0) > int((cur.get(k) or ["0"])[0] or 0):
+                out.append(full)
+                break
+    return list(dict.fromkeys(out))
 
 
 # ---------------------------------------------------------------- SmartRecruiters (API publique des offres)
@@ -1014,7 +1080,9 @@ def parse_greenhouse(data, company):
 
 
 def collect_greenhouse_site(s):
-    status, txt = http("https://boards-api.greenhouse.io/v1/boards/%s/jobs" % urllib.parse.quote(s["board"]),
+    # Les boards hébergés en Europe passent par boards-api.eu.greenhouse.io ("eu": true dans la config)
+    api = "boards-api.eu.greenhouse.io" if s.get("eu") else "boards-api.greenhouse.io"
+    status, txt = http("https://%s/v1/boards/%s/jobs" % (api, urllib.parse.quote(s["board"])),
                        headers={"Accept": "application/json"})
     if status != 200:
         raise SourceError("HTTP %d" % status)
@@ -1277,8 +1345,43 @@ def _jsonld_job(page):
                 if isinstance(et, list):
                     et = " ".join(str(x) for x in et)
                 return dict(description=_html_text(html.unescape(str(it.get("description") or ""))),
-                            employment_type=str(et).replace("_", " "))
+                            employment_type=str(et).replace("_", " "), location=_jsonld_location(it.get("jobLocation")))
     return None
+
+
+def _jsonld_location(loc):
+    """Lieu(x) d'un bloc schema.org jobLocation : "Ville, Région, Pays"."""
+    out = []
+    for l in loc if isinstance(loc, list) else [loc]:
+        if isinstance(l, dict):
+            a = l.get("address") or {}
+            if isinstance(a, str):
+                out.append(a)
+            elif isinstance(a, dict):
+                c = a.get("addressCountry")
+                c = c.get("name") if isinstance(c, dict) else c
+                out.append(", ".join(str(x) for x in (a.get("addressLocality"), a.get("addressRegion"), c) if x))
+        elif isinstance(l, str):
+            out.append(l)
+    return "; ".join(x for x in out if x)
+
+
+LOCATION_HTML = re.compile(r'class="[^"]*(?:jobGeoLocation|job-?location|jobLocation|location)[^"]*"[^>]*>\s*([^<]{2,100}?)\s*<', re.I)
+
+
+def fetch_location(offer):
+    """Lieu d'une offre de site carrière dont la page liste n'indique pas le lieu (JSON-LD, sinon balise "location")."""
+    url = offer.get("url") or ""
+    if not url.startswith("http") or not robots_allowed(url):
+        return ""
+    status, page = http(url, headers={"Accept": "text/html"})
+    if status != 200:
+        return ""
+    d = _jsonld_job(page)
+    if d and d.get("location"):
+        return d["location"]
+    m = LOCATION_HTML.search(page)
+    return html.unescape(m.group(1)).strip() if m else ""
 
 
 def fetch_description(offer):
@@ -1312,9 +1415,9 @@ def fetch_description(offer):
             return dict(description=_html_text(info.get("jobDescription") or ""), employment_type="", trusted=False)
         if "smartrecruiters.com" in url:
             return None  # l'API SmartRecruiters est interdite aux robots (robots.txt) : pas de lecture
-        m = re.match(r"https://(?:boards|job-boards)\.greenhouse\.io/([^/]+)/jobs/(\d+)", url)
+        m = re.match(r"https://(?:boards|job-boards)\.(eu\.)?greenhouse\.io/([^/]+)/jobs/(\d+)", url)
         if m:
-            status, txt = http("https://boards-api.greenhouse.io/v1/boards/%s/jobs/%s" % m.groups(),
+            status, txt = http("https://boards-api.%sgreenhouse.io/v1/boards/%s/jobs/%s" % (m.group(1) or "", m.group(2), m.group(3)),
                                headers={"Accept": "application/json"})
             if status != 200:
                 return None

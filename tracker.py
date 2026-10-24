@@ -327,6 +327,27 @@ DEFAULT_CONFIG = {
         {"company": "Nuveen", "type": "workday", "host": "tiaa.wd1.myworkdayjobs.com", "tenant": "tiaa", "site": "Search"},
         {"company": "Vanguard", "type": "workday", "host": "vanguard.wd5.myworkdayjobs.com", "tenant": "vanguard", "site": "vanguard_external"},
         {"company": "Cboe", "type": "workday", "host": "cboe.wd1.myworkdayjobs.com", "tenant": "cboe", "site": "External_Career_CBOE"},
+        {"company": "Legal & General (LGIM)", "type": "html", "url": "https://careers.legalandgeneral.com/investment-jobs", "link_regex": "/job/[a-z0-9-]+-jid-\\d+"},  # v9
+        {"company": "Janus Henderson", "type": "html", "url": "https://jobs.janushenderson.com/search?q=&sortColumn=referencedate&sortDirection=desc", "link_regex": "/job/[^\"/]+/\\d+/"},  # v9
+        {"company": "Scotiabank", "type": "html", "url": "https://jobs.scotiabank.com/go/Student-&-New-Grad-Jobs/2298417/", "link_regex": "/job/[^\"/]+/\\d+/"},  # v9
+        {"company": "Permira", "type": "greenhouse", "board": "permiraexternalprivate", "eu": True},  # v9
+        {"company": "Atomico", "type": "greenhouse", "board": "atomico"},  # v9
+        {"company": "CVC Credit Partners", "type": "workable", "account": "cvc-credit-partners"},  # v9
+        {"company": "Balderton Capital", "type": "workable", "account": "baldertoncapital"},  # v9
+        {"company": "DV Trading", "type": "greenhouse", "board": "dvtrading"},  # v9
+        {"company": "Glencore UK (early careers)", "type": "greenhouse", "board": "glencoreuk", "eu": True},  # v9
+        {"company": "Sixth Street", "type": "workday", "host": "sixthstreet.wd1.myworkdayjobs.com", "tenant": "sixthstreet", "site": "sixthstreetcareers"},  # v9
+        {"company": "Verition Fund Management", "type": "greenhouse", "board": "veritiongroupllcinternships"},  # v9
+        {"company": "LionTree", "type": "greenhouse", "board": "liontree"},  # v9
+        {"company": "Rothesay", "type": "greenhouse", "board": "rothesaygraduates"},  # v9
+        {"company": "Capstone Investment Advisors", "type": "greenhouse", "board": "capstoneinvestmentadvisors"},  # v9
+        {"company": "Harrison Street", "type": "lever", "account": "harrisonst"},  # v9
+        {"company": "Graham Capital Management", "type": "greenhouse", "board": "grahamcapitalmanagement"},  # v9
+        {"company": "Howden Capital Markets & Advisory (Hyperion Group)", "type": "workday", "host": "hyperiongrp.wd3.myworkdayjobs.com", "tenant": "hyperiongrp", "site": "Hyperion_External"},  # v9
+        {"company": "Maven Securities", "type": "greenhouse", "board": "emergingtalent"},  # v9
+        {"company": "Motion Ventures", "type": "greenhouse", "board": "motionventures", "eu": True},  # v9
+        {"company": "Davy (Bank of Ireland group)", "type": "workable", "account": "davy"},  # v9
+        {"company": "Mirabaud", "type": "html", "url": "https://www.mirabaud.com/fr/carrieres/offres-demploi", "link_regex": "/fr/carrieres/offres-demploi/job-details/\\d+"},  # v9
     ],
     # Portail officiel de l'emploi à Singapour (offres « Internship/Attachment »)
     "mcf": {
@@ -353,7 +374,8 @@ DEFAULT_CONFIG = {
                            "BNP Paribas", "Bank of America", "Société Générale"],
     "closed_checks_per_run": 20,
     "parallel_sources": 12,
-    "collect_budget_seconds": 400,  # au-delà, les sources pas encore lues passent au passage suivant (en priorité)
+    "collect_budget_seconds": 400,
+    "location_checks_per_run": 40,  # offres de sites carrières sans lieu : lecture du lieu sur la page de l'offre  # au-delà, les sources pas encore lues passent au passage suivant (en priorité)
     # Agrégateurs à API officielle : The Muse (sans clé), Adzuna et Reed (clés gratuites dans les secrets GitHub)
     "muse": {"enabled": True, "max_pages": 15,
              "locations": ["London, United Kingdom", "Paris, France", "Zurich, Switzerland", "Geneva, Switzerland",
@@ -844,7 +866,7 @@ class Tracker:
         self.li_blocked = False  # nouvelle tentative LinkedIn à chaque passage
         new_list, seeded_now = [], []
         details_budget = self.cfg["linkedin"]["detail_limit_per_cycle"]
-        detail_queue, desc_queue = [], []
+        detail_queue, desc_queue, loc_queue = [], [], []
         for name, jobs in self.collect():
             seed = self.store.get_meta("seeded:" + name) is None
             for j in jobs:
@@ -855,6 +877,13 @@ class Tracker:
                     self.store.add_rejected(j["uid"], "publiée il y a trop longtemps", j)
                     continue
                 r = self._classify(j)
+                if (not r["ok"] and r["region"] is None and j["source"] == "Site carrière"
+                        and not (j.get("location") or "").strip()):
+                    # Page liste sans lieu : si l'intitulé est dans le périmètre, le lieu est lu sur la page de l'offre
+                    probe = self._classify(dict(j, location="Paris"))
+                    if probe["ok"] or probe["intern"] == "unknown":
+                        loc_queue.append((j, seed))
+                        continue
                 if j["source"] == "LinkedIn" and (r["ok"] or r["intern"] == "unknown"):
                     # On va chercher le lien carrière (et confirmer le stage si besoin)
                     detail_queue.append((0 if r["ok"] else 1, j, r, seed))
@@ -868,6 +897,7 @@ class Tracker:
             if seed and jobs:
                 seeded_now.append(name)
 
+        self._check_locations(loc_queue, desc_queue, new_list)
         self._check_descriptions(desc_queue, new_list)
 
         # Offres LinkedIn retenues d'abord, puis celles à confirmer
@@ -920,6 +950,33 @@ class Tracker:
         if d.get("trusted") or re.search(r"(?i)intern|stage|praktik|attachment", emp):
             return emp
         return ""
+
+    def _check_locations(self, queue, desc_queue, new_list):
+        """Offres de sites carrières sans lieu sur la page liste : lieu lu sur la page de l'offre (budget par passage).
+        Au-delà du budget, l'offre n'est pas enregistrée et sera reprise au passage suivant."""
+        budget = int(self.cfg.get("location_checks_per_run", 40))
+        for j, seed in queue:
+            if budget <= 0:
+                continue
+            budget -= 1
+            try:
+                loc = sources.fetch_location(j)
+            except sources.RateLimited:
+                budget = 0
+                continue
+            except Exception:  # noqa: BLE001
+                loc = ""
+            if not loc:
+                self.store.add_rejected(j["uid"], "hors zone (lieu introuvable sur la page de l'offre)", j)
+                continue
+            j["location"] = loc
+            r = self._classify(j)
+            if r["ok"] and seed:
+                self._accept(j, r, seed, new_list)
+            elif r["ok"] or r["intern"] == "unknown":
+                desc_queue.append((0 if r["ok"] else 1, j, r, seed))
+            else:
+                self.store.add_rejected(j["uid"], r["reason"] or "?", j)
 
     def _check_descriptions(self, queue, new_list):
         """Offres hors LinkedIn : lecture de la description avant de notifier, dans la limite d'un budget par passage.

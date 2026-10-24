@@ -7,7 +7,7 @@ import re
 import unicodedata
 
 # À incrémenter à chaque changement de règles : les offres déjà écartées sont alors réexaminées.
-FILTER_VERSION = 9
+FILTER_VERSION = 10
 
 
 def normalize(text):
@@ -43,6 +43,8 @@ INTERN_TITLE = _rx([
     r"\w+praktik(?:um|ums|a|ant\w*)",
     # v7 : "Summer Associate" (Goldman Sachs, Capital Group...) = stage d'été
     r"summer associates?",
+    # v10 : "Summer Financial Analyst" (Houlihan Lokey), "Year in Industry" (Legal & General) = stage
+    r"summer (?:\w+ ){1,2}analysts?", r"year in industry",
 ])
 SUMMER_TITLE = _rx([r"summer"])
 # Contrats explicitement exclus
@@ -54,6 +56,12 @@ CONTRACT_EXCLUDE = _rx([
     r"werkstudent\w*", r"lehrstelle\w*", r"lernende[nr]?", r"lehrling\w*",
     # v7 : "Working Student" (J.P. Morgan, Swiss Life AM) = Werkstudent, pas un stage
     r"working students?",
+    # v10 : "Full Time Analyst ... (Applicable for 2026 Citi Summer interns only)" : CDI réservé aux anciens stagiaires
+    r"full ?time (?:analysts?|associates?)",
+    # v10 : programmes de découverte d'une semaine ou d'un jour (hors périmètre : ni stage ni poste)
+    r"spring weeks?", r"spring insights?", r"insight (?:weeks?|days?|programmes?|programs?|events?)",
+    r"(?:women s |diversity )?immersion (?:programmes?|programs?|days?|weeks?)", r"discovery (?:days?|weeks?)",
+    r"open days?", r"virtual experience",
 ])
 # Titres de postes confirmés ou de programmes graduate : jamais un stage si le titre ne dit pas "stage"/"intern"
 NOT_INTERN_TITLE = _rx([
@@ -174,6 +182,13 @@ CAT_PATTERNS = {
         r"fundraising advisory", r"analyste fundraising", r"fundraising analysts?",
         # v7
         r"(?<!working )capital solutions", r"secondary advisory", r"aviation advisory",
+        # v10 : Citi "Banking, Financing", PJT "Strategic Advisory", Jefferies "Private Fund Advisory", UBS "Global Banking",
+        # Commerzbank "Syndicated Finance", CIMB "Wholesale Banking", UOB "Corporate Investments & Acquisitions"
+        r"banking (?:and )?financing", r"strategic advisory", r"private funds? advisory", r"global banking",
+        r"syndicated finance", r"wholesale banking", r"investments? (?:and )?acquisitions?",
+        # v10 (échantillon de référence) : Macquarie "Generalist Advisory", Rothschild "Arrowpoint Advisory",
+        # SGX "GSO, Debt & Equity"
+        r"generalist advisory", r"arrowpoint\w*", r"debt (?:and )?equity",
         r"fund finance",  # financement de fonds en banque (ING) ; exclu chez un gérant (voir BANKS dans categorize)
     ],
     "Private Equity": [
@@ -184,6 +199,10 @@ CAT_PATTERNS = {
         r"investissement non cote", r"\bpe\b fund", r"charge e? d investissements?", r"chargee? d investissements?", r"gp stakes", r"gp solutions", r"gp led", r"continuation funds?",
         # v7
         r"private credit", r"real estate investments?(?! trusts?)", r"real estate private equity",
+        # v10 : Blackstone Tactical Opportunities / Strategic Partners (secondaires), Castleton "Principal Investments",
+        # Keppel "RE/DC/OneInfra Investment", Capstone "Investment Internship"
+        r"tactical opportunities", r"blackstone strategic partners", r"principal investments?",
+        r"(?:re|dc|oneinfra|direct) investments?",
     ],
     "Private Equity (faible)": [
         r"infrastructure", r"real assets", r"primaries", r"co ?invest\w*",
@@ -205,6 +224,9 @@ CAT_PATTERNS = {
         # v7
         r"investment managers?", r"portfolio construction", r"investment analysis",
         r"(?:sustainable|responsible) investing",
+        r"investment intern(?:ships?|s)?",  # v10 : Capstone "Investment Internship", Altor "Investment Intern"
+        r"(?:uk|europe|european|credit|growth|direct|private|global) investing",  # v10 : Sixth Street "UK Investing"
+        r"investment direct(?:ing|ors?)",  # v10 : Fidelity International "Investment Directing" (spécialistes produits)
     ],
     "Sales & Trading": [
         r"sales trading", r"sales and trading", r"sales traders?", r"traders?", r"trading",
@@ -253,7 +275,7 @@ ROLE_EXCLUDE = _rx([
     r"it", r"developer", r"developpeur",
     r"developpeuse", r"engineer", r"engineering", r"ingenieur", r"ingenieure", r"data",
     r"software", r"devops", r"cyber\w*", r"juristes?", r"legal", r"avocats?", r"cabinet d avocats",
-    r"lawyers?", r"droit", r"juridique", r"law", r"rh", r"hr", r"human resources", r"ressources humaines", r"recrutement",
+    r"lawyers?", r"counsel", r"droit", r"juridique", r"law", r"rh", r"hr", r"human resources", r"ressources humaines", r"recrutement",
     r"recruitment", r"talent (?:acquisition|management|sourcing|partner|development)", r"marketing",
     r"consultant\w*", r"consulting", r"chief of staff", r"medias?", r"programmati\w*", r"digital trader\w*",
     r"trader\w* digital", r"social media", r"trader social", r"ads", r"advertising", r"publicite", r"adtech", r"paid media",
@@ -437,10 +459,11 @@ COMMO_HOUSES = _rx([
     r"ameropa", r"alvean", r"engelhart", r"etg", r"bb energy", r"sinochem", r"unipec", r"petrochina", r"freepoint",
     r"edf trading", r"uniper", r"totalenergies trading", r"shell trading", r"bp trading", r"koch supply",
     r"koch",  # v7 : "Koch" (Koch Supply & Trading, Singapour)
+    r"klesch",  # v10 : Klesch Group (raffinage, métaux, négoce), programme d'analystes
 ])
 COMMO_HOUSE_ROLE = _rx([
     r"analysts?", r"analyste", r"research", r"recherche", r"trading", r"traders?", r"operations?", r"operators?",
-    r"freight", r"chartering", r"markets?", r"origination", r"scheduler\w*",
+    r"freight", r"chartering", r"markets?", r"originat\w*", r"scheduler\w*",
     r"shipping", r"traffic",  # v7 : opérations physiques (traffic = logistique d'un négociant)
 ])
 HOUSE_EXCLUDE = _rx([r"risk", r"risks", r"control\w*", r"finance", r"treasury", r"tresorerie", r"credit", r"gen ?ai", r"ai",
@@ -593,8 +616,10 @@ BANKS = _rx([
 AM_COMPANY = _rx([r"asset management", r"asset managers", r"investment managers?", r"investment management",
                   r"capital management", r"gestion"])
 INVEST_HOUSES = {  # employeur -> catégorie
-    "Asset Management": _rx([r"brevan howard", r"blackrock", r"comgest", r"tikehau\w*"]),
-    "Private Equity": _rx([r"partners group", r"clubfunding\w*", r"la caisse", r"cdpq"]),
+    "Asset Management": _rx([r"brevan howard", r"blackrock", r"comgest", r"tikehau\w*", r"graham capital\w*", r"capula\w*",
+                             r"verition\w*", r"capstone investment\w*", r"point72", r"millennium", r"citadel",
+                             r"balyasny", r"marshall wace", r"man group"]),
+    "Private Equity": _rx([r"partners group", r"clubfunding\w*", r"la caisse", r"cdpq", r"3i", r"sixth street"]),
     "Venture Capital": _rx([r"sg growth capital"]),
 }
 # Banques d'affaires : intitulé réduit à une équipe sectorielle ("Industrials Team", "Telecom & Tech")
@@ -603,8 +628,18 @@ IB_HOUSES = _rx([r"evercore", r"lazard", r"rothschild and co", r"houlihan lokey"
                  r"natixis corporate (?:and )?investment banking"])
 # Boutiques dont un stage "générique" est forcément en banque d'affaires
 IB_GENERIC_HOUSES = _rx([r"evercore", r"pjt\w*", r"moelis\w*", r"perella\w*", r"centerview\w*", r"greenhill\w*",
-                         r"lincoln international"])
-GENERIC_INVEST_HOUSES = _rx([r"brevan howard", r"blackrock", r"comgest", r"partners group", r"la caisse", r"cdpq"])
+                         r"lincoln international", r"raine"])
+GENERIC_INVEST_HOUSES = _rx([r"brevan howard", r"blackrock", r"comgest", r"partners group", r"la caisse", r"cdpq", r"3i",
+                             r"graham capital\w*", r"sixth street", r"capula\w*", r"verition\w*", r"capstone investment\w*",
+                             r"point72", r"millennium", r"citadel", r"balyasny", r"marshall wace", r"man group"])
+# v10 : stage générique "Analyst" / "Placement" chez une maison ci-dessus (Partners Group "Summer Analyst Program")
+GENERIC_CORE_NOISE = re.compile(r"(?<![a-z0-9])(?:analysts?|financial|placement|united|kingdom|uk|ireland)(?![a-z0-9])")
+# v10 : en banque, "Global Research", "Client Sales", "Corporates Sales", "Sales Analyst" = marchés
+BANK_SR_CORE = r"(?:(?:global|client|corporates?|institutional) )*(?:sales|research)"
+# v10 : gérants de private equity dont l'immobilier est un métier d'investissement (Blackstone REPE, Carlyle)
+PE_HOUSES = _rx([r"blackstone", r"carlyle", r"kkr", r"apollo", r"tpg", r"brookfield", r"eqt", r"cvc", r"bain capital",
+                 r"partners group", r"ardian", r"tikehau\w*"])
+PE_RE_ROLE = _rx([r"real estate (?:partners|secondaries|debt|acquisitions?|investments?|equity)", r"real estate intern\w*"])
 INVEST_ROLE = _rx([r"financial analysts?", r"analystes? financi\w*", r"credit analysts?", r"analystes? credit"])
 VC_SECTORS = r"healthcare|life sciences?|green|bio|economy|hardware|next|gen|consumer|industrials?|deep ?tech|fintech|semiconductors?"
 IB_SECTORS = (r"industrials?|consumer|retail|healthcare|tmt|telecom\w*|media|technology|tech|energy|power|infrastructure|"
@@ -636,15 +671,21 @@ def _house_category(t, company):
         return None
     c = normalize(company)
     core = _title_core(t)
-    if BANKS.search(c) and core in ("sales", "research"):
+    # v10 : sans les mots du nom de l'employeur ni "analyst"/"placement"/pays
+    gcore = core
+    for w in set(c.split()):
+        if len(w) >= 3:
+            gcore = re.sub(r"(?<![a-z0-9])%s(?![a-z0-9])" % re.escape(w), " ", gcore)
+    gcore = re.sub(r"\s+", " ", GENERIC_CORE_NOISE.sub(" ", gcore)).strip()
+    if BANKS.search(c) and (core in ("sales", "research") or re.fullmatch(BANK_SR_CORE, gcore)):
         return "Sales & Trading"
     if IB_HOUSES.search(c) and _only(core, IB_SECTORS):
         return "M&A / IBD"
-    if IB_GENERIC_HOUSES.search(c) and not core:
+    if IB_GENERIC_HOUSES.search(c) and not gcore:
         return "M&A / IBD"
     for cat, rx in INVEST_HOUSES.items():
         if rx.search(c) and (INVEST_ROLE.search(t) or _only(core, VC_SECTORS)
-                             or (not core and GENERIC_INVEST_HOUSES.search(c))):
+                             or (not gcore and GENERIC_INVEST_HOUSES.search(c))):
             return cat
     if AM_COMPANY.search(c) and INVEST_ROLE.search(t):
         return "Asset Management"
@@ -679,6 +720,8 @@ def categorize(title, company=""):
     if SECTOR_OK.search(t):  # "Investment Banking, Consumer Retail Group", "Equity Research Immobilier"
         for w in SECTOR_WORDS:
             t_for_excl = re.sub(r"(?<![a-z0-9])%s(?![a-z0-9])" % w, " ", t_for_excl)
+    if company and PE_HOUSES.search(c) and PE_RE_ROLE.search(t):  # v10 : immobilier côté investissement chez un GP
+        t_for_excl = re.sub(r"(?<![a-z0-9])real estate(?![a-z0-9])", " ", t_for_excl)
     if company and BANKS.search(c):  # "Fund Finance" en banque = financement de fonds (IBD), pas la finance d'un GP
         t_for_excl = re.sub(r"(?<![a-z0-9])fund finance(?![a-z0-9])", " ", t_for_excl)
     m = ROLE_EXCLUDE.search(t_for_excl)
@@ -686,6 +729,8 @@ def categorize(title, company=""):
         return None, "métier exclu (%s)" % m.group(0).strip()
     if LEVFIN_RX.search(t):
         return "M&A / IBD", None
+    if company and PE_HOUSES.search(c) and PE_RE_ROLE.search(t):
+        return "Private Equity", None
     # Ordre : PE et VC avant M&A (un "stage investissement PE" ne doit pas finir en IBD)
     for cat in ("Private Equity", "Venture Capital", "Asset Management", "M&A / IBD", "Private Equity (faible)",
                 "Sales & Trading"):

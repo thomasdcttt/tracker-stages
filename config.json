@@ -1336,6 +1336,122 @@
       "host": "cboe.wd1.myworkdayjobs.com",
       "tenant": "cboe",
       "site": "External_Career_CBOE"
+    },
+    {
+      "company": "Legal & General (LGIM)",
+      "type": "html",
+      "url": "https://careers.legalandgeneral.com/investment-jobs",
+      "link_regex": "/job/[a-z0-9-]+-jid-\\d+"
+    },
+    {
+      "company": "Janus Henderson",
+      "type": "html",
+      "url": "https://jobs.janushenderson.com/search?q=&sortColumn=referencedate&sortDirection=desc",
+      "link_regex": "/job/[^\"/]+/\\d+/"
+    },
+    {
+      "company": "Scotiabank",
+      "type": "html",
+      "url": "https://jobs.scotiabank.com/go/Student-&-New-Grad-Jobs/2298417/",
+      "link_regex": "/job/[^\"/]+/\\d+/"
+    },
+    {
+      "company": "Permira",
+      "type": "greenhouse",
+      "board": "permiraexternalprivate",
+      "eu": true
+    },
+    {
+      "company": "Atomico",
+      "type": "greenhouse",
+      "board": "atomico"
+    },
+    {
+      "company": "CVC Credit Partners",
+      "type": "workable",
+      "account": "cvc-credit-partners"
+    },
+    {
+      "company": "Balderton Capital",
+      "type": "workable",
+      "account": "baldertoncapital"
+    },
+    {
+      "company": "DV Trading",
+      "type": "greenhouse",
+      "board": "dvtrading"
+    },
+    {
+      "company": "Glencore UK (early careers)",
+      "type": "greenhouse",
+      "board": "glencoreuk",
+      "eu": true
+    },
+    {
+      "company": "Sixth Street",
+      "type": "workday",
+      "host": "sixthstreet.wd1.myworkdayjobs.com",
+      "tenant": "sixthstreet",
+      "site": "sixthstreetcareers"
+    },
+    {
+      "company": "Verition Fund Management",
+      "type": "greenhouse",
+      "board": "veritiongroupllcinternships"
+    },
+    {
+      "company": "LionTree",
+      "type": "greenhouse",
+      "board": "liontree"
+    },
+    {
+      "company": "Rothesay",
+      "type": "greenhouse",
+      "board": "rothesaygraduates"
+    },
+    {
+      "company": "Capstone Investment Advisors",
+      "type": "greenhouse",
+      "board": "capstoneinvestmentadvisors"
+    },
+    {
+      "company": "Harrison Street",
+      "type": "lever",
+      "account": "harrisonst"
+    },
+    {
+      "company": "Graham Capital Management",
+      "type": "greenhouse",
+      "board": "grahamcapitalmanagement"
+    },
+    {
+      "company": "Howden Capital Markets & Advisory (Hyperion Group)",
+      "type": "workday",
+      "host": "hyperiongrp.wd3.myworkdayjobs.com",
+      "tenant": "hyperiongrp",
+      "site": "Hyperion_External"
+    },
+    {
+      "company": "Maven Securities",
+      "type": "greenhouse",
+      "board": "emergingtalent"
+    },
+    {
+      "company": "Motion Ventures",
+      "type": "greenhouse",
+      "board": "motionventures",
+      "eu": true
+    },
+    {
+      "company": "Davy (Bank of Ireland group)",
+      "type": "workable",
+      "account": "davy"
+    },
+    {
+      "company": "Mirabaud",
+      "type": "html",
+      "url": "https://www.mirabaud.com/fr/carrieres/offres-demploi",
+      "link_regex": "/fr/carrieres/offres-demploi/job-details/\\d+"
     }
   ],
   "mcf": {
@@ -1384,6 +1500,8 @@
   ],
   "closed_checks_per_run": 20,
   "parallel_sources": 12,
+  "collect_budget_seconds": 400,
+  "location_checks_per_run": 40,
   "muse": {
     "enabled": true,
     "max_pages": 15,
