@@ -28,6 +28,20 @@ class SourceError(Exception):
     pass
 
 
+class Unavailable(SourceError):
+    """Panne passagère (maintenance hebdomadaire Workday, page d'erreur, 5xx) : ne compte pas comme un échec durable."""
+    pass
+
+
+def _json_or_unavailable(status, txt, host):
+    if status >= 500:
+        raise Unavailable("%s : HTTP %d (maintenance probable)" % (host, status))
+    try:
+        return json.loads(txt)
+    except ValueError:
+        raise Unavailable("%s : réponse illisible (maintenance probable)" % host)
+
+
 def _ssl_context():
     try:
         import certifi  # présent si "pip install certifi" (recommandé sur Mac)
@@ -553,9 +567,9 @@ def collect_workday(cfg, log):
             seen = {}
             for q in cfg["workday"]["queries"]:
                 status, txt = _wd_search(host, tenant, site, q)
-                if status != 200:
+                if status != 200 and status < 500:
                     raise SourceError("HTTP %d" % status)
-                first = json.loads(txt)
+                first = _json_or_unavailable(status, txt, host)
                 for data in [first] + _wd_more_pages(host, tenant, site, q, first):
                     for j in parse_workday(data, host, site):
                         j["company"] = company
@@ -604,7 +618,10 @@ def _wd_more_pages(host, tenant, site, q, first_data):
         status, txt = _wd_search(host, tenant, site, q, offset)
         if status != 200:
             break
-        data = json.loads(txt)
+        try:
+            data = json.loads(txt)
+        except ValueError:
+            break
         if not data.get("jobPostings"):
             break
         pages.append(data)
@@ -671,9 +688,9 @@ def collect_workday_site(s):
             tenant = s["tenant"]  # la découverte peut corriger le tenant (osv-cci -> osv_cci)
             s["_host"], s["_site"], s["_discovered"] = host, site, True
             status, txt = _wd_search(host, tenant, site, q)
-        if status != 200:
+        if status != 200 and status < 500:
             raise SourceError("HTTP %d" % status)
-        first = json.loads(txt)
+        first = _json_or_unavailable(status, txt, host)
         for data in [first] + _wd_more_pages(host, tenant, site, q, first):
             for j in parse_workday(data, host, site):
                 if j["ext_id"] in seen:
@@ -1029,6 +1046,29 @@ def collect_lever_site(s):
     return parse_lever(json.loads(txt), s["company"])
 
 
+# ---------------------------------------------------------------- Ashby (API publique des offres, très utilisée par les fonds)
+def parse_ashby(data, company):
+    jobs = []
+    for p in (data or {}).get("jobs", []) or []:
+        if not p.get("id") or not (p.get("jobUrl") or p.get("applyUrl")) or p.get("isListed") is False:
+            continue
+        locs = [p.get("location") or ""] + [(x.get("location") or "") for x in (p.get("secondaryLocations") or [])
+                                            if isinstance(x, dict)]
+        j = _job(company, p["id"], p.get("title") or "", ", ".join(dict.fromkeys(l for l in locs if l)),
+                 p.get("jobUrl") or p.get("applyUrl"), (p.get("publishedAt") or "")[:10])
+        j["employment_type"] = p.get("employmentType") or ""
+        jobs.append(j)
+    return jobs
+
+
+def collect_ashby_site(s):
+    status, txt = http("https://api.ashbyhq.com/posting-api/job-board/%s" % urllib.parse.quote(s["board"]),
+                       headers={"Accept": "application/json"})
+    if status != 200:
+        raise SourceError("HTTP %d" % status)
+    return parse_ashby(json.loads(txt), s["company"])
+
+
 # ---------------------------------------------------------------- Workable (widget public des offres)
 def parse_workable(data, company):
     jobs = []
@@ -1209,6 +1249,7 @@ SITE_COLLECTORS = {
     "greenhouse": collect_greenhouse_site,
     "lever": collect_lever_site,
     "workable": collect_workable_site,
+    "ashby": collect_ashby_site,
 }
 
 
@@ -1289,6 +1330,17 @@ def fetch_description(offer):
                 "%s: %s" % (x.get("text") or "", _html_text(x.get("content") or "")) for x in (d.get("lists") or []))
             return dict(description=text, employment_type=(d.get("categories") or {}).get("commitment") or "",
                         trusted=False)
+        m = re.match(r"https://jobs\.ashbyhq\.com/([^/?#]+)/([0-9a-f-]{20,})", url)
+        if m:
+            status, txt = http("https://api.ashbyhq.com/posting-api/job-board/%s" % m.group(1),
+                               headers={"Accept": "application/json"})
+            if status != 200:
+                return None
+            for p in json.loads(txt).get("jobs") or []:
+                if p.get("id") == m.group(2):
+                    return dict(description=p.get("descriptionPlain") or _html_text(p.get("descriptionHtml") or ""),
+                                employment_type=p.get("employmentType") or "", trusted=False)
+            return None
         m = re.match(r"https://([^/]+)/hcmUI/CandidateExperience/[a-z]{2}/sites/([^/]+)/job/(\d+)", url)
         if m:
             host, site, rid = m.groups()

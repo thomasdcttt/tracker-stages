@@ -20,7 +20,7 @@ import traceback
 import urllib.parse
 import webbrowser
 from concurrent.futures import ThreadPoolExecutor
-from datetime import datetime
+from datetime import datetime, timezone
 
 # Console Windows / lancement sans console (pythonw) : jamais de plantage sur un affichage
 for _name in ("stdout", "stderr"):
@@ -353,6 +353,7 @@ DEFAULT_CONFIG = {
                            "BNP Paribas", "Bank of America", "Société Générale"],
     "closed_checks_per_run": 20,
     "parallel_sources": 12,
+    "collect_budget_seconds": 400,  # au-delà, les sources pas encore lues passent au passage suivant (en priorité)
     # Agrégateurs à API officielle : The Muse (sans clé), Adzuna et Reed (clés gratuites dans les secrets GitHub)
     "muse": {"enabled": True, "max_pages": 15,
              "locations": ["London, United Kingdom", "Paris, France", "Zurich, Switzerland", "Geneva, Switzerland",
@@ -455,6 +456,12 @@ def paris_now():
         return datetime.now(timezone(timedelta(hours=2)))
 
 
+def workday_maintenance(now=None):
+    """Fenêtre de maintenance hebdomadaire de Workday : samedi 06:00 à 11:00 UTC (marge incluse, heure d'été et d'hiver)."""
+    d = datetime.fromtimestamp(now if now is not None else time.time(), timezone.utc)
+    return d.weekday() == 5 and 6 <= d.hour < 11
+
+
 # ----------------------------------------------------------------------------- collecte
 class Tracker:
     def __init__(self, cfg, store):
@@ -472,6 +479,10 @@ class Tracker:
                     self.backoff_len.pop(name)
             except ValueError:
                 pass
+        if store.get_meta("pause_reset_v9", "") != "1":
+            # La maintenance Workday du 24/10 avait mis tous les sites Workday en pause 24 h : on lève ces pauses
+            store.reset_site_pauses()
+            store.set_meta("pause_reset_v9", "1")
         self._check_filter_version()
         self._init_region_seeding()
 
@@ -627,17 +638,25 @@ class Tracker:
             self._save_backoff(name)
             log("%s : limité par le site (%s), pause de %d min" % (name, e, d // 60))
             self.store.set_source(name, False, "Limité par le site, pause %d min" % (d // 60))
+        except sources.Unavailable as e:
+            # Maintenance ou panne passagère : aucune pause, nouvel essai dès le passage suivant
+            log("%s : indisponible sur ce passage (%s)" % (name, e))
+            self.store.set_source(name, False, "Indisponible sur ce passage (%s), nouvel essai au suivant" % str(e)[:150])
         except Exception as e:
             fails = int(self.store.get_meta("fails:" + name, 0) or 0) + 1
             self.store.set_meta("fails:" + name, fails)
             if name.startswith("Site · ") and fails >= 6:
-                # Site illisible de façon durable : on ne réessaie qu'une fois par jour
-                self.backoff[name] = now + 86400
-                self.backoff_len[name] = 86400
+                # Un site qui a fonctionné ces 3 derniers jours n'est mis en pause qu'une heure (panne passagère) ;
+                # un site illisible de façon durable n'est réessayé qu'une fois par jour.
+                recent = now - self.store.source_last_ok(name) < 3 * 86400
+                pause = 3600 if recent else 86400
+                self.backoff[name] = now + pause
+                self.backoff_len[name] = pause
                 self._save_backoff(name)
-                log("%s : illisible après %d essais, nouvel essai dans 24 h (%s)" % (name, fails, e))
-                self.store.set_source(name, False, "Non lisible automatiquement (couvert par LinkedIn). "
-                                      "Nouvel essai dans 24 h. Détail : %s" % str(e)[:120])
+                log("%s : illisible après %d essais, nouvel essai dans %s (%s)" % (name, fails, "1 h" if recent else "24 h", e))
+                self.store.set_source(name, False, ("Panne passagère, nouvel essai dans 1 h. " if recent else
+                                                    "Non lisible automatiquement, nouvel essai dans 24 h. ")
+                                      + "Détail : %s" % str(e)[:120])
             else:
                 log("%s : ERREUR %s" % (name, e))
                 self.store.set_source(name, False, "Erreur : %s" % str(e)[:200])
@@ -684,6 +703,10 @@ class Tracker:
 
     @staticmethod
     def _host_of(site):
+        api = {"greenhouse": "boards-api.greenhouse.io", "lever": "api.lever.co", "ashby": "api.ashbyhq.com",
+               "workable": "apply.workable.com"}.get(site.get("type"))
+        if api:
+            return api  # une seule file par API commune, pour rester discret
         if site.get("host"):
             return site["host"].split(".")[0] if "myworkdayjobs" in site["host"] else site["host"]
         u = site.get("url") or (site.get("urls") or [""])[0]
@@ -730,19 +753,38 @@ class Tracker:
             tasks.append(("Site · %s" % site.get("label", site["company"]), self._host_of(site),
                           lambda s=s, fn=fn: fn(s), lambda site=site, s=s: self._site_finish(site, s)))
 
+        if workday_maintenance():
+            # Maintenance hebdomadaire Workday (samedi 06:00 à 11:00 UTC) : on ne l'interroge pas, sans compter d'échec
+            wd = {"Site · %s" % x.get("label", x["company"]) for x in c.get("sites") or [] if x.get("type") == "workday"}
+            wd.add("Sites carrières Workday")
+            for t in tasks:
+                if t[0] in wd:
+                    self.store.set_source(t[0], False, "Maintenance hebdomadaire Workday (samedi matin), reprise automatique")
+            tasks = [t for t in tasks if t[0] not in wd]
         ready = [t for t in tasks if self._source_ready(t[0])]
+        # Les sources interrogées il y a le plus longtemps passent en premier : si le budget de temps est atteint,
+        # celles qui n'ont pas pu être lues seront prioritaires au passage suivant.
+        last_run = {r[0]: r[1] or 0 for r in self.store.db.execute("SELECT name, last_run FROM source_status")}
         groups = {}
         for t in ready:
             groups.setdefault(t[1], []).append(t)
+        for items in groups.values():
+            items.sort(key=lambda t: last_run.get(t[0], 0))
 
         outcomes = {}
+        t_start = time.time()
+        deadline = t_start + float(c.get("collect_budget_seconds", 400))
 
         def run_group(items):
             for name, _, net, _ in items:
+                if time.time() > deadline:
+                    outcomes[name] = ("skip", None, 0.0)
+                    continue
+                t0 = time.time()
                 try:
-                    outcomes[name] = (net(), None)
+                    outcomes[name] = (net(), None, time.time() - t0)
                 except Exception as e:  # noqa: BLE001
-                    outcomes[name] = (None, e)
+                    outcomes[name] = (None, e, time.time() - t0)
 
         workers = max(1, int(c.get("parallel_sources", 6)))
         if workers == 1 or len(groups) <= 1:
@@ -751,13 +793,17 @@ class Tracker:
         else:
             with ThreadPoolExecutor(max_workers=workers) as ex:
                 # Les groupes les plus longs d'abord, pour que le passage se termine au plus tôt
-                order = sorted(groups.values(), key=lambda it: (it[0][1] != "linkedin", -len(it)))
+                order = sorted(groups.values(), key=lambda it: (it[0][1] != "linkedin",
+                                                                 min(last_run.get(t[0], 0) for t in it) > t_start - 3600,
+                                                                 -len(it)))
                 for f in [ex.submit(run_group, it) for it in order]:
                     f.result()
 
-        batches = []
+        batches, skipped = [], []
         for name, _, _, finish in tasks:
-            if name not in outcomes:
+            if name not in outcomes or outcomes[name][0] == "skip":
+                if name in outcomes:
+                    skipped.append(name)
                 batches.append((name, []))
                 continue
             if finish:
@@ -765,8 +811,16 @@ class Tracker:
                     finish()
                 except Exception as e:  # noqa: BLE001
                     log("%s : %s" % (name, e))
-            res, err = outcomes[name]
+            res, err, _ = outcomes[name]
             batches.append((name, self._source_done(name, res, error=err)))
+        total = time.time() - t_start
+        timings = sorted(((round(v[2], 1), k) for k, v in outcomes.items() if v[0] != "skip"), reverse=True)
+        self.store.set_meta("collect_seconds", round(total, 1))
+        self.store.set_meta("collect_timings", json.dumps(timings[:40], ensure_ascii=False))
+        self.store.set_meta("collect_skipped", json.dumps(skipped, ensure_ascii=False))
+        log("Collecte : %.0f s, %d sources lues, %d reportées au passage suivant (budget de temps)%s"
+            % (total, len(outcomes) - len(skipped), len(skipped),
+               " · plus lentes : " + ", ".join("%s %.0f s" % (k, v) for v, k in timings[:5]) if timings else ""))
         return batches
 
     def _accept(self, j, r, seed, new_list):

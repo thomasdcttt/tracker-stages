@@ -40,6 +40,17 @@ class Store:
         r = self.db.execute("SELECT value FROM meta WHERE key=?", (key,)).fetchone()
         return r["value"] if r else default
 
+    def source_last_ok(self, name):
+        r = self.db.execute("SELECT last_ok FROM source_status WHERE name=?", (name,)).fetchone()
+        return float(r[0]) if r and r[0] else 0.0
+
+    def reset_site_pauses(self):
+        """Lève toutes les pauses longues des sites carrières (après une panne générale passagère)."""
+        n = self.db.execute("UPDATE meta SET value='0' WHERE (key LIKE 'backoff:Site · %' OR key LIKE 'backoff_len:Site · %'"
+                            " OR key LIKE 'fails:Site · %') AND value<>'0'").rowcount
+        self.db.commit()
+        return n
+
     def set_meta(self, key, value):
         self.db.execute("INSERT OR REPLACE INTO meta(key, value) VALUES(?, ?)", (key, str(value)))
         self.db.commit()
