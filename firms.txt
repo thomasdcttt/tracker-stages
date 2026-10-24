@@ -1,0 +1,405 @@
+Permira
+Cinven
+Apax
+Apax Partners
+BC Partners
+Bridgepoint
+Hg
+HgCapital
+Inflexion
+Advent International
+CVC
+CVC Capital Partners
+EQT
+Ardian
+PAI Partners
+Eurazeo
+Tikehau
+Tikehau Capital
+Antin
+Antin Infrastructure Partners
+Astorg
+Wendel
+IK Partners
+Triton
+Nordic Capital
+Montagu
+Exponent
+Livingbridge
+Phoenix Equity Partners
+August Equity
+Vitruvian
+Vitruvian Partners
+TA Associates
+General Atlantic
+Warburg Pincus
+Hellman & Friedman
+Silver Lake
+Thoma Bravo
+Vista Equity Partners
+Insight Partners
+Summit Partners
+TPG
+Carlyle
+KKR
+Blackstone
+Apollo
+Ares
+Ares Management
+Oaktree
+HPS
+HPS Investment Partners
+Blue Owl
+Golub Capital
+Arcmont
+Pemberton
+Pemberton Asset Management
+Intermediate Capital Group
+ICG
+Alcentra
+Hayfin
+Hayfin Capital Management
+Park Square Capital
+Kartesia
+Muzinich
+Capital Four
+Arbour Lane
+Davidson Kempner
+Elliott
+Elliott Management
+Sculptor
+King Street
+Centerbridge
+Bain Capital
+Partners Group
+Pantheon
+Coller Capital
+Lexington Partners
+HarbourVest
+Adams Street
+Hamilton Lane
+StepStone
+Neuberger Berman
+Index Ventures
+Atomico
+Balderton
+Accel
+Northzone
+Lakestar
+Creandum
+Seedcamp
+LocalGlobe
+Octopus Ventures
+Notion Capital
+Highland Europe
+Felix Capital
+Hoxton Ventures
+Dawn Capital
+Molten Ventures
+Draper Esprit
+MMC Ventures
+Kindred Capital
+Speedinvest
+Partech
+Eurazeo Growth
+Elaia
+Alven
+Frst
+Isai
+Serena
+Kima Ventures
+Breega
+Daphni
+Headline
+Point Nine
+Earlybird
+HV Capital
+Cherry Ventures
+General Catalyst
+Lightspeed
+Sequoia
+Peak XV
+Vertex Ventures
+Openspace
+Jungle Ventures
+East Ventures
+Golden Gate Ventures
+Monk's Hill Ventures
+Wavemaker
+Antler
+Entrepreneur First
+Temasek
+GIC
+Brevan Howard
+Millennium
+Millennium Management
+Citadel
+Citadel Securities
+Balyasny
+Balyasny Asset Management
+Point72
+Marshall Wace
+Man Group
+Lansdowne Partners
+Rokos
+Rokos Capital Management
+Capula
+Verition
+ExodusPoint
+Schonfeld
+Squarepoint
+Qube Research
+Qube Research & Technologies
+Eisler Capital
+Symmetry Investments
+Hudson Bay Capital
+Garda Capital Partners
+Dymon Asia
+Hosen Capital
+Segantii
+Polymer Capital
+LMR Partners
+Tudor
+Two Sigma
+D. E. Shaw
+DE Shaw
+AQR
+Winton
+Aspect Capital
+Lynx
+Graham Capital
+Caxton Associates
+Bluecrest
+Odey
+Ruffer
+Baillie Gifford
+Liontrust
+Jupiter
+Schroders
+abrdn
+Aviva Investors
+LGIM
+Insight Investment
+Newton Investment Management
+Artemis
+Polar Capital
+Ninety One
+Pictet
+Lombard Odier
+UBP
+Unigestion
+Syz
+Quaero Capital
+Capital Dynamics
+Pemberton
+Vontobel
+GAM
+Swissquote
+Julius Baer
+EFG
+Edmond de Rothschild
+Carmignac
+Comgest
+Amundi
+Natixis Investment Managers
+Mirova
+Ostrum
+Candriam
+La Financière de l'Echiquier
+Sycomore
+Lazard Frères Gestion
+Rothschild & Co
+Lazard
+Evercore
+Centerview
+Centerview Partners
+PJT Partners
+Moelis
+Perella Weinberg
+Greenhill
+Robey Warshaw
+Qatalyst
+Arma Partners
+LionTree
+Guggenheim
+Houlihan Lokey
+Lincoln International
+William Blair
+Harris Williams
+Baird
+Jefferies
+Stifel
+Cantor Fitzgerald
+Numis
+Peel Hunt
+Panmure Liberum
+Cavendish
+Investec
+Canaccord
+Alantra
+DC Advisory
+Raymond James
+Ondra Partners
+Oaklins
+Clearwater International
+GCA Altium
+Messier
+Messier & Associés
+Société Générale
+Natixis
+Crédit Agricole
+BNP Paribas
+Mizuho
+SMBC
+MUFG
+Nomura
+Daiwa
+Barclays
+HSBC
+Standard Chartered
+Lloyds
+NatWest
+Santander
+BBVA
+Deutsche Bank
+Commerzbank
+UniCredit
+Intesa Sanpaolo
+ING
+ABN AMRO
+Rabobank
+Nordea
+Macquarie
+Scotiabank
+RBC
+TD Securities
+BMO
+CIBC
+Wells Fargo
+Bank of America
+Goldman Sachs
+Morgan Stanley
+JPMorgan
+Citi
+UBS
+OCBC
+UOB
+DBS
+Maybank
+CIMB
+Trafigura
+Vitol
+Glencore
+Gunvor
+Mercuria
+Hartree
+Hartree Partners
+Freepoint
+Freepoint Commodities
+Castleton
+Castleton Commodities
+Koch
+Koch Supply & Trading
+Cargill
+Louis Dreyfus
+ADM
+Bunge
+Olam
+Wilmar
+Viterra
+COFCO International
+Litasco
+Socar Trading
+IXM
+Concord Resources
+Kpler
+Vortexa
+Engelhart
+Marex
+StoneX
+ED&F Man
+Sucden
+Axpo
+Alpiq
+Uniper
+RWE
+Centrica
+Orsted
+Statkraft
+Equinor
+Shell
+BP
+TotalEnergies
+Engie
+EDF Trading
+Pavilion Energy
+Optiver
+IMC
+Jane Street
+Flow Traders
+Susquehanna
+SIG
+Jump Trading
+DRW
+Hudson River Trading
+Tower Research
+XTX Markets
+Maven Securities
+Da Vinci
+DV Trading
+G-Research
+Quadrature
+Davy
+Goodbody
+AIB
+Bank of Ireland
+Avolon
+SMBC Aviation Capital
+AerCap
+Carlyle Aviation
+BOC Aviation
+Rothesay
+Pension Insurance Corporation
+Legal & General
+M&G
+Phoenix Group
+Sixth Street
+Harrison Street
+Howden
+LGT
+LGT Capital Partners
+Partners Capital
+Cambridge Associates
+Mercer
+Kepler Cheuvreux
+Oddo BHF
+Exane
+Bryan Garnier
+Tikehau Investment Management
+Idinvest
+Five Arrows
+Keensight
+Ardian
+Siparex
+Bpifrance
+Meridiam
+Mirova
+Infravia
+InfraVia Capital Partners
+Arjun
+Arjun Infrastructure Partners
+DIF Capital Partners
+Ancala
+Equitix
+John Laing
+3i
+Brookfield
+Macquarie Asset Management
+GLIL
+Igneo
+Stonepeak
+Global Infrastructure Partners
+I Squared Capital
+Actis
+Helios Investment Partners
+Patria
