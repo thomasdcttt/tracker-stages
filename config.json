@@ -1452,6 +1452,36 @@
       "type": "html",
       "url": "https://www.mirabaud.com/fr/carrieres/offres-demploi",
       "link_regex": "/fr/carrieres/offres-demploi/job-details/\\d+"
+    },
+    {
+      "company": "StepStone Group",
+      "type": "greenhouse",
+      "board": "stepstone"
+    },
+    {
+      "company": "Jane Street",
+      "type": "greenhouse",
+      "board": "janestreet"
+    },
+    {
+      "company": "Qube Research & Technologies",
+      "type": "greenhouse",
+      "board": "quberesearchandtechnologies"
+    },
+    {
+      "company": "William Blair",
+      "type": "greenhouse",
+      "board": "williamblair"
+    },
+    {
+      "company": "AQR",
+      "type": "greenhouse",
+      "board": "aqr"
+    },
+    {
+      "company": "Winton",
+      "type": "greenhouse",
+      "board": "winton"
     }
   ],
   "mcf": {
@@ -1501,7 +1531,7 @@
   "closed_checks_per_run": 20,
   "parallel_sources": 12,
   "collect_budget_seconds": 400,
-  "location_checks_per_run": 40,
+  "location_checks_per_run": 60,
   "muse": {
     "enabled": true,
     "max_pages": 15,

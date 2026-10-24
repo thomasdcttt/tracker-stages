@@ -348,6 +348,12 @@ DEFAULT_CONFIG = {
         {"company": "Motion Ventures", "type": "greenhouse", "board": "motionventures", "eu": True},  # v9
         {"company": "Davy (Bank of Ireland group)", "type": "workable", "account": "davy"},  # v9
         {"company": "Mirabaud", "type": "html", "url": "https://www.mirabaud.com/fr/carrieres/offres-demploi", "link_regex": "/fr/carrieres/offres-demploi/job-details/\\d+"},  # v9
+        {"company": "StepStone Group", "type": "greenhouse", "board": "stepstone"},  # v9 (sondage API)
+        {"company": "Jane Street", "type": "greenhouse", "board": "janestreet"},  # v9 (sondage API)
+        {"company": "Qube Research & Technologies", "type": "greenhouse", "board": "quberesearchandtechnologies"},  # v9 (sondage API)
+        {"company": "William Blair", "type": "greenhouse", "board": "williamblair"},  # v9 (sondage API)
+        {"company": "AQR", "type": "greenhouse", "board": "aqr"},  # v9 (sondage API)
+        {"company": "Winton", "type": "greenhouse", "board": "winton"},  # v9 (sondage API)
     ],
     # Portail officiel de l'emploi à Singapour (offres « Internship/Attachment »)
     "mcf": {
@@ -374,8 +380,8 @@ DEFAULT_CONFIG = {
                            "BNP Paribas", "Bank of America", "Société Générale"],
     "closed_checks_per_run": 20,
     "parallel_sources": 12,
-    "collect_budget_seconds": 400,
-    "location_checks_per_run": 40,  # offres de sites carrières sans lieu : lecture du lieu sur la page de l'offre  # au-delà, les sources pas encore lues passent au passage suivant (en priorité)
+    "collect_budget_seconds": 400,  # au-delà, les sources pas encore lues passent au passage suivant (en priorité)
+    "location_checks_per_run": 60,  # offres de sites carrières sans lieu : lecture du lieu sur la page de l'offre
     # Agrégateurs à API officielle : The Muse (sans clé), Adzuna et Reed (clés gratuites dans les secrets GitHub)
     "muse": {"enabled": True, "max_pages": 15,
              "locations": ["London, United Kingdom", "Paris, France", "Zurich, Switzerland", "Geneva, Switzerland",

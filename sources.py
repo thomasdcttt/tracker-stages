@@ -1080,9 +1080,12 @@ def parse_greenhouse(data, company):
 
 
 def collect_greenhouse_site(s):
-    # Les boards hébergés en Europe passent par boards-api.eu.greenhouse.io ("eu": true dans la config)
-    api = "boards-api.eu.greenhouse.io" if s.get("eu") else "boards-api.greenhouse.io"
-    status, txt = http("https://%s/v1/boards/%s/jobs" % (api, urllib.parse.quote(s["board"])),
+    if s.get("eu"):
+        # Boards hébergés en Europe : pas d'API publique, la page job-boards.eu.greenhouse.io est rendue côté serveur
+        board = urllib.parse.quote(s["board"])
+        return collect_html_site(dict(company=s["company"], url="https://job-boards.eu.greenhouse.io/%s" % board,
+                                      link_regex=r"/%s/jobs/\d+" % re.escape(board)))
+    status, txt = http("https://boards-api.greenhouse.io/v1/boards/%s/jobs" % urllib.parse.quote(s["board"]),
                        headers={"Accept": "application/json"})
     if status != 200:
         raise SourceError("HTTP %d" % status)
@@ -1415,9 +1418,9 @@ def fetch_description(offer):
             return dict(description=_html_text(info.get("jobDescription") or ""), employment_type="", trusted=False)
         if "smartrecruiters.com" in url:
             return None  # l'API SmartRecruiters est interdite aux robots (robots.txt) : pas de lecture
-        m = re.match(r"https://(?:boards|job-boards)\.(eu\.)?greenhouse\.io/([^/]+)/jobs/(\d+)", url)
+        m = re.match(r"https://(?:boards|job-boards)\.greenhouse\.io/([^/]+)/jobs/(\d+)", url)
         if m:
-            status, txt = http("https://boards-api.%sgreenhouse.io/v1/boards/%s/jobs/%s" % (m.group(1) or "", m.group(2), m.group(3)),
+            status, txt = http("https://boards-api.greenhouse.io/v1/boards/%s/jobs/%s" % m.groups(),
                                headers={"Accept": "application/json"})
             if status != 200:
                 return None

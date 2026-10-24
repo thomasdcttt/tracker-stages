@@ -7,7 +7,7 @@ import re
 import unicodedata
 
 # À incrémenter à chaque changement de règles : les offres déjà écartées sont alors réexaminées.
-FILTER_VERSION = 10
+FILTER_VERSION = 11
 
 
 def normalize(text):
@@ -277,7 +277,7 @@ ROLE_EXCLUDE = _rx([
     r"software", r"devops", r"cyber\w*", r"juristes?", r"legal", r"avocats?", r"cabinet d avocats",
     r"lawyers?", r"counsel", r"droit", r"juridique", r"law", r"rh", r"hr", r"human resources", r"ressources humaines", r"recrutement",
     r"recruitment", r"talent (?:acquisition|management|sourcing|partner|development)", r"marketing",
-    r"consultant\w*", r"consulting", r"chief of staff", r"medias?", r"programmati\w*", r"digital trader\w*",
+    r"consultant\w*", r"consulting", r"conseil (?:en )?strategi\w*", r"strategy consult\w*", r"chief of staff", r"medias?", r"programmati\w*", r"digital trader\w*",
     r"trader\w* digital", r"social media", r"trader social", r"ads", r"advertising", r"publicite", r"adtech", r"paid media",
     r"superintend\w*",
     r"technicien\w*", r"inspecteur\w*", r"inspection", r"securite financiere", r"fraude", r"fraud",
