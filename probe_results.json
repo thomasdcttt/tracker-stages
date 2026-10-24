@@ -1,0 +1,2003 @@
+[
+ {
+  "firm": "Permira",
+  "kind": "greenhouse",
+  "slug": "permira",
+  "board_name": "Permira ",
+  "total": 0,
+  "in_zones": 0,
+  "interns_in_zones": [],
+  "sample": []
+ },
+ {
+  "firm": "Apax",
+  "kind": "lever",
+  "slug": "apax",
+  "board_name": "apax",
+  "total": 0,
+  "in_zones": 0,
+  "interns_in_zones": [],
+  "sample": []
+ },
+ {
+  "firm": "Apax Partners",
+  "kind": "lever",
+  "slug": "apax",
+  "board_name": "apax",
+  "total": 0,
+  "in_zones": 0,
+  "interns_in_zones": [],
+  "sample": []
+ },
+ {
+  "firm": "Apax Partners",
+  "kind": "workable",
+  "slug": "apax-partners",
+  "board_name": "Apax Partners",
+  "total": 0,
+  "in_zones": 0,
+  "interns_in_zones": [],
+  "sample": []
+ },
+ {
+  "firm": "Bridgepoint",
+  "kind": "workable",
+  "slug": "bridgepoint",
+  "board_name": "Bridgepoint",
+  "total": 0,
+  "in_zones": 0,
+  "interns_in_zones": [],
+  "sample": []
+ },
+ {
+  "firm": "Advent International",
+  "kind": "workable",
+  "slug": "advent-international",
+  "board_name": "ADVENT INTERNATIONAL",
+  "total": 0,
+  "in_zones": 0,
+  "interns_in_zones": [],
+  "sample": []
+ },
+ {
+  "firm": "CVC",
+  "kind": "workable",
+  "slug": "cvc",
+  "board_name": "cvc",
+  "total": 0,
+  "in_zones": 0,
+  "interns_in_zones": [],
+  "sample": []
+ },
+ {
+  "firm": "CVC Capital Partners",
+  "kind": "workable",
+  "slug": "cvc",
+  "board_name": "cvc",
+  "total": 0,
+  "in_zones": 0,
+  "interns_in_zones": [],
+  "sample": []
+ },
+ {
+  "firm": "EQT",
+  "kind": "workable",
+  "slug": "eqt",
+  "board_name": "EQT",
+  "total": 0,
+  "in_zones": 0,
+  "interns_in_zones": [],
+  "sample": []
+ },
+ {
+  "firm": "Tikehau",
+  "kind": "workable",
+  "slug": "tikehau",
+  "board_name": "Tikehau",
+  "total": 0,
+  "in_zones": 0,
+  "interns_in_zones": [],
+  "sample": []
+ },
+ {
+  "firm": "Tikehau Capital",
+  "kind": "workable",
+  "slug": "tikehau",
+  "board_name": "Tikehau",
+  "total": 0,
+  "in_zones": 0,
+  "interns_in_zones": [],
+  "sample": []
+ },
+ {
+  "firm": "Astorg",
+  "kind": "workable",
+  "slug": "astorg",
+  "board_name": "Astorg",
+  "total": 0,
+  "in_zones": 0,
+  "interns_in_zones": [],
+  "sample": []
+ },
+ {
+  "firm": "Wendel",
+  "kind": "workable",
+  "slug": "wendel",
+  "board_name": "Wendel",
+  "total": 0,
+  "in_zones": 0,
+  "interns_in_zones": [],
+  "sample": []
+ },
+ {
+  "firm": "Triton",
+  "kind": "workable",
+  "slug": "triton",
+  "board_name": "Triton",
+  "total": 0,
+  "in_zones": 0,
+  "interns_in_zones": [],
+  "sample": []
+ },
+ {
+  "firm": "Exponent",
+  "kind": "workable",
+  "slug": "exponent",
+  "board_name": "Exponent",
+  "total": 0,
+  "in_zones": 0,
+  "interns_in_zones": [],
+  "sample": []
+ },
+ {
+  "firm": "Phoenix Equity Partners",
+  "kind": "ashby",
+  "slug": "phoenix",
+  "board_name": "phoenix",
+  "total": 10,
+  "in_zones": 0,
+  "interns_in_zones": [],
+  "sample": [
+   [
+    "Performance Marketing Specialist",
+    "Toronto, Ontario"
+   ],
+   [
+    "Senior Frontend Developer (React)",
+    "Toronto, Ontario"
+   ],
+   [
+    "Creative Strategist, Raven",
+    "Toronto, Ontario"
+   ],
+   [
+    "Pharmacy Assistant",
+    "Richmond, British Columbia"
+   ]
+  ]
+ },
+ {
+  "firm": "August Equity",
+  "kind": "ashby",
+  "slug": "august",
+  "board_name": "august",
+  "total": 12,
+  "in_zones": 0,
+  "interns_in_zones": [],
+  "sample": [
+   [
+    "Account Executive",
+    "New York City"
+   ],
+   [
+    "AI Product Engineer",
+    "New York City"
+   ],
+   [
+    "Founding Designer",
+    "New York City"
+   ],
+   [
+    "Legal Product Champion",
+    "New York City"
+   ]
+  ]
+ },
+ {
+  "firm": "August Equity",
+  "kind": "workable",
+  "slug": "august",
+  "board_name": "August ",
+  "total": 0,
+  "in_zones": 0,
+  "interns_in_zones": [],
+  "sample": []
+ },
+ {
+  "firm": "General Atlantic",
+  "kind": "greenhouse",
+  "slug": "generalatlantic",
+  "board_name": "General Atlantic ",
+  "total": 13,
+  "in_zones": 5,
+  "interns_in_zones": [],
+  "sample": [
+   [
+    "Analyst, Munich",
+    "Munich"
+   ],
+   [
+    "Analyst, Portfolio Management",
+    "New York - Park Avenue"
+   ],
+   [
+    "Analyst, Real Estate and Data Centers",
+    "Singapore - Battery Road"
+   ],
+   [
+    "Associate, Life Sciences",
+    "New York - Park Avenue"
+   ]
+  ]
+ },
+ {
+  "firm": "General Atlantic",
+  "kind": "workable",
+  "slug": "general-atlantic",
+  "board_name": "General Atlantic",
+  "total": 0,
+  "in_zones": 0,
+  "interns_in_zones": [],
+  "sample": []
+ },
+ {
+  "firm": "Silver Lake",
+  "kind": "ashby",
+  "slug": "silver",
+  "board_name": "silver",
+  "total": 41,
+  "in_zones": 0,
+  "interns_in_zones": [],
+  "sample": [
+   [
+    "Silver.dev - Sr Technical Recruiter",
+    "Argentina / Hybrid"
+   ],
+   [
+    "Opportunity in Tech company - Mobile Engineer",
+    "Argentina"
+   ],
+   [
+    "Technical Interviewer - Pay-per-Interview",
+    "Argentina"
+   ],
+   [
+    "Fullstack Engineers who want to move to SF",
+    "Remote"
+   ]
+  ]
+ },
+ {
+  "firm": "Thoma Bravo",
+  "kind": "lever",
+  "slug": "thomabravo",
+  "board_name": "thomabravo",
+  "total": 0,
+  "in_zones": 0,
+  "interns_in_zones": [],
+  "sample": []
+ },
+ {
+  "firm": "Insight Partners",
+  "kind": "greenhouse",
+  "slug": "insight",
+  "board_name": "Insight",
+  "total": 10,
+  "in_zones": 3,
+  "interns_in_zones": [],
+  "sample": [
+   [
+    "Forward Deployed Engineer",
+    "Bristol, England, United Kingdom"
+   ],
+   [
+    "Mendix Developer Romania",
+    "București, Bucharest, Romania"
+   ],
+   [
+    "Partnerships Solutions Consultant",
+    "Bristol, England, United Kingdom"
+   ],
+   [
+    "Regional Payroll Manager",
+    "București, Bucharest, Romania"
+   ]
+  ]
+ },
+ {
+  "firm": "Insight Partners",
+  "kind": "ashby",
+  "slug": "insightpartners",
+  "board_name": "insightpartners",
+  "total": 0,
+  "in_zones": 0,
+  "interns_in_zones": [],
+  "sample": []
+ },
+ {
+  "firm": "TPG",
+  "kind": "workable",
+  "slug": "tpg",
+  "board_name": "TPG",
+  "total": 0,
+  "in_zones": 0,
+  "interns_in_zones": [],
+  "sample": []
+ },
+ {
+  "firm": "Apollo",
+  "kind": "greenhouse",
+  "slug": "apollo",
+  "board_name": "Apollo Education Systems",
+  "total": 0,
+  "in_zones": 0,
+  "interns_in_zones": [],
+  "sample": []
+ },
+ {
+  "firm": "HPS Investment Partners",
+  "kind": "greenhouse",
+  "slug": "hpsinvestmentpartners",
+  "board_name": "HPS Investment Partners",
+  "total": 1,
+  "in_zones": 0,
+  "interns_in_zones": [],
+  "sample": [
+   [
+    "Associate, Enterprise Technology Integration ",
+    "New York"
+   ]
+  ]
+ },
+ {
+  "firm": "Blue Owl",
+  "kind": "lever",
+  "slug": "blue",
+  "board_name": "blue",
+  "total": 9,
+  "in_zones": 0,
+  "interns_in_zones": [],
+  "sample": [
+   [
+    "#5 Senior Data Engineer- Costa Rica, LATAM",
+    "LatAm 2, LatAm 2"
+   ],
+   [
+    "#706 Snowflake Engagement Manager",
+    "Onshore, Onshore"
+   ],
+   [
+    "AI/ML Architect - Talent Pipeline",
+    "Onshore, Onshore"
+   ],
+   [
+    "Data Architect - Talent Pipeline",
+    "Onshore, Onshore"
+   ]
+  ]
+ },
+ {
+  "firm": "Pemberton",
+  "kind": "ashby",
+  "slug": "pemberton",
+  "board_name": "pemberton",
+  "total": 3,
+  "in_zones": 3,
+  "interns_in_zones": [],
+  "sample": [
+   [
+    "INVENSA - Associate, Finance Operations ",
+    "London"
+   ],
+   [
+    "Analyst, Product Strategy & Development ",
+    "London"
+   ],
+   [
+    "Analyst, Talent Acquisition and Talent Management, People & Performance",
+    "London"
+   ]
+  ]
+ },
+ {
+  "firm": "Pemberton Asset Management",
+  "kind": "ashby",
+  "slug": "pemberton",
+  "board_name": "pemberton",
+  "total": 3,
+  "in_zones": 3,
+  "interns_in_zones": [],
+  "sample": [
+   [
+    "INVENSA - Associate, Finance Operations ",
+    "London"
+   ],
+   [
+    "Analyst, Product Strategy & Development ",
+    "London"
+   ],
+   [
+    "Analyst, Talent Acquisition and Talent Management, People & Performance",
+    "London"
+   ]
+  ]
+ },
+ {
+  "firm": "Capital Four",
+  "kind": "lever",
+  "slug": "capital",
+  "board_name": "capital",
+  "total": 57,
+  "in_zones": 16,
+  "interns_in_zones": [
+   [
+    "Group Head of Internal Audit",
+    "London, England, United Kingdom, London, England, United Kingdom"
+   ]
+  ],
+  "sample": [
+   [
+    "Angular Software Engineer",
+    "Sofia City, Bulgaria, Sofia City, Bulgaria, Warsaw, Mazowieckie, Poland, Limassol, Cyprus"
+   ],
+   [
+    "Application Security Architect",
+    "Warsaw, Mazowieckie, Poland, Warsaw, Mazowieckie, Poland, Sofia City, Bulgaria, Limassol, Cyprus"
+   ],
+   [
+    "Chief Operations Officer, Senior Official II",
+    "Nassau, New Providence, Nassau, New Providence"
+   ],
+   [
+    "Client Services Specialist (Chinese)",
+    "Melbourne, Victoria, Australia, Melbourne, Victoria, Australia"
+   ]
+  ]
+ },
+ {
+  "firm": "Bain Capital",
+  "kind": "ashby",
+  "slug": "bain-capital",
+  "board_name": "bain-capital",
+  "total": 0,
+  "in_zones": 0,
+  "interns_in_zones": [],
+  "sample": []
+ },
+ {
+  "firm": "Pantheon",
+  "kind": "greenhouse",
+  "slug": "pantheon",
+  "board_name": "Pantheon Systems, Inc",
+  "total": 20,
+  "in_zones": 3,
+  "interns_in_zones": [],
+  "sample": [
+   [
+    "Enterprise Account Executive",
+    "United States (Remote)"
+   ],
+   [
+    "Executive Assistant ",
+    "Chicago, IL, USA"
+   ],
+   [
+    "Principal Software Engineer, Collaborative Web Platform",
+    "Canada (Remote)"
+   ],
+   [
+    "Principal Software Engineer, Collaborative Web Platform",
+    "United States (Remote)"
+   ]
+  ]
+ },
+ {
+  "firm": "Lexington Partners",
+  "kind": "greenhouse",
+  "slug": "lexingtonpartners",
+  "board_name": "Lexington Partners",
+  "total": 1,
+  "in_zones": 0,
+  "interns_in_zones": [],
+  "sample": [
+   [
+    "2027 CIP Summer Internship Program ",
+    "New York, New York, United States"
+   ]
+  ]
+ },
+ {
+  "firm": "StepStone",
+  "kind": "greenhouse",
+  "slug": "stepstone",
+  "board_name": "StepStone Group",
+  "total": 55,
+  "in_zones": 18,
+  "interns_in_zones": [
+   [
+    "2026 - 2027 Private Debt Portfolio and Risk Management Intern",
+    "Zurich"
+   ],
+   [
+    "2026 – 2027 StepStone Portfolio Analytics and Reporting – Client Services Intern",
+    "Dublin"
+   ],
+   [
+    "2027 Private Equity Infrastructure & Real Assets Intern",
+    "London"
+   ],
+   [
+    "2027 Private Equity Summer Analyst",
+    "London "
+   ]
+  ],
+  "sample": [
+   [
+    "2026 - 2027 Private Debt Portfolio and Risk Management Intern",
+    "Zurich"
+   ],
+   [
+    "2026 – 2027 StepStone Portfolio Analytics and Reporting – Client Services Intern",
+    "Dublin"
+   ],
+   [
+    "2026 Client Service Junior Analyst",
+    "Beijing"
+   ],
+   [
+    "2026 Client Service Solutions Junior Analyst",
+    "Beijing"
+   ]
+  ]
+ },
+ {
+  "firm": "Index Ventures",
+  "kind": "lever",
+  "slug": "indexventures",
+  "board_name": "indexventures",
+  "total": 0,
+  "in_zones": 0,
+  "interns_in_zones": [],
+  "sample": []
+ },
+ {
+  "firm": "Balderton",
+  "kind": "ashby",
+  "slug": "balderton",
+  "board_name": "balderton",
+  "total": 0,
+  "in_zones": 0,
+  "interns_in_zones": [],
+  "sample": []
+ },
+ {
+  "firm": "Notion Capital",
+  "kind": "ashby",
+  "slug": "notion",
+  "board_name": "notion",
+  "total": 140,
+  "in_zones": 32,
+  "interns_in_zones": [],
+  "sample": [
+   [
+    "Software Engineer, AI Connections (Developer Platform)",
+    "San Francisco, California, New York, New York"
+   ],
+   [
+    "Business Development Representative, New York",
+    "New York, New York"
+   ],
+   [
+    "Business Development Representative, San Francisco",
+    "San Francisco, California"
+   ],
+   [
+    "Product Designer",
+    "San Francisco, California, New York, New York"
+   ]
+  ]
+ },
+ {
+  "firm": "Highland Europe",
+  "kind": "greenhouse",
+  "slug": "highland",
+  "board_name": "Highland Animal Hospital",
+  "total": 4,
+  "in_zones": 0,
+  "interns_in_zones": [],
+  "sample": [
+   [
+    "DVM Student Externship/Preceptorship Program - Highland Animal Hospital",
+    "Needham Heights, MA"
+   ],
+   [
+    "Veterinary Receptionist",
+    "Needham Heights, MA"
+   ],
+   [
+    "Veterinary Technician",
+    "Needham Heights, MA"
+   ],
+   [
+    "Veterinary Technician Student Externship/Preceptorship Program - Highland Animal Hospital",
+    "Needham Heights, MA"
+   ]
+  ]
+ },
+ {
+  "firm": "Felix Capital",
+  "kind": "ashby",
+  "slug": "felix",
+  "board_name": "felix",
+  "total": 47,
+  "in_zones": 0,
+  "interns_in_zones": [],
+  "sample": [
+   [
+    "Nurse Practitioner - Manitoba",
+    "Remote, Canada"
+   ],
+   [
+    "Nurse Practitioner - British Columbia",
+    "Remote, Canada"
+   ],
+   [
+    "Nurse Practitioner, Menopause & Women's Health",
+    "Remote, Canada"
+   ],
+   [
+    "Staff Pharmacist - Full-Time (On site, Port Coquitlam, BC)",
+    "Port Coquitlam, British Columbia"
+   ]
+  ]
+ },
+ {
+  "firm": "Kindred Capital",
+  "kind": "ashby",
+  "slug": "kindred",
+  "board_name": "kindred",
+  "total": 4,
+  "in_zones": 0,
+  "interns_in_zones": [],
+  "sample": [
+   [
+    "Senior Infrastructure Engineer",
+    "Remote - US or Canada"
+   ],
+   [
+    "Head of Product Design",
+    "San Francisco, CA, Remote - US"
+   ],
+   [
+    "Full-Stack Engineer",
+    "Remote - US or Canada"
+   ],
+   [
+    "Trust & Safety Manager, Policy & Risk Insights",
+    "Remote - US"
+   ]
+  ]
+ },
+ {
+  "firm": "Point Nine",
+  "kind": "ashby",
+  "slug": "point",
+  "board_name": "point",
+  "total": 0,
+  "in_zones": 0,
+  "interns_in_zones": [],
+  "sample": []
+ },
+ {
+  "firm": "Cherry Ventures",
+  "kind": "greenhouse",
+  "slug": "cherry",
+  "board_name": "Cherry",
+  "total": 0,
+  "in_zones": 0,
+  "interns_in_zones": [],
+  "sample": []
+ },
+ {
+  "firm": "General Catalyst",
+  "kind": "greenhouse",
+  "slug": "generalcatalyst",
+  "board_name": "General Catalyst",
+  "total": 0,
+  "in_zones": 0,
+  "interns_in_zones": [],
+  "sample": []
+ },
+ {
+  "firm": "Lightspeed",
+  "kind": "ashby",
+  "slug": "lightspeed",
+  "board_name": "lightspeed",
+  "total": 5,
+  "in_zones": 0,
+  "interns_in_zones": [],
+  "sample": [
+   [
+    "Residential Design & Preconstruction Specialist",
+    "Northbrook, IL, Chicago, IL"
+   ],
+   [
+    "Robot Learning Engineer",
+    "Northbrook, IL"
+   ],
+   [
+    "Robotics Technician",
+    "Northbrook, IL"
+   ],
+   [
+    "Perception Engineer",
+    "Northbrook, IL"
+   ]
+  ]
+ },
+ {
+  "firm": "Sequoia",
+  "kind": "ashby",
+  "slug": "sequoia",
+  "board_name": "sequoia",
+  "total": 8,
+  "in_zones": 0,
+  "interns_in_zones": [],
+  "sample": [
+   [
+    "Director of Web and Digital Experience ",
+    "Mexico City"
+   ],
+   [
+    "Platform Success Manager",
+    "Tempe"
+   ],
+   [
+    "401k Compliance Client Service Manager",
+    "Tempe"
+   ],
+   [
+    "IT Support Engineer",
+    "Mexico City"
+   ]
+  ]
+ },
+ {
+  "firm": "Peak XV",
+  "kind": "greenhouse",
+  "slug": "peak",
+  "board_name": "Peak Physical Therapy - Upstream",
+  "total": 52,
+  "in_zones": 0,
+  "interns_in_zones": [],
+  "sample": [
+   [
+    "Clinic Director - Physical Therapist",
+    "Fort Worth, TX"
+   ],
+   [
+    "Clinic Director - Physical Therapist",
+    "Southlake, TX"
+   ],
+   [
+    "Clinic Director - Physical Therapist",
+    "Garland, TX"
+   ],
+   [
+    "Clinic Director - Physical Therapist",
+    "Lindale, TX"
+   ]
+  ]
+ },
+ {
+  "firm": "Openspace",
+  "kind": "greenhouse",
+  "slug": "openspace",
+  "board_name": "OpenSpace",
+  "total": 10,
+  "in_zones": 0,
+  "interns_in_zones": [],
+  "sample": [
+   [
+    "Customer Success Manager I",
+    "U.S."
+   ],
+   [
+    "Inside Sales Representative",
+    "Germany"
+   ],
+   [
+    "Product Designer",
+    "Bosnia"
+   ],
+   [
+    "Sales Operations Manager",
+    "U.S."
+   ]
+  ]
+ },
+ {
+  "firm": "Monk's Hill Ventures",
+  "kind": "ashby",
+  "slug": "monk",
+  "board_name": "monk",
+  "total": 18,
+  "in_zones": 0,
+  "interns_in_zones": [],
+  "sample": [
+   [
+    "Member of Technical Staff: Data",
+    "San Francisco"
+   ],
+   [
+    "Member of Technical Staff: Data",
+    "New York City"
+   ],
+   [
+    "Member of Technical Staff: Full-stack",
+    "New York City"
+   ],
+   [
+    "Account Executive",
+    "New York City"
+   ]
+  ]
+ },
+ {
+  "firm": "Point72",
+  "kind": "greenhouse",
+  "slug": "point72",
+  "board_name": "Point72 ",
+  "total": 211,
+  "in_zones": 34,
+  "interns_in_zones": [
+   [
+    "Fundamental Researcher, MI-Canvas International",
+    "London"
+   ],
+   [
+    "Manager, International Communications",
+    "United Kingdom"
+   ],
+   [
+    "Point72 Academy 2026 Investment Analyst Program for Experienced Professionals - UK",
+    "London, UK"
+   ],
+   [
+    "Quantitative Researcher - Intern",
+    "London, Paris, Hong Kong, Tokyo"
+   ],
+   [
+    "Quantitative Software Developer Intern",
+    "New York, London, or Paris"
+   ]
+  ],
+  "sample": [
+   [
+    "2027 Point72 Academy Investment Analyst Summer Internship Program - Hong Kong",
+    "Hong Kong"
+   ],
+   [
+    "2027 Point72 Academy Investment Analyst Summer Internship Program - Japan",
+    "Japan"
+   ],
+   [
+    "2027 Point72 Academy Investment Analyst Summer Internship Program - Japan (BCF)",
+    "Japan"
+   ],
+   [
+    "2027 Point72 Academy Spring Insight Programme – UK",
+    "London, UK"
+   ]
+  ]
+ },
+ {
+  "firm": "Marshall Wace",
+  "kind": "greenhouse",
+  "slug": "marshallwace",
+  "board_name": "Marshall Wace",
+  "total": 1,
+  "in_zones": 0,
+  "interns_in_zones": [],
+  "sample": [
+   [
+    "2027 Summer Operations Intern",
+    "New York"
+   ]
+  ]
+ },
+ {
+  "firm": "Man Group",
+  "kind": "greenhouse",
+  "slug": "mangroup",
+  "board_name": "Man Group",
+  "total": 62,
+  "in_zones": 24,
+  "interns_in_zones": [],
+  "sample": [
+   [
+    "Analyst, Solutions Middle Office",
+    "London"
+   ],
+   [
+    "Associate, Discretionary Investment Specialists",
+    "London"
+   ],
+   [
+    "Business Manager",
+    "Boston; Massachusetts"
+   ],
+   [
+    "Business Manager",
+    "Sofia"
+   ]
+  ]
+ },
+ {
+  "firm": "ExodusPoint",
+  "kind": "greenhouse",
+  "slug": "exoduspoint",
+  "board_name": "ExodusPoint",
+  "total": 3,
+  "in_zones": 0,
+  "interns_in_zones": [],
+  "sample": [
+   [
+    "Investment - ExodusPoint Jobs Page",
+    "Anywhere"
+   ],
+   [
+    "Non-Investment - Referral ",
+    "Anywhere"
+   ],
+   [
+    "Quant Credit Intern - PA (Hybrid) - December 2026",
+    "Wynnewood, PA"
+   ]
+  ]
+ },
+ {
+  "firm": "Schonfeld",
+  "kind": "greenhouse",
+  "slug": "schonfeld",
+  "board_name": "Schonfeld ",
+  "total": 67,
+  "in_zones": 17,
+  "interns_in_zones": [
+   [
+    "2027 DMFI Quant Research Intern",
+    "London, England, United Kingdom"
+   ]
+  ],
+  "sample": [
+   [
+    "2027 Business Analytics Intern",
+    "New York, New York, United States"
+   ],
+   [
+    "2027 Core Operations Intern",
+    "Miami, Florida, United States"
+   ],
+   [
+    "2027 DMFI Quant Research Intern",
+    "London, England, United Kingdom"
+   ],
+   [
+    "2027 Emerging Markets and Delta One Investment Analyst Internship",
+    "Dubai, United Arab Emirates"
+   ]
+  ]
+ },
+ {
+  "firm": "Qube Research & Technologies",
+  "kind": "greenhouse",
+  "slug": "quberesearchandtechnologies",
+  "board_name": "Qube Research & Technologies",
+  "total": 193,
+  "in_zones": 100,
+  "interns_in_zones": [
+   [
+    "2027 – Graduate or Internship, Infrastructure Engineer ",
+    "London, Paris"
+   ],
+   [
+    "2027 - Internship, Data Engineering",
+    "Paris, London"
+   ],
+   [
+    "2027 – Internship, Data Engineering",
+    "Hong Kong, Singapore"
+   ],
+   [
+    "2027 – Internship, Infrastructure Engineering  ",
+    "Hong Kong, Singapore, Shanghai"
+   ],
+   [
+    "2027 – Internship or Graduate, FPGA Engineering",
+    "Hong Kong, Singapore"
+   ],
+   [
+    "2027 – Internship or Graduate, FPGA Engineering ",
+    "London, Paris, New York"
+   ],
+   [
+    "2027 – Internship or Graduate, Quantitative Research and Trading ",
+    "Hong Kong, Singapore, Shanghai, Beijing"
+   ],
+   [
+    "2027 – Internship or Graduate, Software Engineer and Quantitative Developer",
+    "Hong Kong, Singapore"
+   ],
+   [
+    "2027 - Internship, Quantitative Research and Trading",
+    "Aarhus, Budapest, Dubai, London, Paris, Zurich"
+   ],
+   [
+    "2027 Internship – Security Engineer ",
+    "London, Paris, New York"
+   ],
+   [
+    "2027 - Internship, Software Engineering and Quantitative Development",
+    "London, Paris, Wrocław, Zurich, Dubai, Aarhus, Amsterdam"
+   ]
+  ],
+  "sample": [
+   [
+    "2027 – Graduate or Internship, Infrastructure Engineer ",
+    "London, Paris"
+   ],
+   [
+    "2027 - Internship, Data Engineering",
+    "Paris, London"
+   ],
+   [
+    "2027 – Internship, Data Engineering",
+    "Hong Kong, Singapore"
+   ],
+   [
+    "2027 – Internship, Infrastructure Engineering  ",
+    "Hong Kong, Singapore, Shanghai"
+   ]
+  ]
+ },
+ {
+  "firm": "Symmetry Investments",
+  "kind": "greenhouse",
+  "slug": "symmetry",
+  "board_name": "Symmetry",
+  "total": 3,
+  "in_zones": 0,
+  "interns_in_zones": [],
+  "sample": [
+   [
+    "Executive Operations Partner",
+    "Scottsdale, AZ - Hybrid"
+   ],
+   [
+    "Head of Marketing - Symmetry",
+    "Denver, CO - Hybrid; San Francisco, CA - Hybrid; Scottsdale, AZ - Hybrid"
+   ],
+   [
+    "Solutions Engineer",
+    "Denver, CO - Hybrid; New York, NY - Hybrid; San Francisco, CA - Hybrid; Scottsdale, AZ - Hybrid"
+   ]
+  ]
+ },
+ {
+  "firm": "Symmetry Investments",
+  "kind": "lever",
+  "slug": "symmetryinvestments",
+  "board_name": "symmetryinvestments",
+  "total": 0,
+  "in_zones": 0,
+  "interns_in_zones": [],
+  "sample": []
+ },
+ {
+  "firm": "Symmetry Investments",
+  "kind": "ashby",
+  "slug": "symmetry",
+  "board_name": "symmetry",
+  "total": 3,
+  "in_zones": 0,
+  "interns_in_zones": [],
+  "sample": [
+   [
+    "Applied AI Engineer",
+    "Seattle HQ"
+   ],
+   [
+    "Senior Full Stack Engineer",
+    "Seattle HQ"
+   ],
+   [
+    "Senior Full Stack Engineer",
+    "India (Remote)"
+   ]
+  ]
+ },
+ {
+  "firm": "LMR Partners",
+  "kind": "greenhouse",
+  "slug": "lmr",
+  "board_name": "Long Meadow Ranch and Farmstead",
+  "total": 8,
+  "in_zones": 0,
+  "interns_in_zones": [],
+  "sample": [
+   [
+    "Backwait",
+    "St. Helena"
+   ],
+   [
+    "Banquet Bartender",
+    "St Helena"
+   ],
+   [
+    "Banquet Server",
+    "St Helena"
+   ],
+   [
+    "Bartender",
+    "St Helena"
+   ]
+  ]
+ },
+ {
+  "firm": "AQR",
+  "kind": "greenhouse",
+  "slug": "aqr",
+  "board_name": "AQR",
+  "total": 56,
+  "in_zones": 1,
+  "interns_in_zones": [],
+  "sample": [
+   [
+    "2027 Business Development Analyst - US Wealth",
+    "Greenwich, CT"
+   ],
+   [
+    "2027 Business Development Summer Analyst ",
+    "Greenwich, CT"
+   ],
+   [
+    "2027 Engineering Summer Analyst",
+    "Greenwich, CT"
+   ],
+   [
+    "2027 PhD Summer Associate, Machine Learning Research",
+    "Greenwich, CT"
+   ]
+  ]
+ },
+ {
+  "firm": "Winton",
+  "kind": "greenhouse",
+  "slug": "winton",
+  "board_name": "Winton",
+  "total": 7,
+  "in_zones": 7,
+  "interns_in_zones": [
+   [
+    "Quantitative Developer, Graduate",
+    "London, United Kingdom"
+   ]
+  ],
+  "sample": [
+   [
+    "Quantitative Developer, Commodities",
+    "London, United Kingdom"
+   ],
+   [
+    "Quantitative Developer, Graduate",
+    "London, United Kingdom"
+   ],
+   [
+    "Register Your Interest: Business Management ",
+    "London, United Kingdom"
+   ],
+   [
+    "Register Your Interest: Investment Management",
+    "London, United Kingdom"
+   ]
+  ]
+ },
+ {
+  "firm": "Insight Investment",
+  "kind": "greenhouse",
+  "slug": "insight",
+  "board_name": "Insight",
+  "total": 10,
+  "in_zones": 3,
+  "interns_in_zones": [],
+  "sample": [
+   [
+    "Forward Deployed Engineer",
+    "Bristol, England, United Kingdom"
+   ],
+   [
+    "Mendix Developer Romania",
+    "București, Bucharest, Romania"
+   ],
+   [
+    "Partnerships Solutions Consultant",
+    "Bristol, England, United Kingdom"
+   ],
+   [
+    "Regional Payroll Manager",
+    "București, Bucharest, Romania"
+   ]
+  ]
+ },
+ {
+  "firm": "Newton Investment Management",
+  "kind": "greenhouse",
+  "slug": "newton",
+  "board_name": "Newton",
+  "total": 3,
+  "in_zones": 0,
+  "interns_in_zones": [],
+  "sample": [
+   [
+    "Sales Director - USA",
+    "US - Remote"
+   ],
+   [
+    "Sales Manager — Newton & Appnext",
+    "Brazil"
+   ],
+   [
+    "Sr. Account Executive - USA",
+    "US - Remote"
+   ]
+  ]
+ },
+ {
+  "firm": "Newton Investment Management",
+  "kind": "lever",
+  "slug": "newton",
+  "board_name": "newton",
+  "total": 2,
+  "in_zones": 0,
+  "interns_in_zones": [],
+  "sample": [
+   [
+    "An Open Call for Talent",
+    "Toronto, Ontario, Toronto, Ontario"
+   ],
+   [
+    "Director of Finance - Canada Wide - Remote",
+    "Toronto, Ontario, Toronto, Ontario"
+   ]
+  ]
+ },
+ {
+  "firm": "Artemis",
+  "kind": "ashby",
+  "slug": "artemis",
+  "board_name": "artemis",
+  "total": 23,
+  "in_zones": 3,
+  "interns_in_zones": [],
+  "sample": [
+   [
+    "Sales Development Representative (UK) ",
+    "London"
+   ],
+   [
+    "Senior Software Engineer  ",
+    "New York City"
+   ],
+   [
+    "Security Research Engineer",
+    "New York City, Remote"
+   ],
+   [
+    "Product Engineer ",
+    "New York City"
+   ]
+  ]
+ },
+ {
+  "firm": "Polar Capital",
+  "kind": "ashby",
+  "slug": "polar",
+  "board_name": "polar",
+  "total": 2,
+  "in_zones": 0,
+  "interns_in_zones": [],
+  "sample": [
+   [
+    "Platform Engineering",
+    "U.S. / Europe"
+   ],
+   [
+    "Product Engineering",
+    "U.S. / Europe"
+   ]
+  ]
+ },
+ {
+  "firm": "Capital Dynamics",
+  "kind": "lever",
+  "slug": "capital",
+  "board_name": "capital",
+  "total": 57,
+  "in_zones": 16,
+  "interns_in_zones": [
+   [
+    "Group Head of Internal Audit",
+    "London, England, United Kingdom, London, England, United Kingdom"
+   ]
+  ],
+  "sample": [
+   [
+    "Angular Software Engineer",
+    "Sofia City, Bulgaria, Sofia City, Bulgaria, Warsaw, Mazowieckie, Poland, Limassol, Cyprus"
+   ],
+   [
+    "Application Security Architect",
+    "Warsaw, Mazowieckie, Poland, Warsaw, Mazowieckie, Poland, Sofia City, Bulgaria, Limassol, Cyprus"
+   ],
+   [
+    "Chief Operations Officer, Senior Official II",
+    "Nassau, New Providence, Nassau, New Providence"
+   ],
+   [
+    "Client Services Specialist (Chinese)",
+    "Melbourne, Victoria, Australia, Melbourne, Victoria, Australia"
+   ]
+  ]
+ },
+ {
+  "firm": "Pemberton",
+  "kind": "ashby",
+  "slug": "pemberton",
+  "board_name": "pemberton",
+  "total": 3,
+  "in_zones": 3,
+  "interns_in_zones": [],
+  "sample": [
+   [
+    "INVENSA - Associate, Finance Operations ",
+    "London"
+   ],
+   [
+    "Analyst, Product Strategy & Development ",
+    "London"
+   ],
+   [
+    "Analyst, Talent Acquisition and Talent Management, People & Performance",
+    "London"
+   ]
+  ]
+ },
+ {
+  "firm": "Julius Baer",
+  "kind": "ashby",
+  "slug": "julius",
+  "board_name": "julius",
+  "total": 6,
+  "in_zones": 0,
+  "interns_in_zones": [],
+  "sample": [
+   [
+    "Software Engineer - Product (New Grad)",
+    "San Francisco, CA"
+   ],
+   [
+    "Software Engineer - Infrastructure (Mid - Senior)",
+    "San Francisco, CA"
+   ],
+   [
+    "Software Engineer - Product (Mid to Senior)",
+    "San Francisco, CA"
+   ],
+   [
+    "Growth Marketer",
+    "San Francisco, CA"
+   ]
+  ]
+ },
+ {
+  "firm": "LionTree",
+  "kind": "greenhouse",
+  "slug": "liontree",
+  "board_name": "LionTree",
+  "total": 3,
+  "in_zones": 0,
+  "interns_in_zones": [],
+  "sample": [
+   [
+    "Capital Markets - Research Associate ",
+    "New York "
+   ],
+   [
+    "LionTree - 2028 US Advisory Summer Analyst - NY",
+    "New York "
+   ],
+   [
+    "LionTree - 2028 US Advisory Summer Analyst - SF",
+    "San Francisco, CA"
+   ]
+  ]
+ },
+ {
+  "firm": "Lincoln International",
+  "kind": "greenhouse",
+  "slug": "lincolninternational",
+  "board_name": "Lincoln International",
+  "total": 40,
+  "in_zones": 10,
+  "interns_in_zones": [
+   [
+    "Debt Advisory Internship (March 2027)",
+    "Paris, France"
+   ],
+   [
+    "M&A Internship (January 2027)",
+    "Paris, France"
+   ]
+  ],
+  "sample": [
+   [
+    "2026 Sophomore Job Shadow Program",
+    "Chicago, IL"
+   ],
+   [
+    "2026 Women in Finance Workshop",
+    "Chicago, IL"
+   ],
+   [
+    "2027 Full-Time Analyst, Consumer M&A",
+    "Los Angeles, CA"
+   ],
+   [
+    "2027 Full-Time Analyst, Valuations & Opinions Group ",
+    "Atlanta, GA; Dallas, TX; New York City, NY; San Francisco, CA"
+   ]
+  ]
+ },
+ {
+  "firm": "William Blair",
+  "kind": "greenhouse",
+  "slug": "williamblair",
+  "board_name": "William Blair",
+  "total": 52,
+  "in_zones": 6,
+  "interns_in_zones": [],
+  "sample": [
+   [
+    "2027 Investment Banking Full-Time Analyst - Consumer Products & Services",
+    "Charlotte, North Carolina"
+   ],
+   [
+    "2027 Investment Banking Full-Time MBA Associate",
+    "Atlanta, Georgia; Boston, Massachusetts; Charlotte, North Carolina; Chicago, Illinois, United States; Los Angeles, California; San Francisco, California"
+   ],
+   [
+    "2027 Investment Banking Summer Analyst, Enterprise Value Debt",
+    "San Francisco, California"
+   ],
+   [
+    "Analyst, PWM Private Capital",
+    "Chicago, Illinois, United States"
+   ]
+  ]
+ },
+ {
+  "firm": "Clearwater International",
+  "kind": "greenhouse",
+  "slug": "clearwater",
+  "board_name": "Clearwater",
+  "total": 15,
+  "in_zones": 0,
+  "interns_in_zones": [],
+  "sample": [
+   [
+    "Junior Consultant – Vulnerability Assessment, Penetration Testing & Red Teaming",
+    "Pune (M.H)"
+   ],
+   [
+    "Junior SOC 2 Type 2 Auditor",
+    "Pune (M.H)"
+   ],
+   [
+    "Principal Penetration Tester",
+    "Remote United States "
+   ],
+   [
+    "Principal Penetration Tester ",
+    "India"
+   ]
+  ]
+ },
+ {
+  "firm": "Koch",
+  "kind": "greenhouse",
+  "slug": "koch",
+  "board_name": "Koch Mechanical",
+  "total": 1,
+  "in_zones": 0,
+  "interns_in_zones": [],
+  "sample": [
+   [
+    "Journeyman Plumber ",
+    "Salt Lake City, UT"
+   ]
+  ]
+ },
+ {
+  "firm": "Koch Supply & Trading",
+  "kind": "greenhouse",
+  "slug": "koch",
+  "board_name": "Koch Mechanical",
+  "total": 1,
+  "in_zones": 0,
+  "interns_in_zones": [],
+  "sample": [
+   [
+    "Journeyman Plumber ",
+    "Salt Lake City, UT"
+   ]
+  ]
+ },
+ {
+  "firm": "Kpler",
+  "kind": "lever",
+  "slug": "kpler",
+  "board_name": "kpler",
+  "total": 102,
+  "in_zones": 45,
+  "interns_in_zones": [],
+  "sample": [
+   [
+    "Account Executive - Automotive & Mobility Intelligence",
+    "Detroit, Detroit"
+   ],
+   [
+    "Account Executive - Banking/Hedge Funds",
+    "New York, New York"
+   ],
+   [
+    "Account Executive - Energy",
+    "Houston, Houston, New York"
+   ],
+   [
+    "Account Executive - Energy and Chemicals (New Business)",
+    "Houston, Houston"
+   ]
+  ]
+ },
+ {
+  "firm": "Engelhart",
+  "kind": "greenhouse",
+  "slug": "engelhart",
+  "board_name": "Engelhart",
+  "total": 3,
+  "in_zones": 0,
+  "interns_in_zones": [],
+  "sample": [
+   [
+    "Legal Counsel",
+    "Houston, Texas"
+   ],
+   [
+    "Middle Office Analyst",
+    "Houston, Texas; Stamford, Connecticut"
+   ],
+   [
+    "Treasury and Trade Finance Analyst",
+    "Stamford, Connecticut"
+   ]
+  ]
+ },
+ {
+  "firm": "Optiver",
+  "kind": "greenhouse",
+  "slug": "optiver",
+  "board_name": "Optiver",
+  "total": 0,
+  "in_zones": 0,
+  "interns_in_zones": [],
+  "sample": []
+ },
+ {
+  "firm": "IMC",
+  "kind": "greenhouse",
+  "slug": "imc",
+  "board_name": "IMC",
+  "total": 170,
+  "in_zones": 16,
+  "interns_in_zones": [
+   [
+    "Global Internal Auditor",
+    "Amsterdam, Netherlands; London, United Kingdom"
+   ],
+   [
+    "Graduate Deep Learning Researcher  - London",
+    "London, United Kingdom"
+   ],
+   [
+    "Graduate Quant Researcher - Digital Assets ",
+    "Zug, Switzerland"
+   ]
+  ],
+  "sample": [
+   [
+    "2026 Chess Academy Australia & New Zealand",
+    "APAC"
+   ],
+   [
+    "2027 EU Campus Programme Talent Community",
+    "Europe"
+   ],
+   [
+    "2027 EU Chess Academy - Expression of Interest",
+    "Europe"
+   ],
+   [
+    "2027 US Chess Academy Interest Form",
+    "Chicago, United States"
+   ]
+  ]
+ },
+ {
+  "firm": "Jane Street",
+  "kind": "greenhouse",
+  "slug": "janestreet",
+  "board_name": "Jane Street",
+  "total": 220,
+  "in_zones": 72,
+  "interns_in_zones": [],
+  "sample": [
+   [
+    "Accounting Coordinator",
+    "New York, New York, United States"
+   ],
+   [
+    "ꓟachine ꓡearning ꓣesearcher",
+    "Hong Kong, Hong Kong"
+   ],
+   [
+    "Architect ",
+    "New York, New York, United States"
+   ],
+   [
+    "ASIC Engineer",
+    "London, England, United Kingdom"
+   ]
+  ]
+ },
+ {
+  "firm": "Jane Street",
+  "kind": "ashby",
+  "slug": "jane",
+  "board_name": "jane",
+  "total": 27,
+  "in_zones": 0,
+  "interns_in_zones": [],
+  "sample": [
+   [
+    "Market Owner, CAN Manual Therapy & Mental Health",
+    "Canada"
+   ],
+   [
+    "Customer Support",
+    "Canada"
+   ],
+   [
+    "Software Development Manager - Growth",
+    "Canada/US"
+   ],
+   [
+    "Senior Manager, Growth Strategy & Insights",
+    "Canada/US, United States"
+   ]
+  ]
+ },
+ {
+  "firm": "Flow Traders",
+  "kind": "greenhouse",
+  "slug": "flowtraders",
+  "board_name": "Flow Traders",
+  "total": 46,
+  "in_zones": 4,
+  "interns_in_zones": [],
+  "sample": [
+   [
+    "AI Engineering Manager",
+    "Amsterdam"
+   ],
+   [
+    "Core Data Engineer",
+    "Amsterdam"
+   ],
+   [
+    "Corporate Receptionist",
+    "New York"
+   ],
+   [
+    "Data Center Engineer",
+    "Amsterdam"
+   ]
+  ]
+ },
+ {
+  "firm": "Jump Trading",
+  "kind": "greenhouse",
+  "slug": "jumptrading",
+  "board_name": "Jump Trading",
+  "total": 94,
+  "in_zones": 41,
+  "interns_in_zones": [
+   [
+    "Campus AI/ML Researcher (Intern)",
+    "Hong Kong; Shanghai; Singapore"
+   ],
+   [
+    "Campus AI Researcher, PhD/Postdoc (Intern)",
+    "London"
+   ],
+   [
+    "Campus Crypto Researcher (Intern)",
+    "London"
+   ],
+   [
+    "Campus C++ Software Engineer (Intern)",
+    "Singapore"
+   ],
+   [
+    "Campus ML Research Engineer (Intern)",
+    "London"
+   ],
+   [
+    "Campus Python Software Engineer (Intern)",
+    "Singapore"
+   ],
+   [
+    "Campus Quantitative Researcher (Intern)",
+    "London; Amsterdam"
+   ],
+   [
+    "Campus Quantitative Researcher (Intern)",
+    "Singapore"
+   ],
+   [
+    "Campus Quantitative Researcher (M1/M2 Intern)",
+    "London; Paris"
+   ],
+   [
+    "Campus Quantitative Trader (Intern)",
+    "London; Amsterdam"
+   ],
+   [
+    "Campus Quantitative Trader (Intern)",
+    "Singapore"
+   ],
+   [
+    "Campus Systems Engineer (Intern)",
+    "Singapore"
+   ],
+   [
+    "Campus Systems Engineer (Intern)",
+    "London; Amsterdam"
+   ],
+   [
+    "Campus UI Software Engineer (Intern)",
+    "London"
+   ]
+  ],
+  "sample": [
+   [
+    "Campus AI/ML Researcher (Intern)",
+    "Hong Kong; Shanghai; Singapore"
+   ],
+   [
+    "Campus AI Research Engineer – Deep Learning (Full-Time)",
+    "Chicago; New York"
+   ],
+   [
+    "Campus AI Research Engineer - Deep Learning (Intern)",
+    "Chicago; New York"
+   ],
+   [
+    "Campus AI Research Engineer (Full-Time)",
+    "Chicago; New York"
+   ]
+  ]
+ },
+ {
+  "firm": "Jump Trading",
+  "kind": "ashby",
+  "slug": "jump",
+  "board_name": "jump",
+  "total": 3,
+  "in_zones": 0,
+  "interns_in_zones": [],
+  "sample": [
+   [
+    "Join the Jump Product & Design Talent Pool ",
+    "Remote (US)"
+   ],
+   [
+    "Join the Jump Engineering Talent Pool",
+    "Remote (US)"
+   ],
+   [
+    "Join the Jump Go-To-Market Talent Pool",
+    "Remote (US)"
+   ]
+  ]
+ },
+ {
+  "firm": "Maven Securities",
+  "kind": "ashby",
+  "slug": "maven",
+  "board_name": "maven",
+  "total": 3,
+  "in_zones": 0,
+  "interns_in_zones": [],
+  "sample": [
+   [
+    "Partnerships Lead, Maven for Business",
+    "Remote"
+   ],
+   [
+    "Senior Software Engineer",
+    "Remote"
+   ],
+   [
+    "Growth Lead",
+    "Remote"
+   ]
+  ]
+ },
+ {
+  "firm": "DV Trading",
+  "kind": "greenhouse",
+  "slug": "dvtrading",
+  "board_name": "DV Trading",
+  "total": 75,
+  "in_zones": 24,
+  "interns_in_zones": [
+   [
+    "Client Platforms Engineer Intern - Summer 2027",
+    "London"
+   ],
+   [
+    "Graduate Software Engineer (DV Commodities)",
+    "London"
+   ],
+   [
+    "Security Engineer Intern - Summer 2027",
+    "London"
+   ],
+   [
+    "Software Engineer Intern - Summer 2027 (DV Commodities)",
+    "London"
+   ],
+   [
+    "Trading Intern - Summer 2027 (DV Commodities)",
+    "London"
+   ]
+  ],
+  "sample": [
+   [
+    "2027 Quantitative Researcher Graduate (DV QES)",
+    "Hong Kong"
+   ],
+   [
+    "2027 Quantitative Research Intern (DV QES)",
+    "Hong Kong"
+   ],
+   [
+    "2027 Quantitative Trader Graduate (DV Equities)",
+    "New York"
+   ],
+   [
+    "2027 Quantitative Trader Graduate (DV QES)",
+    "Hong Kong"
+   ]
+  ]
+ },
+ {
+  "firm": "Quadrature",
+  "kind": "ashby",
+  "slug": "quadrature",
+  "board_name": "quadrature",
+  "total": 1,
+  "in_zones": 1,
+  "interns_in_zones": [],
+  "sample": [
+   [
+    "Quantitative Developer",
+    "London"
+   ]
+  ]
+ },
+ {
+  "firm": "Phoenix Group",
+  "kind": "ashby",
+  "slug": "phoenix",
+  "board_name": "phoenix",
+  "total": 10,
+  "in_zones": 0,
+  "interns_in_zones": [],
+  "sample": [
+   [
+    "Performance Marketing Specialist",
+    "Toronto, Ontario"
+   ],
+   [
+    "Senior Frontend Developer (React)",
+    "Toronto, Ontario"
+   ],
+   [
+    "Creative Strategist, Raven",
+    "Toronto, Ontario"
+   ],
+   [
+    "Pharmacy Assistant",
+    "Richmond, British Columbia"
+   ]
+  ]
+ },
+ {
+  "firm": "Kepler Cheuvreux",
+  "kind": "lever",
+  "slug": "kepler",
+  "board_name": "kepler",
+  "total": 26,
+  "in_zones": 1,
+  "interns_in_zones": [],
+  "sample": [
+   [
+    "Assembly Technician",
+    "Toronto, Ontario, Toronto, Ontario"
+   ],
+   [
+    "Director of Product - Platform, Payload & Services",
+    "United States, United States, United Kingdom, Germany, Canada"
+   ],
+   [
+    "Embedded Software Designer",
+    "Toronto, Ontario, Toronto, Ontario"
+   ],
+   [
+    "Embedded Software Engineering Intern (January 2027) (4 months)",
+    "Toronto, Ontario, Toronto, Ontario"
+   ]
+  ]
+ },
+ {
+  "firm": "Kepler Cheuvreux",
+  "kind": "ashby",
+  "slug": "kepler",
+  "board_name": "kepler",
+  "total": 0,
+  "in_zones": 0,
+  "interns_in_zones": [],
+  "sample": []
+ },
+ {
+  "firm": "I Squared Capital",
+  "kind": "greenhouse",
+  "slug": "isquaredcapital",
+  "board_name": "I Squared Capital",
+  "total": 0,
+  "in_zones": 0,
+  "interns_in_zones": [],
+  "sample": []
+ }
+]
