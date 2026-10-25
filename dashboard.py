@@ -492,9 +492,9 @@ const cityOf = o => o.city || o.location || "";
 const compact = s => String(s || "").normalize("NFKD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/[^a-z0-9]/g, "");
 function pubTs(o){ if (o.posted && /^\d{4}-\d{2}-\d{2}/.test(o.posted)) return Date.parse(o.posted.slice(0,10) + "T12:00:00") / 1000; return o.first_seen; }
 const nowS = () => Date.now() / 1000;
-// Date de détection par le tracker : une offre publiée il y a 3 semaines mais trouvée aujourd'hui est une nouveauté.
-// Les offres ajoutées sans notification (premier passage d'une source) gardent leur date de publication.
-function detTs(o){ return o.notified === false ? Math.min(o.first_seen, pubTs(o)) : o.first_seen; }
+// Date de l'offre pour le tri et les groupes : date de publication quand le site la donne, sinon date de détection.
+// (Les offres retrouvées après un changement des règles ne doivent pas passer devant les offres vraiment récentes.)
+function detTs(o){ return Math.min(o.first_seen, pubTs(o)); }
 const isFresh = o => nowS() - detTs(o) < 2 * DAY;
 const SEEN_KEY = "ts_seen", LOADED_AT = nowS();
 let SEEN = LS.get(SEEN_KEY, 0) || (LOADED_AT - 2 * DAY);
@@ -699,8 +699,8 @@ const Sync = (() => {
 })();
 
 /* ---------- rendu : offres ---------- */
-const GROUPS = {prio:["Entreprises prioritaires", "star"], today:["Trouvées aujourd'hui", ""], yday:["Trouvées hier", "clock"],
-                week:["Trouvées cette semaine", "clock"], old:["Plus anciennes", "clock"], closed:["Offres fermées", ""]};
+const GROUPS = {prio:["Entreprises prioritaires", "star"], today:["Publiées aujourd'hui", ""], yday:["Publiées hier", "clock"],
+                week:["Publiées cette semaine", "clock"], old:["Plus anciennes", "clock"], closed:["Offres fermées", ""]};
 function bucketOf(o, p){ if (o.closed) return "closed"; if (p) return "prio";
   const d = Math.floor((nowS() - detTs(o) + DAY / 2) / DAY); return d <= 0 ? "today" : d === 1 ? "yday" : d < 7 ? "week" : "old"; }
 function filtered(){

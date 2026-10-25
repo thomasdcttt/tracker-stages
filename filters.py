@@ -7,7 +7,7 @@ import re
 import unicodedata
 
 # À incrémenter à chaque changement de règles : les offres déjà écartées sont alors réexaminées.
-FILTER_VERSION = 12
+FILTER_VERSION = 13
 
 
 def normalize(text):
@@ -45,6 +45,9 @@ INTERN_TITLE = _rx([
     r"summer associates?",
     # v10 : "Summer Financial Analyst" (Houlihan Lokey), "Year in Industry" (Legal & General) = stage
     r"summer (?:\w+ ){1,2}analysts?", r"year in industry",
+    # v13 : stages d'un an des universités britanniques
+    r"(?:\d+|six|twelve|12) months? (?:industrial )?placements?", r"placement years?", r"industrial placements?",
+    r"sandwich placements?", r"year long placements?",
 ])
 SUMMER_TITLE = _rx([r"summer"])
 # Contrats explicitement exclus
@@ -235,6 +238,11 @@ CAT_PATTERNS = {
         r"derivatives", r"derives", r"fx", r"forex", r"rates", r"institutional sales", r"cross asset",
         r"obligataire", r"primary bonds", r"syndicate", r"syndication", r"primary markets?",
         r"marches? primaires?", r"prime brokerage", r"securities lending", r"repo",
+        # v13 : métiers de broker (corporate broking, interdealer, courtage de marché)
+        r"corporate broking", r"stock ?broking", r"stock ?brokers?", r"interdealer\w*", r"inter dealer\w*",
+        r"(?:equity|equities|fx|rates|energy|power|gas|oil|credit|derivatives?|futures|commodit\w*|freight|ship|money ?markets?) brok\w*",
+        r"(?<!insurance )(?<!mortgage )(?<!customs )(?<!real estate )(?<!reinsurance )brok(?:ing|ers?|erage)",
+        r"courtage", r"courtiers?",
         r"equity research", r"credit research", r"fixed income research", r"macro research",
         r"recherche (?:actions|credit|macro\w*|economique|marches?|obligataire|taux|obligations?)",
         r"exchange traded", r"etfs?", r"research analysts?",
@@ -628,7 +636,20 @@ IB_HOUSES = _rx([r"evercore", r"lazard", r"rothschild and co", r"houlihan lokey"
                  r"natixis corporate (?:and )?investment banking"])
 # Boutiques dont un stage "générique" est forcément en banque d'affaires
 IB_GENERIC_HOUSES = _rx([r"evercore", r"pjt\w*", r"moelis\w*", r"perella\w*", r"centerview\w*", r"greenhill\w*",
-                         r"lincoln international", r"raine"])
+                         r"lincoln international", r"raine",
+                         # v13 : banques mid-market et boutiques (stage "Summer Internship" sans métier = banque d'affaires)
+                         r"stifel\w*", r"investec", r"numis", r"deutsche numis", r"peel hunt", r"panmure\w*", r"liberum",
+                         r"cavendish", r"canaccord\w*", r"berenberg", r"singer capital\w*", r"shore capital\w*",
+                         r"zeus capital", r"cantor fitzgerald", r"houlihan lokey", r"jefferies", r"william blair", r"baird",
+                         r"raymond james", r"dc advisory", r"alantra", r"kbw", r"keefe bruyette\w*", r"oaklins",
+                         r"clearwater international", r"arden partners", r"finncap", r"guggenheim\w*", r"robey warshaw",
+                         r"qatalyst", r"arma partners", r"liontree", r"ondra\w*", r"messier\w*", r"natixis partners",
+                         r"edmond de rothschild corporate finance", r"bryan garnier", r"degroof petercam", r"harris williams"])
+# v13 : brokers (stage générique = vente / courtage de marché)
+BROKER_HOUSES = _rx([r"tp icap", r"icap", r"tullett\w*", r"bgc\w*", r"tradition", r"marex", r"stonex", r"sucden\w*",
+                     r"adm investor services", r"clarksons\w*", r"braemar\w*", r"ssy", r"gibson shipbrokers",
+                     r"simpson spence young", r"evolution markets", r"amerex", r"griffin markets", r"oneil", r"aurel bgc",
+                     r"kepler cheuvreux", r"oddo bhf", r"exane", r"redburn\w*"])
 GENERIC_INVEST_HOUSES = _rx([r"brevan howard", r"blackrock", r"comgest", r"partners group", r"la caisse", r"cdpq", r"3i",
                              r"graham capital\w*", r"sixth street", r"capula\w*", r"verition\w*", r"capstone investment\w*",
                              r"point72", r"millennium", r"citadel", r"balyasny", r"marshall wace", r"man group"])
@@ -683,6 +704,8 @@ def _house_category(t, company):
         return "M&A / IBD"
     if IB_GENERIC_HOUSES.search(c) and not gcore:
         return "M&A / IBD"
+    if BROKER_HOUSES.search(c) and not gcore:
+        return "Sales & Trading"
     for cat, rx in INVEST_HOUSES.items():
         if rx.search(c) and (INVEST_ROLE.search(t) or _only(core, VC_SECTORS)
                              or (not gcore and GENERIC_INVEST_HOUSES.search(c))):

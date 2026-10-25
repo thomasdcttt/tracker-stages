@@ -305,9 +305,10 @@ def collect_linkedin(cfg, log, state=None):
     out, errors, used, done_rest, fails_in_row = {}, [], 0, 0, 0
     known = state.get("known_ids") or set()
     resume = {}
+    deadline = float(state.get("deadline") or 0) or float("inf")
     for idx, task in enumerate(order):
-        if used >= budget:
-            break
+        if used >= budget or time.time() > deadline:
+            break  # budget de requêtes ou de temps atteint : la rotation reprend au passage suivant
         start, seen_task, page_len = int(task.get("start", 0)), set(), 0
         if task.get("cont"):  # suite d'un balayage : reprend là où la 1re page s'est arrêtée (si elle était pleine)
             if task["cont"] not in resume:
@@ -315,7 +316,7 @@ def collect_linkedin(cfg, log, state=None):
             start, page_len = resume[task["cont"]]
         try:
             for _ in range(task["pages"]):
-                if used >= budget:
+                if used >= budget or time.time() > deadline:
                     break
                 res = linkedin_search(task["q"], task.get("loc") or li["location"], task["past"], start=start,
                                       job_type=task["jt"])
