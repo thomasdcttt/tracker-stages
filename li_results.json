@@ -1,0 +1,163 @@
+[
+ {
+  "q": "(intern OR internship OR placement OR \"summer analyst\" OR \"off-cycle\" OR \"off cycle\")",
+  "jt": null,
+  "n": 8,
+  "in_scope": 0,
+  "titles": [
+   "UK Business Planning Strategy Intern (TikTok Shop) - 2027 Summer",
+   "Talent Acquisition Intern (Global Functions Talent Acquisition) - 2027 Summer",
+   "Recruitment Intern (Students Only)",
+   "Quantitative Strategy Developer Graduate: 2027 (London)",
+   "2027 Graduate Security Consultant - London",
+   "FMCG Strategy Planning Project Intern (TikTok Shop FMCG) - 2026 Start (BS/MS)",
+   "Ecommere Strategy Project Intern, Chinese Speaking (TikTok Shop)- 2026 Start (BS/MS)",
+   "Creator Community and Campaign Intern, Polish Speaking (TikTok LIVE) - 2027 Start"
+  ]
+ },
+ {
+  "q": "intern OR internship OR placement OR \"summer analyst\" OR \"off-cycle\"",
+  "jt": null,
+  "n": 7,
+  "in_scope": 0,
+  "titles": [
+   "UK Business Planning Strategy Intern (TikTok Shop) - 2027 Summer",
+   "FMCG Strategy Planning Project Intern (TikTok Shop FMCG) - 2026 Start (BS/MS)",
+   "2027 Graduate Security Consultant - London",
+   "Finance Assistant (Fixed Term Contract)",
+   "Talent Acquisition Intern (Global Functions Talent Acquisition) - 2027 Summer",
+   "Ecommere Strategy Project Intern, Chinese Speaking (TikTok Shop)- 2026 Start (BS/MS)",
+   "Creator Community and Campaign Intern, Polish Speaking (TikTok LIVE) - 2027 Start"
+  ]
+ },
+ {
+  "q": "internship",
+  "jt": null,
+  "n": 10,
+  "in_scope": 0,
+  "titles": [
+   "Creator Community and Campaign Intern, Polish Speaking (TikTok LIVE) - 2027 Start",
+   "Talent Acquisition Intern (Global Functions Talent Acquisition) - 2027 Summer",
+   "2027 Graduate Electrical Engineer - Reading",
+   "2027 Graduate Fire Engineer - London",
+   "Trading Systems Engineer Graduate: 2027 (London)",
+   "Casual Sales Assistant",
+   "Events Casual Waiter",
+   "Trainee People and Learning Coordinator",
+   "Quantitative Strategy Developer Graduate: 2027 (London)",
+   "Graduate Marker"
+  ]
+ },
+ {
+  "q": "intern",
+  "jt": null,
+  "n": 8,
+  "in_scope": 0,
+  "titles": [
+   "UK Business Planning Strategy Intern (TikTok Shop) - 2027 Summer",
+   "Creator Community and Campaign Intern, Polish Speaking (TikTok LIVE) - 2027 Start",
+   "Trainee People and Learning Coordinator",
+   "Trading Systems Engineer Graduate: 2027 (London)",
+   "Quantitative Strategy Developer Graduate: 2027 (London)",
+   "Talent Acquisition Intern (Global Functions Talent Acquisition) - 2027 Summer",
+   "FMCG Strategy Planning Project Intern (TikTok Shop FMCG) - 2026 Start (BS/MS)",
+   "Ecommere Strategy Project Intern, Chinese Speaking (TikTok Shop)- 2026 Start (BS/MS)"
+  ]
+ },
+ {
+  "q": "\"summer analyst\"",
+  "jt": null,
+  "n": 3,
+  "in_scope": 0,
+  "titles": [
+   "UK Business Planning Strategy Intern (TikTok Shop) - 2027 Summer",
+   "FMCG Strategy Planning Project Intern (TikTok Shop FMCG) - 2026 Start (BS/MS)",
+   "Ecommere Strategy Project Intern, Chinese Speaking (TikTok Shop)- 2026 Start (BS/MS)"
+  ]
+ },
+ {
+  "q": "\"summer internship\"",
+  "jt": null,
+  "n": 5,
+  "in_scope": 0,
+  "titles": [
+   "UK Business Planning Strategy Intern (TikTok Shop) - 2027 Summer",
+   "Talent Acquisition Intern (Global Functions Talent Acquisition) - 2027 Summer",
+   "Creator Community and Campaign Intern, Polish Speaking (TikTok LIVE) - 2027 Start",
+   "FMCG Strategy Planning Project Intern (TikTok Shop FMCG) - 2026 Start (BS/MS)",
+   "Ecommere Strategy Project Intern, Chinese Speaking (TikTok Shop)- 2026 Start (BS/MS)"
+  ]
+ },
+ {
+  "q": "\"off-cycle\"",
+  "jt": null,
+  "n": 10,
+  "in_scope": 0,
+  "titles": [
+   "Forward Deployed Engineer (Python / Go) | Production Agentic AI | B2C Start-up, Series A | £100k-£200k + Equity | London (5 Days) | Visa Sponsorship + Relocation",
+   "Senior Product Engineer (Python / Go) | Production Agentic AI | B2C Start-up, Series A | £100k-£200k + Equity | London (5 Days) | Visa Sponsorship + Relocation",
+   "owner",
+   "Portfolio Manager",
+   "End Point Assessor - Children, Young People and Families Practitioner (Level 4) (Derbyshire Area)",
+   "Regional Service Desk Analyst - IT",
+   "financial accountant",
+   "Front of house - Sales & Memberships",
+   "Registered Veterinary Nurse - Small Animal",
+   "Founder's Associate"
+  ]
+ },
+ {
+  "q": "placement",
+  "jt": null,
+  "n": 10,
+  "in_scope": 0,
+  "titles": [
+   "Creator Community and Campaign Intern, Polish Speaking (TikTok LIVE) - 2027 Start",
+   "P&C Placing Broker",
+   "Lead Technical Program Manager - Low Latency Market Trading",
+   "Talent Acquisition Manager",
+   "Quantitative Trading & Research - Quantitative Developer - Associate or Vice President",
+   "Prime Financial Services Client Services Analyst",
+   "Talent Acquisition Intern (Global Functions Talent Acquisition) - 2027 Summer",
+   "Senior Electronics Engineer - 12 month FTC",
+   "Insights Manager (Maternity Cover)",
+   "Python Developer"
+  ]
+ },
+ {
+  "q": "\"M&A\" AND (intern OR internship OR placement OR \"summer analyst\" OR \"off-cycle\" OR \"off cycle\")",
+  "jt": null,
+  "n": 10,
+  "in_scope": 10,
+  "titles": [
+   "Banking, Investment Banking - Financial Institution Group (FIG), Summer Analyst, London, United Kingdom 2027",
+   "Banking, Investment Banking, CEE, Greece & Cyprus, Summer Analyst, London, United Kingdom 2027",
+   "2027 Global Investment Banking Analyst Program - Summer Internship - London",
+   "EMEA Banking Summer Analyst",
+   "Private Equity Investment Intern",
+   "2027 Private Equity Summer Analyst",
+   "Technology M&A Intern",
+   "2027 Summer Internship - Global Investment Banking - London",
+   "2027 MUFG UK Summer Analyst Programme: Global Corporate Investment Banking",
+   "Investment Banking Summer Internship 2027 - Mining and Metals"
+  ]
+ },
+ {
+  "q": "\"finance\" AND (intern OR internship OR placement OR \"summer analyst\" OR \"off-cycle\" OR \"off cycle\")",
+  "jt": null,
+  "n": 10,
+  "in_scope": 7,
+  "titles": [
+   "Banking, Investment Banking - Financial Institution Group (FIG), Summer Analyst, London, United Kingdom 2027",
+   "Banking, Financing, Summer Analyst, London - United Kingdom 2027",
+   "Investment Analyst",
+   "2027 Private Equity Summer Analyst",
+   "2027 Summer Intern - Account Analyst, London (Arabic or French Speaking)",
+   "EMEA Banking Summer Analyst",
+   "Fixed Income Summer Internship",
+   "EMEA Markets Summer Analyst",
+   "Finance Internship",
+   "2027 MUFG UK Summer Analyst Programme: Structured Trading Group"
+  ]
+ }
+]
