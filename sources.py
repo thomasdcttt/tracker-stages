@@ -829,10 +829,12 @@ def parse_oracle(data, host, site_url):
     return jobs
 
 
-def _oracle_query(host, site_number, keyword, offset=0):
+def _oracle_query(host, site_number, keyword, offset=0, extra=""):
     finder = "findReqs;siteNumber=%s,keyword=\"%s\",limit=25,sortBy=POSTING_DATES_DESC" % (site_number, keyword)
     if offset:
         finder += ",offset=%d" % offset
+    if extra:
+        finder += "," + extra
     url = ("https://%s/hcmRestApi/resources/latest/recruitingCEJobRequisitions?onlyData=true"
            "&expand=requisitionList.secondaryLocations&finder=%s" % (host, urllib.parse.quote(finder, safe=";=,")))
     return http(url, headers={"Accept": "application/json"})
@@ -872,8 +874,46 @@ def collect_oracle_site(s):
         for d in pages:
             for j in parse_oracle(d, host, site_url):
                 out[j["id"]] = _job(s["company"], j["id"], j["title"], j["location"], j["url"], j["posted"])
+        if total > 100 and not s.get("_oracle_country_done"):
+            # Recherche tronquée (100 premiers résultats, tous pays) : stages refaits filtrés sur les pays suivis
+            s["_oracle_country_done"] = True
+            for d in _oracle_country_pass(host, site_number):
+                for j in parse_oracle(d, host, site_url):
+                    out.setdefault(j["id"], _job(s["company"], j["id"], j["title"], j["location"], j["url"], j["posted"]))
         _pause(0.5, 1.5)
     return list(out.values())
+
+
+ORACLE_COUNTRIES = re.compile(r"(?i)^\s*(united kingdom|switzerland|singapore|ireland|france)\s*$")
+
+
+def _oracle_country_pass(host, site_number):
+    try:
+        st, txt = _oracle_query(host, site_number, "intern", 0, "facetsList=LOCATIONS")
+        if st != 200:
+            return []
+        items = json.loads(txt).get("items") or [{}]
+        ids = [str(f.get("Id")) for f in (items[0].get("locationsFacet") or [])
+               if f.get("Id") and ORACLE_COUNTRIES.match(str(f.get("Name") or ""))]
+    except (SourceError, ValueError):
+        return []
+    pages = []
+    for lid in ids:
+        for q in ("intern", "internship", "summer", "placement", "off-cycle"):
+            for offset in (0, 25, 50, 75):
+                _pause(0.3, 0.8)
+                try:
+                    st, txt = _oracle_query(host, site_number, q, offset, "selectedLocationsFacet=%s" % lid)
+                    d = json.loads(txt) if st == 200 else {}
+                except (SourceError, ValueError):
+                    d = {}
+                reqs = [r for it in d.get("items") or [] for r in (it.get("requisitionList") or [])]
+                if not reqs:
+                    break
+                pages.append(d)
+                if len(reqs) < 25:
+                    break
+    return pages
 
 
 def parse_eightfold(data, host, domain):
