@@ -7,7 +7,7 @@ import re
 import unicodedata
 
 # À incrémenter à chaque changement de règles : les offres déjà écartées sont alors réexaminées.
-FILTER_VERSION = 17
+FILTER_VERSION = 18
 
 
 def normalize(text):
@@ -237,7 +237,7 @@ CAT_PATTERNS = {
     ],
     "Sales & Trading": [
         r"sales trading", r"sales and trading", r"sales traders?", r"traders?", r"trading",
-        r"global markets?", r"markets", r"capital markets", r"marches de capitaux", r"marches financiers",
+        r"global markets?", r"(?<!us )(?<!uk )(?<!swiss )(?<!canada )(?<!french )(?<!german )(?<!export )markets", r"capital markets", r"marches de capitaux", r"marches financiers",
         r"salle des? marches?", r"fixed income", r"ficc", r"equities", r"equity derivatives",
         r"derivatives", r"derives", r"fx", r"forex", r"rates", r"institutional sales", r"cross asset",
         r"obligataire", r"primary bonds", r"syndicate", r"syndication", r"primary markets?",
@@ -290,6 +290,7 @@ ROLE_EXCLUDE = _rx([
     r"lawyers?", r"counsel", r"droit", r"juridique", r"law", r"rh", r"hr", r"human resources", r"ressources humaines", r"recrutement",
     r"recruitment", r"talent (?:acquisition|management|sourcing|partner|development)", r"marketing",
     r"eoliennes?", r"wind turbines?", r"turbines?",  # v17 : ingénierie éolienne (Siemens Gamesa)
+    r"presse", r"press (?:office|relations?|officer)", r"relations? presse", r"fashion",  # v18 : presse, mode (CHANEL)
     r"consultant\w*", r"consulting", r"conseil (?:en )?strategi\w*", r"strategy consult\w*", r"chief of staff", r"medias?", r"programmati\w*", r"digital trader\w*",
     r"trader\w* digital", r"social media", r"trader social", r"ads", r"advertising", r"publicite", r"adtech", r"paid media",
     r"superintend\w*",
