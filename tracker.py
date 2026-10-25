@@ -401,7 +401,8 @@ DEFAULT_CONFIG = {
     "closed_checks_per_run": 20,
     "parallel_sources": 12,
     "collect_budget_seconds": 400,  # au-delà, les sources pas encore lues passent au passage suivant (en priorité)
-    "location_checks_per_run": 60,  # offres de sites carrières sans lieu : lecture du lieu sur la page de l'offre
+    "location_checks_per_run": 60,
+    "date_checks_per_run": 40,  # offres sans date de publication : date lue sur la page de l'offre  # offres de sites carrières sans lieu : lecture du lieu sur la page de l'offre
     # Agrégateurs à API officielle : The Muse (sans clé), Adzuna et Reed (clés gratuites dans les secrets GitHub)
     "muse": {"enabled": True, "max_pages": 15,
              "locations": ["London, United Kingdom", "Paris, France", "Zurich, Switzerland", "Geneva, Switzerland",
@@ -1039,6 +1040,33 @@ class Tracker:
                 self.store.add_rejected(j["uid"], r2["reason"] or "?", j)
             time.sleep(random.uniform(0.1, 0.4))
 
+    def backfill_dates(self):
+        """Offres sans date de publication (pages liste sans date) : date lue sur la page de l'offre, quelques-unes
+        par passage, trois essais au plus par offre."""
+        budget, found = int(self.cfg.get("date_checks_per_run", 40)), 0
+        for o in self.store.offers_without_date():
+            if budget <= 0:
+                break
+            key = "date_try:" + o["uid"]
+            tries = int(self.store.get_meta(key, 0) or 0)
+            if tries >= 3:
+                continue
+            budget -= 1
+            try:
+                d = sources.fetch_posted(o)
+            except sources.RateLimited:
+                break
+            except Exception:  # noqa: BLE001
+                d = ""
+            if d:
+                self.store.set_posted(o["uid"], d)
+                found += 1
+            else:
+                self.store.set_meta(key, tries + 1)
+        if found:
+            log("Dates de publication retrouvées sur la page de l'offre : %d" % found)
+        return found
+
     def verify_offers(self):
         """Contrôle progressif des offres déjà affichées : description lue (langue exigée, type de contrat).
         Une offre qui exige l'allemand ou le mandarin, ou qui n'est finalement pas un stage, est retirée du tableau."""
@@ -1417,6 +1445,10 @@ def main():
                           "Tu seras notifié de chaque nouvelle offre." % n, dash_link(), button="Voir le tableau")
             tracker.notify_new(new_list)
             tracker.announce_regions()
+            try:
+                tracker.backfill_dates()
+            except Exception:
+                log("Dates de publication : erreur\n" + traceback.format_exc())
             try:
                 removed = tracker.verify_offers()
                 if removed:

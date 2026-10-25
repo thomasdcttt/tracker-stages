@@ -95,6 +95,15 @@ class Store:
             "SELECT * FROM offers WHERE duplicate_of IS NULL AND COALESCE(closed,0)=0 AND COALESCE(desc_checked,0)=0 "
             "ORDER BY first_seen DESC")]
 
+    def set_posted(self, uid, posted):
+        self.db.execute("UPDATE offers SET posted=? WHERE uid=? OR duplicate_of=?", (posted, uid, uid))
+        self.db.commit()
+
+    def offers_without_date(self):
+        return [dict(r) for r in self.db.execute(
+            "SELECT * FROM offers WHERE coalesce(closed,0)=0 AND duplicate_of IS NULL AND coalesce(posted,'')='' "
+            "ORDER BY first_seen DESC")]
+
     def set_desc_checked(self, uid, value=1):
         self.db.execute("UPDATE offers SET desc_checked=? WHERE uid=?", (value, uid))
         self.db.commit()

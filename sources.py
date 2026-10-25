@@ -1677,6 +1677,92 @@ def fetch_description(offer):
 
 
 # =====================================================================
+# Date de publication lue sur la page de l'offre (pages liste sans date)
+# =====================================================================
+_MONTHS = {m: i + 1 for i, ms in enumerate([
+    ("jan", "january", "janvier", "janv"), ("feb", "february", "fevrier", "février", "fev", "fév"),
+    ("mar", "march", "mars"), ("apr", "april", "avril", "avr"), ("may", "mai"), ("jun", "june", "juin"),
+    ("jul", "july", "juillet", "juil"), ("aug", "august", "aout", "août"),
+    ("sep", "sept", "september", "septembre"), ("oct", "october", "octobre"),
+    ("nov", "november", "novembre"), ("dec", "december", "decembre", "décembre", "déc")]) for m in ms}
+_DATE_FIELDS = [
+    r'"datePosted"\s*:\s*"([^"]{8,40})"', r'itemprop=["\']datePosted["\'][^>]*?content=["\']([^"\']{8,40})',
+    r'content=["\']([^"\']{8,40})["\'][^>]*?itemprop=["\']datePosted', r'property=["\']article:published_time["\'][^>]*?content=["\']([^"\']{8,40})',
+    r'"(?:postedOn|publishedAt|published_at|first_published|postingDate|datePublished|createdAt|created_at)"\s*:\s*"([^"]{8,40})"',
+]
+_DATE_TEXT = re.compile(
+    r"(?i)(?:date posted|posted on|posted|posting date|publication date|date de publication|publi[ée]e? le|"
+    r"date d[e']? ?mise en ligne|job posted|ver[öo]ffentlicht(?: am)?)\s*[:\-–]?\s*"
+    r"(\d{4}-\d{2}-\d{2}|[0-3]?\d[./][01]?\d[./](?:20)?\d\d|[0-3]?\d(?:st|nd|rd|th)?\s+[A-Za-zéûô]{3,9}\.?,?\s+20\d\d|"
+    r"[A-Za-z]{3,9}\.?\s+[0-3]?\d(?:st|nd|rd|th)?,?\s+20\d\d)")
+
+
+def parse_any_date(v, today=None):
+    """Date (ISO, 12/10/2026, 12 Oct 2026, Oct 12, 2026, 12 octobre 2026) en AAAA-MM-JJ, si plausible."""
+    import datetime as _dt
+    today = today or _dt.date.today()
+    v = html.unescape(str(v or "")).strip()
+    d = None
+    m = re.match(r"(\d{4})-(\d{2})-(\d{2})", v)
+    if m:
+        d = (int(m.group(1)), int(m.group(2)), int(m.group(3)))
+    if not d:
+        m = re.match(r"([0-3]?\d)[./]([01]?\d)[./]((?:20)?\d\d)$", v)
+        if m:
+            y = int(m.group(3)); y = y + 2000 if y < 100 else y
+            d = (y, int(m.group(2)), int(m.group(1)))
+    if not d:
+        m = re.match(r"([0-3]?\d)(?:st|nd|rd|th)?\s+([A-Za-zéûô]{3,9})\.?,?\s+(20\d\d)", v)
+        if m and m.group(2).lower() in _MONTHS:
+            d = (int(m.group(3)), _MONTHS[m.group(2).lower()], int(m.group(1)))
+    if not d:
+        m = re.match(r"([A-Za-z]{3,9})\.?\s+([0-3]?\d)(?:st|nd|rd|th)?,?\s+(20\d\d)", v)
+        if m and m.group(1).lower() in _MONTHS:
+            d = (int(m.group(3)), _MONTHS[m.group(1).lower()], int(m.group(2)))
+    if not d:
+        rel = norm_posted(v, today)  # "Posted 3 Days Ago"
+        return rel
+    try:
+        date = _dt.date(*d)
+    except ValueError:
+        return ""
+    if not (_dt.date(2024, 1, 1) <= date <= today + _dt.timedelta(days=1)):
+        return ""
+    return date.isoformat()
+
+
+def date_from_page(page, today=None):
+    """Date de publication trouvée dans une page d'offre : données structurées d'abord, puis texte « Posted on »."""
+    for rx in _DATE_FIELDS:
+        for m in re.finditer(rx, page or "", re.I):
+            d = parse_any_date(m.group(1), today)
+            if d:
+                return d
+    m = _DATE_TEXT.search(_text(re.sub(r"<(script|style)\b.*?</\1>", " ", page or "", flags=re.S | re.I)))
+    return parse_any_date(m.group(1), today) if m else ""
+
+
+def fetch_posted(offer):
+    """Date de publication d'une offre de site carrière dont la page liste n'en donne pas ("" si introuvable)."""
+    url = offer.get("url") or ""
+    m = re.match(r"https://([^/]+\.myworkdayjobs\.com)/(?:[a-z]{2}-[A-Z]{2}/)?([^/]+)(/job/.+)$", url)
+    if m:
+        host, site, path = m.groups()
+        tenant = host.split(".")[0]
+        status, txt = http("https://%s/wday/cxs/%s/%s%s" % (host, tenant, site, path), headers={"Accept": "application/json"})
+        if status == 200:
+            try:
+                info = json.loads(txt).get("jobPostingInfo") or {}
+            except ValueError:
+                info = {}
+            return parse_any_date(info.get("startDate") or "") or parse_any_date(info.get("postedOn") or "")
+        return ""
+    if not url.startswith("http") or url.lower().endswith(".pdf") or not robots_allowed(url):
+        return ""
+    status, page = http(url, headers={"Accept": "text/html"})
+    return date_from_page(page) if status == 200 else ""
+
+# =====================================================================
 # Offres fermées : vérification ponctuelle de chaque offre
 # =====================================================================
 CLOSED_MARKERS = re.compile(

@@ -1826,6 +1826,7 @@
   "parallel_sources": 12,
   "collect_budget_seconds": 400,
   "location_checks_per_run": 60,
+  "date_checks_per_run": 40,
   "muse": {
     "enabled": true,
     "max_pages": 15,

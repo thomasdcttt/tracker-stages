@@ -500,6 +500,8 @@ const SEEN_KEY = "ts_seen", LOADED_AT = nowS();
 let SEEN = LS.get(SEEN_KEY, 0) || (LOADED_AT - 2 * DAY);
 const isNewSince = o => !o.closed && o.notified !== false && o.first_seen > SEEN;
 const ageDays = o => Math.floor((nowS() - pubTs(o) + DAY / 2) / DAY);
+function seenLabel(o){ const d = new Date(o.first_seen * 1000);
+  return "Repérée le " + String(d.getDate()).padStart(2, "0") + "/" + String(d.getMonth() + 1).padStart(2, "0"); }
 function pubLabel(o){ if (!o.posted) return "";
   const d = ageDays(o);
   if (o.posted_plus) return "Il y a plus de " + Math.max(1, d - 1) + " j";
@@ -700,8 +702,10 @@ const Sync = (() => {
 
 /* ---------- rendu : offres ---------- */
 const GROUPS = {prio:["Entreprises prioritaires", "star"], today:["Publiées aujourd'hui", ""], yday:["Publiées hier", "clock"],
-                week:["Publiées cette semaine", "clock"], old:["Plus anciennes", "clock"], closed:["Offres fermées", ""]};
-function bucketOf(o, p){ if (o.closed) return "closed"; if (p) return "prio";
+                week:["Publiées cette semaine", "clock"], old:["Plus anciennes", "clock"],
+                nodate:["Date de publication inconnue", "clock"], closed:["Offres fermées", ""]};
+const hasDate = o => !!(o.posted && /^\d{4}-\d{2}-\d{2}/.test(o.posted));
+function bucketOf(o, p){ if (o.closed) return "closed"; if (p) return "prio"; if (!hasDate(o)) return "nodate";
   const d = Math.floor((nowS() - detTs(o) + DAY / 2) / DAY); return d <= 0 ? "today" : d === 1 ? "yday" : d < 7 ? "week" : "old"; }
 function filtered(){
   const ql = F.q.trim().toLowerCase();
@@ -713,19 +717,21 @@ function filtered(){
     const p = isPrio(o); if (F.prio && !p) continue;
     rows.push({o, p, t:detTs(o)});
   }
+  // Ordre strictement chronologique (date de publication) ; les offres dont le site ne donne aucune date sont
+  // regroupées après les offres datées, par date de repérage.
   rows.sort((a, b) => ((a.o.closed ? 1 : 0) - (b.o.closed ? 1 : 0)) || ((b.p ? 1 : 0) - (a.p ? 1 : 0)) ||
-      (b.t - a.t) || (b.o.first_seen - a.o.first_seen));
+      ((hasDate(a.o) ? 0 : 1) - (hasDate(b.o) ? 0 : 1)) || (b.t - a.t) || (b.o.first_seen - a.o.first_seen));
   return rows;
 }
 function statusChip(it){ const s = ST[it.status] || ST.a_postuler;
   return '<button type="button" class="status" data-act="status" style="color:var(' + s.v + ')"><i></i>' + esc(s.label) + '</button>'; }
 function cardHTML(r, i, animate){
   const o = r.o, prio = r.p, it = candFor(o.uid), link = safeUrl(o.apply_url || o.url), cv = CATVAR[o.category] || "--mute";
-  const direct = o.apply_url && o.apply_url !== o.url, city = cityOf(o), pl = o.posted ? pubLabel(o) : "";
+  const direct = o.apply_url && o.apply_url !== o.url, city = cityOf(o), pl = o.posted ? pubLabel(o) : seenLabel(o);
   return '<article class="card' + (prio ? " prio" : "") + (o.closed ? " closed" : "") + (animate ? " enter" : "") + '" style="--i:' + i + ';--c:var(' + cv + ')" data-uid="' + esc(o.uid) + '">' +
     '<div class="ch"><div class="av" style="' + avStyle(o.company) + '">' + esc(initials(o.company)) + '</div>' +
     '<div class="who"><div class="co">' + (prio ? '<span class="star" title="Entreprise prioritaire">★</span>' : "") + '<span class="nm">' + esc(o.company || "—") + '</span></div>' +
-    '<div class="where">' + (city ? icon("pin") + '<span class="city">' + esc(city) + '</span>' : "") + (pl ? (city ? '<span class="sep">·</span>' : "") + '<span title="Date de publication">' + esc(pl) + '</span>' : "") + '</div></div>' +
+    '<div class="where">' + (city ? icon("pin") + '<span class="city">' + esc(city) + '</span>' : "") + (pl ? (city ? '<span class="sep">·</span>' : "") + '<span title="' + (o.posted ? "Date de publication" : "Le site ne donne pas de date de publication : date à laquelle le tracker a repéré l'offre") + '">' + esc(pl) + '</span>' : "") + '</div></div>' +
     (o.closed ? '<span class="badge cl">Fermée</span>' : isFresh(o) ? '<span class="badge new">NOUVEAU</span>' : "") + '</div>' +
     '<h3 class="ttl">' + esc(o.title) + '</h3><div class="meta">' +
     '<span class="tag"><span class="ti">' + icon(CATICO[o.category] || "all") + '</span>' + esc(o.category) + '</span>' +

@@ -7,7 +7,7 @@ import re
 import unicodedata
 
 # À incrémenter à chaque changement de règles : les offres déjà écartées sont alors réexaminées.
-FILTER_VERSION = 15
+FILTER_VERSION = 16
 
 
 def normalize(text):
@@ -166,7 +166,7 @@ CITY_NAMES = [(re.compile(r"(?<![a-z0-9])(?:%s)(?![a-z0-9])" % rx), name) for rx
 # ---------- Métiers ----------
 CAT_PATTERNS = {
     "M&A / IBD": [
-        r"mna", r"fusions?", r"fusions? (?:et |and )?acquisitions?", r"mergers?", r"investment banking", r"ibd",
+        r"mna", r"fusions? (?:et |and )?acquisitions?", r"mergers?", r"investment banking", r"ibd",
         r"banque d affaires", r"banque conseil", r"corporate finance", r"finance d entreprise",
         r"ecm", r"dcm", r"equity capital markets?", r"debt capital markets?",
         r"leveraged finance", r"levfin", r"acquisition finance", r"financements? d acquisition",
@@ -498,7 +498,7 @@ COMMO_HARD_EXCLUDE = _rx([
     # v7 : risque et contrôle exclus aussi côté matières premières ; "gestionnaire" = back/middle office
     r"risk", r"risks", r"risques?", r"controls?", r"controles?", r"gestionnaires?(?! de portefeuilles?)",
 ] + ADMIN_ASSISTANT + SUPPORT_EXCLUDE)
-IBD_STRICT = _rx([r"mna", r"fusions?", r"mergers?", r"investment banking", r"ibd", r"banque d affaires",
+IBD_STRICT = _rx([r"mna", r"fusions? (?:et |and )?acquisitions?", r"mergers?", r"investment banking", r"ibd", r"banque d affaires",
                   r"corporate finance", r"private equity", r"capital investissement", r"lbo", r"buy ?out",
                   r"venture capital", r"capital risque", r"vc", r"ecm", r"dcm", r"leveraged finance",
                   r"coverage", r"restructuring", r"debt advisory", r"acquisition finance", r"project finance",
@@ -719,6 +719,16 @@ def _house_category(t, company):
     return None
 
 
+# v16 : contexte financier dans l'intitulé
+FIN_TITLE_CTX = re.compile(r"(?<![a-z0-9])(?:equity|debt|advisory|invest\w*|fund\w*|fonds|portfolio|deals?|transactions?|"
+                           r"m ?& ?a|mna|lending|financ\w*|credit|capital)(?![a-z0-9])")
+# v16 : employeur financier (pour les intitulés ambigus)
+FIN_COMPANY = re.compile(r"(?<![a-z0-9])(?:capital|partners|partenaires|invest\w*|asset\w*|fund\w*|fonds|equity|ventures?|"
+                         r"bank\w*|banque|gestion|management|advisors?|advisory|securities|finance|financial|holdings?|"
+                         r"infra\w*|private|credit|ardian|eurazeo|tikehau|eqt|kkr|blackstone|carlyle|apollo|brookfield|"
+                         r"macquarie|meridiam|antin|bpifrance|wendel|amundi|axa im|natixis|rothschild|lazard)(?![a-z0-9])")
+
+
 def categorize(title, company=""):
     """Renvoie (categorie, raison_exclusion). categorie=None si hors périmètre."""
     t = normalize(title)
@@ -762,6 +772,10 @@ def categorize(title, company=""):
     for cat in ("Private Equity", "Venture Capital", "Asset Management", "M&A / IBD", "Private Equity (faible)",
                 "Sales & Trading"):
         if CAT_RX[cat].search(t):
+            if cat == "Private Equity (faible)" and company and not (
+                    FIN_COMPANY.search(c) or FIN_TITLE_CTX.search(t) or BANKS.search(c) or AM_COMPANY.search(c)
+                    or IB_HOUSES.search(c) or any(rx.search(c) for rx in INVEST_HOUSES.values())):
+                continue  # v16 : "value creation", "infrastructure"... seulement en contexte financier
             # "private equity" contient "equity" : géré car S&T vérifié après PE
             return ("Private Equity" if cat == "Private Equity (faible)" else cat), None
     if SALES_RX.search(t) and MARKET_CTX.search(t):
