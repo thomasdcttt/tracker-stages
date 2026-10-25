@@ -593,17 +593,25 @@ def collect_workday(cfg, log):
             continue
         host, tenant, site, company = t["host"], t["tenant"], t["site"], t["company"]
         try:
-            seen = {}
+            seen, facet_src = {}, None
             for q in cfg["workday"]["queries"]:
                 status, txt = _wd_search(host, tenant, site, q)
                 if status != 200 and status < 500:
                     raise SourceError("HTTP %d" % status)
                 first = _json_or_unavailable(status, txt, host)
+                if int(first.get("total") or 0) > WD_MAX_RESULTS and first.get("facets"):
+                    facet_src = facet_src or first
                 for data in [first] + _wd_more_pages(host, tenant, site, q, first):
                     for j in parse_workday(data, host, site):
                         j["company"] = company
                         seen[j["ext_id"]] = j
                 _pause(0.5, 1.5)
+            if facet_src is not None:
+                for data in _wd_country_pass(host, tenant, site, facet_src):
+                    for j in parse_workday(data, host, site):
+                        if j["ext_id"] not in seen:
+                            j["company"] = company
+                            seen[j["ext_id"]] = j
             for j in seen.values():
                 # "3 Locations" : on va chercher la liste exacte
                 if re.search(r"\d+\s+(locations|sites|lieux)", j["location"], re.I):
@@ -629,10 +637,72 @@ def _job(company, ext, title, location, url, posted=""):
                 location=location or "", url=url, apply_url=url, posted=norm_posted(posted))
 
 
-def _wd_search(host, tenant, site, q, offset=0):
+def _wd_search(host, tenant, site, q, offset=0, facets=None):
     return http("https://%s/wday/cxs/%s/%s/jobs" % (host, tenant, site), method="POST",
-                data={"appliedFacets": {}, "limit": 20, "offset": offset, "searchText": q},
+                data={"appliedFacets": facets or {}, "limit": 20, "offset": offset, "searchText": q},
                 headers={"Accept": "application/json"})
+
+
+# Workday ne renvoie que les 100 premiers résultats d'une recherche, tous pays confondus : chez les grandes banques,
+# ce sont surtout des offres américaines. Quand une recherche est tronquée, on la refait filtrée sur les pays suivis.
+WD_COUNTRIES = re.compile(r"(?i)^\s*(united kingdom|uk|great britain|england|switzerland|schweiz|suisse|singapore|"
+                          r"ireland|france)\s*$")
+WD_FACET_QUERIES = ["intern", "internship", "summer", "placement", "off-cycle", "stage"]
+
+
+def _wd_country_facet(data):
+    """{paramètre: [ids]} du filtre pays d'une réponse Workday (pays suivis), ou None."""
+    found = []
+
+    def walk(facets):
+        for f in facets or []:
+            if not isinstance(f, dict):
+                continue
+            param, vals = f.get("facetParameter") or "", f.get("values") or []
+            ids = [v.get("id") for v in vals if isinstance(v, dict) and v.get("id")
+                   and WD_COUNTRIES.match(str(v.get("descriptor") or ""))]
+            if ids and param:
+                found.append((0 if "country" in param.lower() else 1, param, ids))
+            walk([v for v in vals if isinstance(v, dict) and v.get("values")])
+
+    walk(data.get("facets"))
+    if not found:
+        return None
+    found.sort(key=lambda x: x[0])
+    return {found[0][1]: found[0][2]}
+
+
+def _wd_country_pass(host, tenant, site, first_data):
+    """Recherches de stages filtrées sur les pays suivis (si le filtre existe). Renvoie les pages de résultats."""
+    facet = _wd_country_facet(first_data)
+    if not facet:
+        return []
+    pages = []
+    for q in WD_FACET_QUERIES:
+        _pause(0.3, 0.8)
+        status, txt = _wd_search(host, tenant, site, q, 0, facet)
+        if status != 200:
+            break
+        try:
+            data = json.loads(txt)
+        except ValueError:
+            break
+        pages.append(data)
+        total, offset = int(data.get("total") or 0), 20
+        while offset < min(total, WD_MAX_RESULTS):
+            _pause(0.3, 0.8)
+            status, txt = _wd_search(host, tenant, site, q, offset, facet)
+            if status != 200:
+                break
+            try:
+                d = json.loads(txt)
+            except ValueError:
+                break
+            if not d.get("jobPostings"):
+                break
+            pages.append(d)
+            offset += 20
+    return pages
 
 
 WD_MAX_RESULTS = 100  # par recherche : 5 pages de 20 (Workday ne renvoie que 20 offres par page)
@@ -712,7 +782,7 @@ def collect_workday_site(s):
     for u in ("https://%s/%s/" % (host, site), "https://%s/wday/cxs/%s/%s/jobs" % (host, tenant, site)):
         if not robots_allowed(u):
             raise SourceError("robots.txt du site interdit la lecture automatique (%s)" % urllib.parse.urlparse(u).path)
-    seen = {}
+    seen, facet_src = {}, None
     for q in s.get("queries", SITE_QUERIES):
         status, txt = _wd_search(host, tenant, site, q)
         if status in (404, 422) and not s.get("_discovered"):
@@ -723,6 +793,8 @@ def collect_workday_site(s):
         if status != 200 and status < 500:
             raise SourceError("HTTP %d" % status)
         first = _json_or_unavailable(status, txt, host)
+        if int(first.get("total") or 0) > WD_MAX_RESULTS and first.get("facets"):
+            facet_src = facet_src or first
         for data in [first] + _wd_more_pages(host, tenant, site, q, first):
             for j in parse_workday(data, host, site):
                 if j["ext_id"] in seen:
@@ -734,6 +806,11 @@ def collect_workday_site(s):
                         pass
                 seen[j["ext_id"]] = _job(s["company"], j["ext_id"], j["title"], j["location"], j["url"], j["posted"])
         _pause(0.5, 1.5)
+    if facet_src is not None:
+        for data in _wd_country_pass(host, tenant, site, facet_src):
+            for j in parse_workday(data, host, site):
+                if j["ext_id"] not in seen:
+                    seen[j["ext_id"]] = _job(s["company"], j["ext_id"], j["title"], j["location"], j["url"], j["posted"])
     return list(seen.values())
 
 
