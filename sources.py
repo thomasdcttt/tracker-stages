@@ -254,23 +254,29 @@ LI_INTERN = {
 LI_INTERN_WORDS = re.compile(r"(?i)(?<![a-z])(interns?|internships?|stages?|stagiaires?|praktikum|praktikant\w*|off[- ]?cycle|"
                              r"summer analysts?|summer internships?|placements?|placement year|industrial placement|"
                              r"cesure|césure|summer)(?![a-z])")
+# Balayage « tous les stages » (requête sans thème) : sans "off-cycle" ni "placement", qui seuls ramènent des CDI
+LI_INTERN_SWEEP = {
+    "en": '(intern OR internship OR "summer analyst" OR "summer internship")',
+    "fr": '(stage OR stagiaire OR intern OR internship)',
+    "ch": '(intern OR internship OR stage OR stagiaire OR praktikum OR praktikant)',
+}
 LI_PAGE = 10  # taille réelle d'une page de résultats de la recherche publique
 
 
 def li_keywords(q, lang="en"):
     """Requête LinkedIn qui exige un stage : '"M&A" AND (intern OR internship OR ...)'."""
     terms = LI_INTERN.get(lang, LI_INTERN["en"])
+    sweep = LI_INTERN_SWEEP.get(lang, LI_INTERN_SWEEP["en"])
     q = (q or "").strip()
     if not q:
-        return terms
+        return sweep
     if " AND " in q or " OR " in q:
         return q  # requête déjà écrite avec des opérateurs
     core = LI_INTERN_WORDS.sub(" ", q)
     core = re.sub(r"(?i)(?<![a-z])(2026|2027|2028|london|paris|geneva|gen[eè]ve|zurich|singapore|dublin)(?![a-z])", " ", core)
     core = re.sub(r"\s+", " ", core).strip(" -,")
     if not core:
-        # La requête ne contient que des mots de stage ("off-cycle internship") : expression exacte
-        return '"%s"' % q.replace('"', "") if len(q.split()) > 1 else terms
+        return sweep  # la requête ne contient que des mots de stage ("off-cycle internship")
     return '"%s" AND %s' % (core.replace('"', ""), terms)
 
 
@@ -312,9 +318,11 @@ def linkedin_tasks(cfg):
                       loc=loc, region=name) for k in r.get("queries", [])]
         rest += _backfill_tasks(li, r, loc, name, bf_default, lang)
         # Stock des 30 derniers jours par thème (finance, M&A, marchés...)
-        rest += [dict(q=li_keywords(k, lang), past=int(r.get("stock_seconds", 2592000)), jt=None,
-                      pages=int(r.get("stock_pages", 3)), label="stock 30 j · %s%s" % (k, suffix), loc=loc,
-                      region=name) for k in r.get("stock_keywords", [])]
+        # une page par tâche (début décalé de 10 en 10) pour répartir la profondeur dans la rotation
+        rest += [dict(q=li_keywords(k, lang), past=int(r.get("stock_seconds", 2592000)), jt=None, pages=1,
+                      start=p * LI_PAGE, label="stock 30 j · %s%s · page %d" % (k, suffix, p + 1), loc=loc,
+                      region=name)
+                 for p in range(int(r.get("stock_pages", 3))) for k in r.get("stock_keywords", [])]
     # Une même requête (mêmes mots-clés, même lieu, même fenêtre) n'est faite qu'une fois
     seen, uniq = set(), []
     for t in rest:

@@ -97,7 +97,7 @@ DEFAULT_CONFIG = {
             "Suisse": {
                 "enabled": True, "location": "Switzerland",
                 "sweep_all": True, "sweep_all_seconds": 21600, "sweep_all_pages": 5,
-                "stock_keywords": ["finance", "investment banking", "M&A", "corporate finance", "corporate development", "private equity", "venture capital", "trading", "markets", "sales trading", "investment", "asset management", "hedge fund", "broker", "commodities", "capital markets"], "stock_pages": 3,
+                "stock_keywords": ["finance", "investment banking", "M&A", "corporate finance", "corporate development", "private equity", "venture capital", "trading", "markets", "sales trading", "investment", "asset management", "hedge fund", "broker", "commodities", "capital markets"], "stock_pages": 5,
                 "sweeps": ["finance", "M&A", "investment banking", "corporate finance", "corporate development", "private equity", "venture capital", "investment", "asset management", "fund", "markets", "trading", "sales", "broker", "equity research", "credit", "capital markets", "commodities", "energy", "shipping", "analyst", "banking"], "sweep_seconds": 86400, "sweep_pages": 2,
                 "queries": [
                     "corporate M&A intern", "M&A analyst intern", "corporate development intern", "corporate finance internship", "debt advisory intern", "equity capital markets intern", "broker intern", "boutique investment bank intern", "financial analyst intern", "summer internship finance 2027",
@@ -118,7 +118,7 @@ DEFAULT_CONFIG = {
             "Singapour": {
                 "enabled": True, "location": "Singapore",
                 "sweep_all": True, "sweep_all_seconds": 21600, "sweep_all_pages": 5,
-                "stock_keywords": ["finance", "investment banking", "M&A", "corporate finance", "corporate development", "private equity", "venture capital", "trading", "markets", "sales trading", "investment", "asset management", "hedge fund", "broker", "commodities", "capital markets"], "stock_pages": 3,
+                "stock_keywords": ["finance", "investment banking", "M&A", "corporate finance", "corporate development", "private equity", "venture capital", "trading", "markets", "sales trading", "investment", "asset management", "hedge fund", "broker", "commodities", "capital markets"], "stock_pages": 5,
                 "sweeps": ["finance", "M&A", "investment banking", "corporate finance", "corporate development", "private equity", "venture capital", "investment", "asset management", "fund", "markets", "trading", "sales", "broker", "equity research", "credit", "capital markets", "commodities", "energy", "shipping", "analyst", "banking"], "sweep_seconds": 86400, "sweep_pages": 2,
                 "queries": [
                     "corporate M&A intern", "M&A analyst intern", "corporate development intern", "corporate finance internship", "debt advisory intern", "equity capital markets intern", "broker intern", "boutique investment bank intern", "financial analyst intern", "summer internship finance 2027",
@@ -136,7 +136,7 @@ DEFAULT_CONFIG = {
             "Londres": {
                 "enabled": True, "location": "London, England, United Kingdom",
                 "sweep_all": True, "sweep_all_seconds": 21600, "sweep_all_pages": 10, "backfill_pages": 40,
-                "stock_keywords": ["finance", "investment banking", "M&A", "corporate finance", "corporate development", "private equity", "venture capital", "trading", "markets", "sales trading", "investment", "asset management", "hedge fund", "broker", "commodities", "capital markets", "equity research", "credit", "summer analyst", "placement"], "stock_pages": 4,
+                "stock_keywords": ["finance", "investment banking", "M&A", "corporate finance", "corporate development", "private equity", "venture capital", "trading", "markets", "sales trading", "investment", "asset management", "hedge fund", "broker", "commodities", "capital markets", "equity research", "credit", "summer analyst", "placement"], "stock_pages": 8,
                 "sweeps": ["finance", "M&A", "mergers acquisitions", "investment banking", "corporate finance", "corporate development", "private equity", "venture capital", "investment", "investor", "asset management", "fund", "hedge fund", "markets", "trading", "trader", "sales", "broking", "broker", "equity research", "credit", "capital markets", "debt", "commodities", "energy", "shipping", "analyst", "banking", "placement", "summer analyst"], "sweep_seconds": 86400, "sweep_pages": 3,
                 "queries": [
                     "corporate M&A intern", "M&A analyst intern", "corporate development internship", "strategy and M&A internship", "corporate finance internship", "transaction advisory internship", "debt advisory intern", "restructuring internship", "equity capital markets internship", "corporate broking internship", "stockbroking internship", "broker internship", "interdealer broker intern", "shipbroking internship", "commodity broker intern", "mid-market investment bank internship", "boutique investment bank internship", "investment banking off-cycle internship", "industrial placement finance", "placement year investment banking", "12 month placement finance", "spring internship finance", "summer internship finance 2027", "financial analyst intern", "treasury intern", "investor relations intern",
@@ -158,7 +158,7 @@ DEFAULT_CONFIG = {
             "Dublin": {
                 "enabled": True, "location": "Dublin, County Dublin, Ireland",
                 "sweep_all": True, "sweep_all_seconds": 21600, "sweep_all_pages": 3, "backfill_pages": 15,
-                "stock_keywords": ["finance", "investment banking", "M&A", "corporate finance", "corporate development", "private equity", "venture capital", "trading", "markets", "sales trading", "investment", "asset management"], "stock_pages": 2,
+                "stock_keywords": ["finance", "investment banking", "M&A", "corporate finance", "corporate development", "private equity", "venture capital", "trading", "markets", "sales trading", "investment", "asset management"], "stock_pages": 3,
                 "sweeps": ["finance", "M&A", "investment banking", "corporate finance", "corporate development", "private equity", "venture capital", "investment", "asset management", "fund", "markets", "trading", "sales", "broker", "equity research", "credit", "capital markets", "commodities", "energy", "shipping", "analyst", "banking"], "sweep_seconds": 86400, "sweep_pages": 2,
                 "queries": [
                     "corporate M&A intern", "M&A analyst intern", "corporate development intern", "corporate finance internship", "debt advisory intern", "equity capital markets intern", "broker intern", "boutique investment bank intern", "financial analyst intern", "summer internship finance 2027",
