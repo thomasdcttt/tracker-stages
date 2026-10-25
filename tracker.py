@@ -97,6 +97,7 @@ DEFAULT_CONFIG = {
             "Suisse": {
                 "enabled": True, "location": "Switzerland",
                 "sweep_all": True, "sweep_all_seconds": 21600, "sweep_all_pages": 5,
+                "stock_keywords": ["finance", "investment banking", "M&A", "corporate finance", "corporate development", "private equity", "venture capital", "trading", "markets", "sales trading", "investment", "asset management", "hedge fund", "broker", "commodities", "capital markets"], "stock_pages": 3,
                 "sweeps": ["finance", "M&A", "investment banking", "corporate finance", "corporate development", "private equity", "venture capital", "investment", "asset management", "fund", "markets", "trading", "sales", "broker", "equity research", "credit", "capital markets", "commodities", "energy", "shipping", "analyst", "banking"], "sweep_seconds": 86400, "sweep_pages": 2,
                 "queries": [
                     "corporate M&A intern", "M&A analyst intern", "corporate development intern", "corporate finance internship", "debt advisory intern", "equity capital markets intern", "broker intern", "boutique investment bank intern", "financial analyst intern", "summer internship finance 2027",
@@ -117,6 +118,7 @@ DEFAULT_CONFIG = {
             "Singapour": {
                 "enabled": True, "location": "Singapore",
                 "sweep_all": True, "sweep_all_seconds": 21600, "sweep_all_pages": 5,
+                "stock_keywords": ["finance", "investment banking", "M&A", "corporate finance", "corporate development", "private equity", "venture capital", "trading", "markets", "sales trading", "investment", "asset management", "hedge fund", "broker", "commodities", "capital markets"], "stock_pages": 3,
                 "sweeps": ["finance", "M&A", "investment banking", "corporate finance", "corporate development", "private equity", "venture capital", "investment", "asset management", "fund", "markets", "trading", "sales", "broker", "equity research", "credit", "capital markets", "commodities", "energy", "shipping", "analyst", "banking"], "sweep_seconds": 86400, "sweep_pages": 2,
                 "queries": [
                     "corporate M&A intern", "M&A analyst intern", "corporate development intern", "corporate finance internship", "debt advisory intern", "equity capital markets intern", "broker intern", "boutique investment bank intern", "financial analyst intern", "summer internship finance 2027",
@@ -134,6 +136,7 @@ DEFAULT_CONFIG = {
             "Londres": {
                 "enabled": True, "location": "London, England, United Kingdom",
                 "sweep_all": True, "sweep_all_seconds": 21600, "sweep_all_pages": 10, "backfill_pages": 40,
+                "stock_keywords": ["finance", "investment banking", "M&A", "corporate finance", "corporate development", "private equity", "venture capital", "trading", "markets", "sales trading", "investment", "asset management", "hedge fund", "broker", "commodities", "capital markets", "equity research", "credit", "summer analyst", "placement"], "stock_pages": 4,
                 "sweeps": ["finance", "M&A", "mergers acquisitions", "investment banking", "corporate finance", "corporate development", "private equity", "venture capital", "investment", "investor", "asset management", "fund", "hedge fund", "markets", "trading", "trader", "sales", "broking", "broker", "equity research", "credit", "capital markets", "debt", "commodities", "energy", "shipping", "analyst", "banking", "placement", "summer analyst"], "sweep_seconds": 86400, "sweep_pages": 3,
                 "queries": [
                     "corporate M&A intern", "M&A analyst intern", "corporate development internship", "strategy and M&A internship", "corporate finance internship", "transaction advisory internship", "debt advisory intern", "restructuring internship", "equity capital markets internship", "corporate broking internship", "stockbroking internship", "broker internship", "interdealer broker intern", "shipbroking internship", "commodity broker intern", "mid-market investment bank internship", "boutique investment bank internship", "investment banking off-cycle internship", "industrial placement finance", "placement year investment banking", "12 month placement finance", "spring internship finance", "summer internship finance 2027", "financial analyst intern", "treasury intern", "investor relations intern",
@@ -155,6 +158,7 @@ DEFAULT_CONFIG = {
             "Dublin": {
                 "enabled": True, "location": "Dublin, County Dublin, Ireland",
                 "sweep_all": True, "sweep_all_seconds": 21600, "sweep_all_pages": 3, "backfill_pages": 15,
+                "stock_keywords": ["finance", "investment banking", "M&A", "corporate finance", "corporate development", "private equity", "venture capital", "trading", "markets", "sales trading", "investment", "asset management"], "stock_pages": 2,
                 "sweeps": ["finance", "M&A", "investment banking", "corporate finance", "corporate development", "private equity", "venture capital", "investment", "asset management", "fund", "markets", "trading", "sales", "broker", "equity research", "credit", "capital markets", "commodities", "energy", "shipping", "analyst", "banking"], "sweep_seconds": 86400, "sweep_pages": 2,
                 "queries": [
                     "corporate M&A intern", "M&A analyst intern", "corporate development intern", "corporate finance internship", "debt advisory intern", "equity capital markets intern", "broker intern", "boutique investment bank intern", "financial analyst intern", "summer internship finance 2027",
@@ -362,6 +366,14 @@ DEFAULT_CONFIG = {
         {"company": "William Blair", "type": "greenhouse", "board": "williamblair"},  # v9 (sondage API)
         {"company": "AQR", "type": "greenhouse", "board": "aqr"},  # v9 (sondage API)
         {"company": "Winton", "type": "greenhouse", "board": "winton"},  # v9 (sondage API)
+        {"company": "Canaccord Genuity", "type": "workday", "host": "cgf.wd10.myworkdayjobs.com", "tenant": "cgf", "site": "CG"},  # v10
+        {"company": "Hayfin Capital Management", "type": "workable", "account": "hayfin-capital-management"},  # v10
+        {"company": "Aviva Investors", "type": "workday", "host": "aviva.wd1.myworkdayjobs.com", "tenant": "aviva", "site": "Aviva_Investors_External"},  # v10
+        {"company": "Octopus Group", "type": "html", "url": "https://octopusgroup.com/careers/listings", "link_regex": "/careers/listings/(?!page/)[a-z0-9-]+/?$"},  # v10
+        {"company": "Berenberg", "type": "html", "url": "https://careers.berenberg.com/search-our-jobs?dept=Internships", "link_regex": "/search-our-jobs/[A-Za-z0-9-]+-\\d+-[A-Za-z-]+$"},  # v10
+        {"company": "Cavendish", "type": "html", "url": "https://www.cavendish.com/category/current-roles/", "link_regex": "cavendish\\.com/(?!category/|people/|tag/|page/|wp-)[a-z0-9-]+/?$"},  # v10
+        {"company": "Clarksons", "type": "html", "url": "https://careers.clarksons.com/Clarksons/go/View-All-Jobs/3979701/", "link_regex": "/Clarksons/job/[^\"]+/\\d+"},  # v10
+        {"company": "Dymon Asia Capital", "type": "html", "url": "https://www.dymonasia.com/join-us/", "link_regex": "https://dymon\\.careers\\.hibob\\.com/jobs/[0-9a-f-]{36}", "default_location": "Singapore"},  # v10
     ],
     # Portail officiel de l'emploi à Singapour (offres « Internship/Attachment »)
     "mcf": {

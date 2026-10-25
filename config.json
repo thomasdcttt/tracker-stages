@@ -109,6 +109,25 @@
         "sweep_all": true,
         "sweep_all_seconds": 21600,
         "sweep_all_pages": 5,
+        "stock_keywords": [
+          "finance",
+          "investment banking",
+          "M&A",
+          "corporate finance",
+          "corporate development",
+          "private equity",
+          "venture capital",
+          "trading",
+          "markets",
+          "sales trading",
+          "investment",
+          "asset management",
+          "hedge fund",
+          "broker",
+          "commodities",
+          "capital markets"
+        ],
+        "stock_pages": 3,
         "sweeps": [
           "finance",
           "M&A",
@@ -188,6 +207,25 @@
         "sweep_all": true,
         "sweep_all_seconds": 21600,
         "sweep_all_pages": 5,
+        "stock_keywords": [
+          "finance",
+          "investment banking",
+          "M&A",
+          "corporate finance",
+          "corporate development",
+          "private equity",
+          "venture capital",
+          "trading",
+          "markets",
+          "sales trading",
+          "investment",
+          "asset management",
+          "hedge fund",
+          "broker",
+          "commodities",
+          "capital markets"
+        ],
+        "stock_pages": 3,
         "sweeps": [
           "finance",
           "M&A",
@@ -261,6 +299,29 @@
         "sweep_all_seconds": 21600,
         "sweep_all_pages": 10,
         "backfill_pages": 40,
+        "stock_keywords": [
+          "finance",
+          "investment banking",
+          "M&A",
+          "corporate finance",
+          "corporate development",
+          "private equity",
+          "venture capital",
+          "trading",
+          "markets",
+          "sales trading",
+          "investment",
+          "asset management",
+          "hedge fund",
+          "broker",
+          "commodities",
+          "capital markets",
+          "equity research",
+          "credit",
+          "summer analyst",
+          "placement"
+        ],
+        "stock_pages": 4,
         "sweeps": [
           "finance",
           "M&A",
@@ -371,6 +432,21 @@
         "sweep_all_seconds": 21600,
         "sweep_all_pages": 3,
         "backfill_pages": 15,
+        "stock_keywords": [
+          "finance",
+          "investment banking",
+          "M&A",
+          "corporate finance",
+          "corporate development",
+          "private equity",
+          "venture capital",
+          "trading",
+          "markets",
+          "sales trading",
+          "investment",
+          "asset management"
+        ],
+        "stock_pages": 2,
         "sweeps": [
           "finance",
           "M&A",
@@ -1650,6 +1726,56 @@
       "company": "Winton",
       "type": "greenhouse",
       "board": "winton"
+    },
+    {
+      "company": "Canaccord Genuity",
+      "type": "workday",
+      "host": "cgf.wd10.myworkdayjobs.com",
+      "tenant": "cgf",
+      "site": "CG"
+    },
+    {
+      "company": "Hayfin Capital Management",
+      "type": "workable",
+      "account": "hayfin-capital-management"
+    },
+    {
+      "company": "Aviva Investors",
+      "type": "workday",
+      "host": "aviva.wd1.myworkdayjobs.com",
+      "tenant": "aviva",
+      "site": "Aviva_Investors_External"
+    },
+    {
+      "company": "Octopus Group",
+      "type": "html",
+      "url": "https://octopusgroup.com/careers/listings",
+      "link_regex": "/careers/listings/(?!page/)[a-z0-9-]+/?$"
+    },
+    {
+      "company": "Berenberg",
+      "type": "html",
+      "url": "https://careers.berenberg.com/search-our-jobs?dept=Internships",
+      "link_regex": "/search-our-jobs/[A-Za-z0-9-]+-\\d+-[A-Za-z-]+$"
+    },
+    {
+      "company": "Cavendish",
+      "type": "html",
+      "url": "https://www.cavendish.com/category/current-roles/",
+      "link_regex": "cavendish\\.com/(?!category/|people/|tag/|page/|wp-)[a-z0-9-]+/?$"
+    },
+    {
+      "company": "Clarksons",
+      "type": "html",
+      "url": "https://careers.clarksons.com/Clarksons/go/View-All-Jobs/3979701/",
+      "link_regex": "/Clarksons/job/[^\"]+/\\d+"
+    },
+    {
+      "company": "Dymon Asia Capital",
+      "type": "html",
+      "url": "https://www.dymonasia.com/join-us/",
+      "link_regex": "https://dymon\\.careers\\.hibob\\.com/jobs/[0-9a-f-]{36}",
+      "default_location": "Singapore"
     }
   ],
   "mcf": {

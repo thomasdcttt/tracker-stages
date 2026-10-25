@@ -192,6 +192,7 @@ CAT_PATTERNS = {
         # v10 (échantillon de référence) : Macquarie "Generalist Advisory", Rothschild "Arrowpoint Advisory",
         # SGX "GSO, Debt & Equity"
         r"generalist advisory", r"arrowpoint\w*", r"debt (?:and )?equity",
+        r"asset rotation", r"(?:loan|debt|credit) distribution",  # v13 : CA-CIB "Distribution & Asset Rotation"
         r"fund finance",  # financement de fonds en banque (ING) ; exclu chez un gérant (voir BANKS dans categorize)
     ],
     "Private Equity": [

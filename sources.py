@@ -275,6 +275,10 @@ def linkedin_tasks(cfg):
                       pages=r.get("pages_per_query", li.get("pages_per_query", 1)), label="%s · %s" % (k, name),
                       loc=loc, region=name) for k in r.get("queries", [])]
         rest += _backfill_tasks(li, r, loc, name, 20)
+        # Stock des 30 derniers jours par thème (finance, M&A, marchés...) : le rattrapage général ne voit que les
+        # 1 000 premiers stages de la zone tous métiers confondus, très loin du total à Londres.
+        rest += [dict(q=k, past=int(r.get("stock_seconds", 2592000)), jt="I", pages=int(r.get("stock_pages", 3)),
+                      label="stock 30 j · %s · %s" % (k, name), loc=loc, region=name) for k in r.get("stock_keywords", [])]
     return first, rest
 
 
