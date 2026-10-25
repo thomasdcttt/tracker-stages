@@ -244,6 +244,46 @@ def linkedin_detail(job_id):
     return parse_linkedin_detail(page)
 
 
+# Le filtre « Stage » de LinkedIn (f_JT=I) est ignoré par la recherche publique : il renvoyait des CDI de tous
+# niveaux. Le stage est donc exigé dans les mots-clés (opérateurs AND / OR en majuscules, guillemets = expression).
+LI_INTERN = {
+    "en": '(intern OR internship OR placement OR "summer analyst" OR "off-cycle" OR "off cycle")',
+    "fr": '(stage OR stagiaire OR intern OR internship OR "off-cycle" OR cesure OR "summer analyst")',
+    "ch": '(intern OR internship OR stage OR stagiaire OR praktikum OR praktikant OR "off-cycle" OR "summer analyst")',
+}
+LI_INTERN_WORDS = re.compile(r"(?i)(?<![a-z])(interns?|internships?|stages?|stagiaires?|praktikum|praktikant\w*|off[- ]?cycle|"
+                             r"summer analysts?|summer internships?|placements?|placement year|industrial placement|"
+                             r"cesure|césure|summer)(?![a-z])")
+# Balayage « tous les stages » (requête sans thème) : sans "off-cycle" ni "placement", qui seuls ramènent des CDI
+LI_INTERN_SWEEP = {
+    "en": '(intern OR internship OR "summer analyst" OR "summer internship")',
+    "fr": '(stage OR stagiaire OR intern OR internship)',
+    "ch": '(intern OR internship OR stage OR stagiaire OR praktikum OR praktikant)',
+}
+LI_PAGE = 10  # taille réelle d'une page de résultats de la recherche publique
+
+
+def li_keywords(q, lang="en"):
+    """Requête LinkedIn qui exige un stage : '"M&A" AND (intern OR internship OR ...)'."""
+    terms = LI_INTERN.get(lang, LI_INTERN["en"])
+    sweep = LI_INTERN_SWEEP.get(lang, LI_INTERN_SWEEP["en"])
+    q = (q or "").strip()
+    if not q:
+        return sweep
+    if " AND " in q or " OR " in q:
+        return q  # requête déjà écrite avec des opérateurs
+    core = LI_INTERN_WORDS.sub(" ", q)
+    core = re.sub(r"(?i)(?<![a-z])(2026|2027|2028|london|paris|geneva|gen[eè]ve|zurich|singapore|dublin)(?![a-z])", " ", core)
+    core = re.sub(r"\s+", " ", core).strip(" -,")
+    if not core:
+        return sweep  # la requête ne contient que des mots de stage ("off-cycle internship")
+    return '"%s" AND %s' % (core.replace('"', ""), terms)
+
+
+def _li_lang(name):
+    return {"France": "fr", "Suisse": "ch"}.get(name, "en")
+
+
 def linkedin_tasks(cfg):
     """Liste des recherches LinkedIn, chacune avec son lieu. Les balayages de tous les stages (un par zone) passent
     toujours en premier ; les recherches par mot-clé de toutes les zones se partagent la rotation."""
@@ -251,45 +291,56 @@ def linkedin_tasks(cfg):
     regions = li.get("regions") or {}
     fr = regions.get("France") or {}
     first, rest = [], []
+    zones = []
     if fr.get("enabled", True):
-        loc = fr.get("location") or li["location"]
-        if li.get("sweep_all", True):
-            first.append(dict(q="", past=li.get("sweep_all_seconds", 7200), jt="I", pages=li.get("sweep_all_pages", 6),
-                              label="tous les stages de Paris", loc=loc, region="France"))
-        rest += [dict(q=k, past=li.get("sweep_seconds", 86400), jt="I", pages=li.get("sweep_pages", 2), label=k,
-                      loc=loc, region="France") for k in li.get("sweeps", [])]
-        rest += [dict(q=k, past=li["past_seconds"], jt=None, pages=li.get("pages_per_query", 1), label=k, loc=loc,
-                      region="France") for k in li["queries"]]
-        rest += _backfill_tasks(li, fr, loc, "France", 40)
+        zones.append(("France", dict(fr, location=fr.get("location") or li["location"],
+                                     sweep_all=li.get("sweep_all", True),
+                                     sweep_all_seconds=li.get("sweep_all_seconds", 7200),
+                                     sweep_all_pages=li.get("sweep_all_pages", 6),
+                                     sweeps=li.get("sweeps", []), queries=li["queries"],
+                                     past_seconds=li["past_seconds"]), 40))
     for name, r in regions.items():
         if name == "France" or not isinstance(r, dict) or not r.get("enabled", True) or not r.get("location"):
             continue
-        loc = r["location"]
+        zones.append((name, r, 20))
+    for name, r, bf_default in zones:
+        loc, lang = r["location"], _li_lang(name)
+        label_all = "tous les stages de Paris" if name == "France" else "tous les stages · %s" % name
+        suffix = "" if name == "France" else " · %s" % name
         if r.get("sweep_all", True):
-            first.append(dict(q="", past=r.get("sweep_all_seconds", 7200), jt="I", pages=r.get("sweep_all_pages", 4),
-                              label="tous les stages · %s" % name, loc=loc, region=name))
-        rest += [dict(q=k, past=r.get("sweep_seconds", li.get("sweep_seconds", 86400)), jt="I",
-                      pages=r.get("sweep_pages", li.get("sweep_pages", 2)), label="%s · %s" % (k, name), loc=loc,
+            first.append(dict(q=li_keywords("", lang), past=r.get("sweep_all_seconds", 7200), jt=None, sweep=True,
+                              pages=r.get("sweep_all_pages", 4), label=label_all, loc=loc, region=name))
+        rest += [dict(q=li_keywords(k, lang), past=r.get("sweep_seconds", li.get("sweep_seconds", 86400)), jt=None,
+                      pages=r.get("sweep_pages", li.get("sweep_pages", 2)), label="%s%s" % (k, suffix), loc=loc,
                       region=name) for k in r.get("sweeps", [])]
-        rest += [dict(q=k, past=r.get("past_seconds", li["past_seconds"]), jt=None,
-                      pages=r.get("pages_per_query", li.get("pages_per_query", 1)), label="%s · %s" % (k, name),
+        rest += [dict(q=li_keywords(k, lang), past=r.get("past_seconds", li["past_seconds"]), jt=None,
+                      pages=r.get("pages_per_query", li.get("pages_per_query", 1)), label="%s%s" % (k, suffix),
                       loc=loc, region=name) for k in r.get("queries", [])]
-        rest += _backfill_tasks(li, r, loc, name, 20)
-        # Stock des 30 derniers jours par thème (finance, M&A, marchés...) : le rattrapage général ne voit que les
-        # 1 000 premiers stages de la zone tous métiers confondus, très loin du total à Londres.
-        rest += [dict(q=k, past=int(r.get("stock_seconds", 2592000)), jt="I", pages=int(r.get("stock_pages", 3)),
-                      label="stock 30 j · %s · %s" % (k, name), loc=loc, region=name) for k in r.get("stock_keywords", [])]
-    return first, rest
+        rest += _backfill_tasks(li, r, loc, name, bf_default, lang)
+        # Stock des 30 derniers jours par thème (finance, M&A, marchés...)
+        # une page par tâche (début décalé de 10 en 10) pour répartir la profondeur dans la rotation
+        rest += [dict(q=li_keywords(k, lang), past=int(r.get("stock_seconds", 2592000)), jt=None, pages=1,
+                      start=p * LI_PAGE, label="stock 30 j · %s%s · page %d" % (k, suffix, p + 1), loc=loc,
+                      region=name)
+                 for p in range(int(r.get("stock_pages", 3))) for k in r.get("stock_keywords", [])]
+    # Une même requête (mêmes mots-clés, même lieu, même fenêtre) n'est faite qu'une fois
+    seen, uniq = set(), []
+    for t in rest:
+        key = (t["q"].lower(), t["loc"], t["past"], t.get("start", 0))
+        if key not in seen:
+            seen.add(key)
+            uniq.append(t)
+    return first, uniq
 
 
-def _backfill_tasks(li, region_cfg, loc, name, default_pages):
+def _backfill_tasks(li, region_cfg, loc, name, default_pages, lang="en"):
     """Rattrapage : tous les stages publiés dans la zone depuis 30 jours, une page de résultats par recherche,
     répartis dans la rotation (les offres plus anciennes que la fenêtre de balayage ne sont pas perdues)."""
     pages = int(region_cfg.get("backfill_pages", li.get("backfill_pages", {}).get(name, default_pages)
                                if isinstance(li.get("backfill_pages"), dict) else default_pages))
     past = int(region_cfg.get("backfill_seconds", li.get("backfill_seconds", 2592000)))
-    return [dict(q="", past=past, jt="I", pages=1, start=k * 25, label="rattrapage 30 j · %s · page %d" % (name, k + 1),
-                 loc=loc, region=name) for k in range(pages)]
+    return [dict(q=li_keywords("", lang), past=past, jt=None, pages=1, start=k * LI_PAGE,
+                 label="rattrapage 30 j · %s · page %d" % (name, k + 1), loc=loc, region=name) for k in range(pages)]
 
 
 def collect_linkedin(cfg, log, state=None):
@@ -338,7 +389,7 @@ def collect_linkedin(cfg, log, state=None):
                 resume.pop(task["label"], None)
                 if not res or not fresh or len(res) < page_len:
                     break  # page vide, déjà vue, ou incomplète (= dernière page)
-                if task["q"] == "" and task["past"] <= 86400 and known and all(j["ext_id"] in known for j in res):
+                if task.get("sweep") and task["past"] <= 86400 and known and all(j["ext_id"] in known for j in res):
                     break  # balayage trié par date : toute la page est déjà connue, la suite aussi
                 start += len(res)  # pagination par nombre de résultats reçus (taille de page variable)
                 resume[task["label"]] = (start, page_len)
@@ -1624,6 +1675,92 @@ def fetch_description(offer):
     except Exception:  # noqa: BLE001  page illisible : on n'écarte rien sur cette base
         return None
 
+
+# =====================================================================
+# Date de publication lue sur la page de l'offre (pages liste sans date)
+# =====================================================================
+_MONTHS = {m: i + 1 for i, ms in enumerate([
+    ("jan", "january", "janvier", "janv"), ("feb", "february", "fevrier", "février", "fev", "fév"),
+    ("mar", "march", "mars"), ("apr", "april", "avril", "avr"), ("may", "mai"), ("jun", "june", "juin"),
+    ("jul", "july", "juillet", "juil"), ("aug", "august", "aout", "août"),
+    ("sep", "sept", "september", "septembre"), ("oct", "october", "octobre"),
+    ("nov", "november", "novembre"), ("dec", "december", "decembre", "décembre", "déc")]) for m in ms}
+_DATE_FIELDS = [
+    r'"datePosted"\s*:\s*"([^"]{8,40})"', r'itemprop=["\']datePosted["\'][^>]*?content=["\']([^"\']{8,40})',
+    r'content=["\']([^"\']{8,40})["\'][^>]*?itemprop=["\']datePosted', r'property=["\']article:published_time["\'][^>]*?content=["\']([^"\']{8,40})',
+    r'"(?:postedOn|publishedAt|published_at|first_published|postingDate|datePublished|createdAt|created_at)"\s*:\s*"([^"]{8,40})"',
+]
+_DATE_TEXT = re.compile(
+    r"(?i)(?:date posted|posted on|posted|posting date|publication date|date de publication|publi[ée]e? le|"
+    r"date d[e']? ?mise en ligne|job posted|ver[öo]ffentlicht(?: am)?)\s*[:\-–]?\s*"
+    r"(\d{4}-\d{2}-\d{2}|[0-3]?\d[./][01]?\d[./](?:20)?\d\d|[0-3]?\d(?:st|nd|rd|th)?\s+[A-Za-zéûô]{3,9}\.?,?\s+20\d\d|"
+    r"[A-Za-z]{3,9}\.?\s+[0-3]?\d(?:st|nd|rd|th)?,?\s+20\d\d)")
+
+
+def parse_any_date(v, today=None):
+    """Date (ISO, 12/10/2026, 12 Oct 2026, Oct 12, 2026, 12 octobre 2026) en AAAA-MM-JJ, si plausible."""
+    import datetime as _dt
+    today = today or _dt.date.today()
+    v = html.unescape(str(v or "")).strip()
+    d = None
+    m = re.match(r"(\d{4})-(\d{2})-(\d{2})", v)
+    if m:
+        d = (int(m.group(1)), int(m.group(2)), int(m.group(3)))
+    if not d:
+        m = re.match(r"([0-3]?\d)[./]([01]?\d)[./]((?:20)?\d\d)$", v)
+        if m:
+            y = int(m.group(3)); y = y + 2000 if y < 100 else y
+            d = (y, int(m.group(2)), int(m.group(1)))
+    if not d:
+        m = re.match(r"([0-3]?\d)(?:st|nd|rd|th)?\s+([A-Za-zéûô]{3,9})\.?,?\s+(20\d\d)", v)
+        if m and m.group(2).lower() in _MONTHS:
+            d = (int(m.group(3)), _MONTHS[m.group(2).lower()], int(m.group(1)))
+    if not d:
+        m = re.match(r"([A-Za-z]{3,9})\.?\s+([0-3]?\d)(?:st|nd|rd|th)?,?\s+(20\d\d)", v)
+        if m and m.group(1).lower() in _MONTHS:
+            d = (int(m.group(3)), _MONTHS[m.group(1).lower()], int(m.group(2)))
+    if not d:
+        rel = norm_posted(v, today)  # "Posted 3 Days Ago"
+        return rel
+    try:
+        date = _dt.date(*d)
+    except ValueError:
+        return ""
+    if not (_dt.date(2024, 1, 1) <= date <= today + _dt.timedelta(days=1)):
+        return ""
+    return date.isoformat()
+
+
+def date_from_page(page, today=None):
+    """Date de publication trouvée dans une page d'offre : données structurées d'abord, puis texte « Posted on »."""
+    for rx in _DATE_FIELDS:
+        for m in re.finditer(rx, page or "", re.I):
+            d = parse_any_date(m.group(1), today)
+            if d:
+                return d
+    m = _DATE_TEXT.search(_text(re.sub(r"<(script|style)\b.*?</\1>", " ", page or "", flags=re.S | re.I)))
+    return parse_any_date(m.group(1), today) if m else ""
+
+
+def fetch_posted(offer):
+    """Date de publication d'une offre de site carrière dont la page liste n'en donne pas ("" si introuvable)."""
+    url = offer.get("url") or ""
+    m = re.match(r"https://([^/]+\.myworkdayjobs\.com)/(?:[a-z]{2}-[A-Z]{2}/)?([^/]+)(/job/.+)$", url)
+    if m:
+        host, site, path = m.groups()
+        tenant = host.split(".")[0]
+        status, txt = http("https://%s/wday/cxs/%s/%s%s" % (host, tenant, site, path), headers={"Accept": "application/json"})
+        if status == 200:
+            try:
+                info = json.loads(txt).get("jobPostingInfo") or {}
+            except ValueError:
+                info = {}
+            return parse_any_date(info.get("startDate") or "") or parse_any_date(info.get("postedOn") or "")
+        return ""
+    if not url.startswith("http") or url.lower().endswith(".pdf") or not robots_allowed(url):
+        return ""
+    status, page = http(url, headers={"Accept": "text/html"})
+    return date_from_page(page) if status == 200 else ""
 
 # =====================================================================
 # Offres fermées : vérification ponctuelle de chaque offre
