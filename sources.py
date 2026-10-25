@@ -244,6 +244,40 @@ def linkedin_detail(job_id):
     return parse_linkedin_detail(page)
 
 
+# Le filtre « Stage » de LinkedIn (f_JT=I) est ignoré par la recherche publique : il renvoyait des CDI de tous
+# niveaux. Le stage est donc exigé dans les mots-clés (opérateurs AND / OR en majuscules, guillemets = expression).
+LI_INTERN = {
+    "en": '(intern OR internship OR placement OR "summer analyst" OR "off-cycle" OR "off cycle")',
+    "fr": '(stage OR stagiaire OR intern OR internship OR "off-cycle" OR cesure OR "summer analyst")',
+    "ch": '(intern OR internship OR stage OR stagiaire OR praktikum OR praktikant OR "off-cycle" OR "summer analyst")',
+}
+LI_INTERN_WORDS = re.compile(r"(?i)(?<![a-z])(interns?|internships?|stages?|stagiaires?|praktikum|praktikant\w*|off[- ]?cycle|"
+                             r"summer analysts?|summer internships?|placements?|placement year|industrial placement|"
+                             r"cesure|césure|summer)(?![a-z])")
+LI_PAGE = 10  # taille réelle d'une page de résultats de la recherche publique
+
+
+def li_keywords(q, lang="en"):
+    """Requête LinkedIn qui exige un stage : '"M&A" AND (intern OR internship OR ...)'."""
+    terms = LI_INTERN.get(lang, LI_INTERN["en"])
+    q = (q or "").strip()
+    if not q:
+        return terms
+    if " AND " in q or " OR " in q:
+        return q  # requête déjà écrite avec des opérateurs
+    core = LI_INTERN_WORDS.sub(" ", q)
+    core = re.sub(r"(?i)(?<![a-z])(2026|2027|2028|london|paris|geneva|gen[eè]ve|zurich|singapore|dublin)(?![a-z])", " ", core)
+    core = re.sub(r"\s+", " ", core).strip(" -,")
+    if not core:
+        # La requête ne contient que des mots de stage ("off-cycle internship") : expression exacte
+        return '"%s"' % q.replace('"', "") if len(q.split()) > 1 else terms
+    return '"%s" AND %s' % (core.replace('"', ""), terms)
+
+
+def _li_lang(name):
+    return {"France": "fr", "Suisse": "ch"}.get(name, "en")
+
+
 def linkedin_tasks(cfg):
     """Liste des recherches LinkedIn, chacune avec son lieu. Les balayages de tous les stages (un par zone) passent
     toujours en premier ; les recherches par mot-clé de toutes les zones se partagent la rotation."""
@@ -251,45 +285,54 @@ def linkedin_tasks(cfg):
     regions = li.get("regions") or {}
     fr = regions.get("France") or {}
     first, rest = [], []
+    zones = []
     if fr.get("enabled", True):
-        loc = fr.get("location") or li["location"]
-        if li.get("sweep_all", True):
-            first.append(dict(q="", past=li.get("sweep_all_seconds", 7200), jt="I", pages=li.get("sweep_all_pages", 6),
-                              label="tous les stages de Paris", loc=loc, region="France"))
-        rest += [dict(q=k, past=li.get("sweep_seconds", 86400), jt="I", pages=li.get("sweep_pages", 2), label=k,
-                      loc=loc, region="France") for k in li.get("sweeps", [])]
-        rest += [dict(q=k, past=li["past_seconds"], jt=None, pages=li.get("pages_per_query", 1), label=k, loc=loc,
-                      region="France") for k in li["queries"]]
-        rest += _backfill_tasks(li, fr, loc, "France", 40)
+        zones.append(("France", dict(fr, location=fr.get("location") or li["location"],
+                                     sweep_all=li.get("sweep_all", True),
+                                     sweep_all_seconds=li.get("sweep_all_seconds", 7200),
+                                     sweep_all_pages=li.get("sweep_all_pages", 6),
+                                     sweeps=li.get("sweeps", []), queries=li["queries"],
+                                     past_seconds=li["past_seconds"]), 40))
     for name, r in regions.items():
         if name == "France" or not isinstance(r, dict) or not r.get("enabled", True) or not r.get("location"):
             continue
-        loc = r["location"]
+        zones.append((name, r, 20))
+    for name, r, bf_default in zones:
+        loc, lang = r["location"], _li_lang(name)
+        label_all = "tous les stages de Paris" if name == "France" else "tous les stages · %s" % name
+        suffix = "" if name == "France" else " · %s" % name
         if r.get("sweep_all", True):
-            first.append(dict(q="", past=r.get("sweep_all_seconds", 7200), jt="I", pages=r.get("sweep_all_pages", 4),
-                              label="tous les stages · %s" % name, loc=loc, region=name))
-        rest += [dict(q=k, past=r.get("sweep_seconds", li.get("sweep_seconds", 86400)), jt="I",
-                      pages=r.get("sweep_pages", li.get("sweep_pages", 2)), label="%s · %s" % (k, name), loc=loc,
+            first.append(dict(q=li_keywords("", lang), past=r.get("sweep_all_seconds", 7200), jt=None, sweep=True,
+                              pages=r.get("sweep_all_pages", 4), label=label_all, loc=loc, region=name))
+        rest += [dict(q=li_keywords(k, lang), past=r.get("sweep_seconds", li.get("sweep_seconds", 86400)), jt=None,
+                      pages=r.get("sweep_pages", li.get("sweep_pages", 2)), label="%s%s" % (k, suffix), loc=loc,
                       region=name) for k in r.get("sweeps", [])]
-        rest += [dict(q=k, past=r.get("past_seconds", li["past_seconds"]), jt=None,
-                      pages=r.get("pages_per_query", li.get("pages_per_query", 1)), label="%s · %s" % (k, name),
+        rest += [dict(q=li_keywords(k, lang), past=r.get("past_seconds", li["past_seconds"]), jt=None,
+                      pages=r.get("pages_per_query", li.get("pages_per_query", 1)), label="%s%s" % (k, suffix),
                       loc=loc, region=name) for k in r.get("queries", [])]
-        rest += _backfill_tasks(li, r, loc, name, 20)
-        # Stock des 30 derniers jours par thème (finance, M&A, marchés...) : le rattrapage général ne voit que les
-        # 1 000 premiers stages de la zone tous métiers confondus, très loin du total à Londres.
-        rest += [dict(q=k, past=int(r.get("stock_seconds", 2592000)), jt="I", pages=int(r.get("stock_pages", 3)),
-                      label="stock 30 j · %s · %s" % (k, name), loc=loc, region=name) for k in r.get("stock_keywords", [])]
-    return first, rest
+        rest += _backfill_tasks(li, r, loc, name, bf_default, lang)
+        # Stock des 30 derniers jours par thème (finance, M&A, marchés...)
+        rest += [dict(q=li_keywords(k, lang), past=int(r.get("stock_seconds", 2592000)), jt=None,
+                      pages=int(r.get("stock_pages", 3)), label="stock 30 j · %s%s" % (k, suffix), loc=loc,
+                      region=name) for k in r.get("stock_keywords", [])]
+    # Une même requête (mêmes mots-clés, même lieu, même fenêtre) n'est faite qu'une fois
+    seen, uniq = set(), []
+    for t in rest:
+        key = (t["q"].lower(), t["loc"], t["past"], t.get("start", 0))
+        if key not in seen:
+            seen.add(key)
+            uniq.append(t)
+    return first, uniq
 
 
-def _backfill_tasks(li, region_cfg, loc, name, default_pages):
+def _backfill_tasks(li, region_cfg, loc, name, default_pages, lang="en"):
     """Rattrapage : tous les stages publiés dans la zone depuis 30 jours, une page de résultats par recherche,
     répartis dans la rotation (les offres plus anciennes que la fenêtre de balayage ne sont pas perdues)."""
     pages = int(region_cfg.get("backfill_pages", li.get("backfill_pages", {}).get(name, default_pages)
                                if isinstance(li.get("backfill_pages"), dict) else default_pages))
     past = int(region_cfg.get("backfill_seconds", li.get("backfill_seconds", 2592000)))
-    return [dict(q="", past=past, jt="I", pages=1, start=k * 25, label="rattrapage 30 j · %s · page %d" % (name, k + 1),
-                 loc=loc, region=name) for k in range(pages)]
+    return [dict(q=li_keywords("", lang), past=past, jt=None, pages=1, start=k * LI_PAGE,
+                 label="rattrapage 30 j · %s · page %d" % (name, k + 1), loc=loc, region=name) for k in range(pages)]
 
 
 def collect_linkedin(cfg, log, state=None):
@@ -338,7 +381,7 @@ def collect_linkedin(cfg, log, state=None):
                 resume.pop(task["label"], None)
                 if not res or not fresh or len(res) < page_len:
                     break  # page vide, déjà vue, ou incomplète (= dernière page)
-                if task["q"] == "" and task["past"] <= 86400 and known and all(j["ext_id"] in known for j in res):
+                if task.get("sweep") and task["past"] <= 86400 and known and all(j["ext_id"] in known for j in res):
                     break  # balayage trié par date : toute la page est déjà connue, la suite aussi
                 start += len(res)  # pagination par nombre de résultats reçus (taille de page variable)
                 resume[task["label"]] = (start, page_len)
