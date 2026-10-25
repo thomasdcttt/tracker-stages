@@ -7,7 +7,7 @@ import re
 import unicodedata
 
 # À incrémenter à chaque changement de règles : les offres déjà écartées sont alors réexaminées.
-FILTER_VERSION = 14
+FILTER_VERSION = 15
 
 
 def normalize(text):
@@ -193,6 +193,7 @@ CAT_PATTERNS = {
         # SGX "GSO, Debt & Equity"
         r"generalist advisory", r"arrowpoint\w*", r"debt (?:and )?equity",
         r"asset rotation", r"(?:loan|debt|credit) distribution",  # v13 : CA-CIB "Distribution & Asset Rotation"
+        r"business (?:and )?capital advisory",  # v15 : conseil en restructuration (KR8, Quantuma)
         r"fund finance",  # financement de fonds en banque (ING) ; exclu chez un gérant (voir BANKS dans categorize)
     ],
     "Private Equity": [
@@ -229,6 +230,8 @@ CAT_PATTERNS = {
         r"investment managers?", r"portfolio construction", r"investment analysis",
         r"(?:sustainable|responsible) investing",
         r"investment intern(?:ships?|s)?",  # v10 : Capstone "Investment Internship", Altor "Investment Intern"
+        r"internship program(?:me)? investments?",  # v15 : BNY "Summer Internship Program – Investments"
+        r"credit analysts?",  # v15 : analyse crédit (prêteurs, gérants de dette privée)
         r"(?:uk|europe|european|credit|growth|direct|private|global) investing",  # v10 : Sixth Street "UK Investing"
         r"investment direct(?:ing|ors?)",  # v10 : Fidelity International "Investment Directing" (spécialistes produits)
     ],
@@ -627,7 +630,7 @@ AM_COMPANY = _rx([r"asset management", r"asset managers", r"investment managers?
 INVEST_HOUSES = {  # employeur -> catégorie
     "Asset Management": _rx([r"brevan howard", r"blackrock", r"comgest", r"tikehau\w*", r"graham capital\w*", r"capula\w*",
                              r"verition\w*", r"capstone investment\w*", r"point72", r"millennium", r"citadel",
-                             r"balyasny", r"marshall wace", r"man group"]),
+                             r"balyasny", r"marshall wace", r"man group", r"pgim\w*"]),
     "Private Equity": _rx([r"partners group", r"clubfunding\w*", r"la caisse", r"cdpq", r"3i", r"sixth street"]),
     "Venture Capital": _rx([r"sg growth capital"]),
 }
@@ -653,7 +656,7 @@ BROKER_HOUSES = _rx([r"tp icap", r"icap", r"tullett\w*", r"bgc\w*", r"tradition"
                      r"kepler cheuvreux", r"oddo bhf", r"exane", r"redburn\w*"])
 GENERIC_INVEST_HOUSES = _rx([r"brevan howard", r"blackrock", r"comgest", r"partners group", r"la caisse", r"cdpq", r"3i",
                              r"graham capital\w*", r"sixth street", r"capula\w*", r"verition\w*", r"capstone investment\w*",
-                             r"point72", r"millennium", r"citadel", r"balyasny", r"marshall wace", r"man group"])
+                             r"point72", r"millennium", r"citadel", r"balyasny", r"marshall wace", r"man group", r"pgim\w*"])
 # v10 : stage générique "Analyst" / "Placement" chez une maison ci-dessus (Partners Group "Summer Analyst Program")
 GENERIC_CORE_NOISE = re.compile(r"(?<![a-z0-9])(?:analysts?|financial|placement|united|kingdom|uk|ireland)(?![a-z0-9])")
 # v10 : en banque, "Global Research", "Client Sales", "Corporates Sales", "Sales Analyst" = marchés
