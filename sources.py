@@ -1686,6 +1686,10 @@ _MONTHS = {m: i + 1 for i, ms in enumerate([
     ("sep", "sept", "september", "septembre"), ("oct", "october", "octobre"),
     ("nov", "november", "novembre"), ("dec", "december", "decembre", "décembre", "déc")]) for m in ms}
 _DATE_FIELDS = [
+    # SuccessFactors (careers.sgx.com, jobs.scotiabank.com, jobs.partnersgroup.com...) : <span data-careersite-propertyid="date">
+    r'data-careersite-propertyid=["\']date["\'][^>]*>\s*([^<]{6,30}?)\s*<',
+    r'id=["\']job-date["\'][^>]*>\s*(?:<[^>]+>\s*)*(?:Date\s*:?\s*)?([^<]{6,30}?)\s*<',
+    r'class=["\'][^"\']*jobdate[^"\']*["\'][^>]*>\s*([^<]{6,30}?)\s*<',
     r'"datePosted"\s*:\s*"([^"]{8,40})"', r'itemprop=["\']datePosted["\'][^>]*?content=["\']([^"\']{8,40})',
     r'content=["\']([^"\']{8,40})["\'][^>]*?itemprop=["\']datePosted', r'property=["\']article:published_time["\'][^>]*?content=["\']([^"\']{8,40})',
     r'"(?:postedOn|publishedAt|published_at|first_published|postingDate|datePublished|createdAt|created_at)"\s*:\s*"([^"]{8,40})"',

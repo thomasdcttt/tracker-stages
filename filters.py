@@ -7,7 +7,7 @@ import re
 import unicodedata
 
 # À incrémenter à chaque changement de règles : les offres déjà écartées sont alors réexaminées.
-FILTER_VERSION = 16
+FILTER_VERSION = 17
 
 
 def normalize(text):
@@ -289,6 +289,7 @@ ROLE_EXCLUDE = _rx([
     r"software", r"devops", r"cyber\w*", r"juristes?", r"legal", r"avocats?", r"cabinet d avocats",
     r"lawyers?", r"counsel", r"droit", r"juridique", r"law", r"rh", r"hr", r"human resources", r"ressources humaines", r"recrutement",
     r"recruitment", r"talent (?:acquisition|management|sourcing|partner|development)", r"marketing",
+    r"eoliennes?", r"wind turbines?", r"turbines?",  # v17 : ingénierie éolienne (Siemens Gamesa)
     r"consultant\w*", r"consulting", r"conseil (?:en )?strategi\w*", r"strategy consult\w*", r"chief of staff", r"medias?", r"programmati\w*", r"digital trader\w*",
     r"trader\w* digital", r"social media", r"trader social", r"ads", r"advertising", r"publicite", r"adtech", r"paid media",
     r"superintend\w*",
@@ -483,6 +484,7 @@ HOUSE_EXCLUDE = _rx([r"risk", r"risks", r"control\w*", r"finance", r"treasury", 
 
 
 COMMO_HARD_EXCLUDE = _rx([
+    r"eoliennes?", r"wind turbines?", r"turbines?", r"etude des charges",  # v17 : ingénierie éolienne
     r"it", r"developer", r"developpeur", r"developpeuse", r"engineer", r"engineering", r"ingenieur",
     r"ingenieure", r"data", r"software", r"devops", r"cyber\w*", r"juriste", r"legal", r"avocat", r"lawyer",
     r"rh", r"hr", r"human resources", r"ressources humaines", r"recrutement", r"recruitment", r"talent",
