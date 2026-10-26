@@ -56,8 +56,8 @@ DEFAULT_CONFIG = {
         "location": "Paris, Île-de-France, France",
         "past_seconds": 604800,
         "pages_per_query": 1,
-        "pause_between_queries": [1.2, 2.5],
-        "pause_between_pages": [1, 2],
+        "pause_between_queries": [2, 4],
+        "pause_between_pages": [1.5, 3],
         "detail_limit_per_cycle": 30,
         # Balayage de TOUS les stages publiés à Paris (filtre LinkedIn « Stage »), à chaque passage
         "sweep_all": True,
@@ -72,7 +72,7 @@ DEFAULT_CONFIG = {
             "commodities", "énergie", "energy", "analyste", "analyst", "fund",
         ],
         # Nombre maximal de requêtes de recherche par passage (les recherches restantes passent au suivant)
-        "max_search_requests": 130,
+        "max_search_requests": 80,
         "queries": [
             "stage M&A", "M&A internship", "stage fusions acquisitions", "stage banque d'affaires",
             "investment banking intern", "stage investment banking", "stage corporate finance",

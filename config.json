@@ -6,12 +6,12 @@
     "past_seconds": 604800,
     "pages_per_query": 1,
     "pause_between_queries": [
-      1.2,
-      2.5
+      2,
+      4
     ],
     "pause_between_pages": [
-      1,
-      2
+      1.5,
+      3
     ],
     "detail_limit_per_cycle": 30,
     "sweep_all": true,
@@ -41,7 +41,7 @@
       "analyst",
       "fund"
     ],
-    "max_search_requests": 130,
+    "max_search_requests": 80,
     "queries": [
       "stage M&A",
       "M&A internship",
