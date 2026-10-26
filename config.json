@@ -297,7 +297,7 @@
         "location": "London, England, United Kingdom",
         "sweep_all": true,
         "sweep_all_seconds": 21600,
-        "sweep_all_pages": 10,
+        "sweep_all_pages": 6,
         "backfill_pages": 40,
         "stock_keywords": [
           "finance",

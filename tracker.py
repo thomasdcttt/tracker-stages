@@ -135,7 +135,7 @@ DEFAULT_CONFIG = {
             },
             "Londres": {
                 "enabled": True, "location": "London, England, United Kingdom",
-                "sweep_all": True, "sweep_all_seconds": 21600, "sweep_all_pages": 10, "backfill_pages": 40,
+                "sweep_all": True, "sweep_all_seconds": 21600, "sweep_all_pages": 6, "backfill_pages": 40,
                 "stock_keywords": ["finance", "investment banking", "M&A", "corporate finance", "corporate development", "private equity", "venture capital", "trading", "markets", "sales trading", "investment", "asset management", "hedge fund", "broker", "commodities", "capital markets", "equity research", "credit", "summer analyst", "placement"], "stock_pages": 8,
                 "sweeps": ["finance", "M&A", "mergers acquisitions", "investment banking", "corporate finance", "corporate development", "private equity", "venture capital", "investment", "investor", "asset management", "fund", "hedge fund", "markets", "trading", "trader", "sales", "broking", "broker", "equity research", "credit", "capital markets", "debt", "commodities", "energy", "shipping", "analyst", "banking", "placement", "summer analyst"], "sweep_seconds": 86400, "sweep_pages": 3,
                 "queries": [
