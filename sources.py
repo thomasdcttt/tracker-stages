@@ -280,6 +280,39 @@ def li_keywords(q, lang="en"):
     return '"%s" AND %s' % (core.replace('"', ""), terms)
 
 
+# Recherches prioritaires : LinkedIn ne laisse passer que quelques requêtes par passage depuis les serveurs de GitHub.
+# Trois recherches finance groupées par zone (OU entre les métiers, ET stage), sur 24 h, passent en premier à tour de rôle.
+LI_PRIORITY = {
+    "en": ['("M&A" OR "investment banking" OR "corporate finance" OR "corporate development" OR "leveraged finance" OR '
+           '"capital markets" OR restructuring OR "debt advisory")',
+           '("sales and trading" OR "global markets" OR markets OR trading OR trader OR broking OR broker OR '
+           '"equity research" OR "fixed income")',
+           '("private equity" OR "venture capital" OR "asset management" OR "investment analyst" OR "hedge fund" OR '
+           'commodities OR "private credit" OR infrastructure OR "investment team")'],
+    "fr": ['("M&A" OR "fusions acquisitions" OR "corporate finance" OR "banque d\'affaires" OR "financement" OR LBO OR '
+           '"corporate development" OR ECM OR DCM)',
+           '("salle des marchés" OR marchés OR trading OR trader OR sales OR "fixed income" OR courtage OR "equity research")',
+           '("private equity" OR "capital investissement" OR "venture capital" OR "gestion d\'actifs" OR "asset management" '
+           'OR "gestion de portefeuille" OR commodities OR "matières premières" OR infrastructure)'],
+}
+
+
+def linkedin_priority_tasks(cfg):
+    li = cfg["linkedin"]
+    regions = li.get("regions") or {}
+    out = []
+    zones = [("France", (regions.get("France") or {}).get("location") or li["location"])] if (regions.get("France") or {}).get("enabled", True) else []
+    zones += [(n, r["location"]) for n, r in regions.items()
+              if n != "France" and isinstance(r, dict) and r.get("enabled", True) and r.get("location")]
+    for name, loc in zones:
+        lang = _li_lang(name)
+        groups = LI_PRIORITY["fr"] if lang == "fr" else LI_PRIORITY["en"]
+        for k, g in enumerate(groups):
+            out.append(dict(q="%s AND %s" % (g, LI_INTERN.get(lang, LI_INTERN["en"])), past=86400, jt=None, pages=1,
+                            label="prioritaire %d · %s" % (k + 1, name), loc=loc, region=name, prio=True))
+    return out
+
+
 def _li_lang(name):
     return {"France": "fr", "Suisse": "ch"}.get(name, "en")
 
@@ -350,13 +383,19 @@ def collect_linkedin(cfg, log, state=None):
     li = cfg["linkedin"]
     budget = int(li.get("max_search_requests", 70))
     first, rest = linkedin_tasks(cfg)
-    # LinkedIn coupe vite (429) depuis les serveurs de GitHub : la 1re page de chaque zone passe avant les suivantes
+    # LinkedIn coupe vite (429) depuis les serveurs de GitHub : les recherches finance prioritaires d'abord (à tour de
+    # rôle), puis la 1re page de chaque zone, puis les suites, puis la rotation des autres recherches
+    prio = linkedin_priority_tasks(cfg) if li.get("priority_first", True) else []
+    np_ = len(prio)
+    poff = int(state.get("poffset", 0)) % np_ if np_ else 0
+    prio = [prio[(poff + i) % np_] for i in range(np_)]
     heads = [dict(t, pages=1) for t in first]
     tails = [dict(t, pages=t["pages"] - 1, cont=t["label"], label=t["label"] + " (suite)") for t in first if t["pages"] > 1]
-    first = heads + tails
+    first = prio + heads + tails
     n = len(rest)
     offset = int(state.get("offset", 0)) % n if n else 0
     order = first + [rest[(offset + i) % n] for i in range(n)]
+    done_prio = 0
     out, errors, used, done_rest, fails_in_row = {}, [], 0, 0, 0
     known = state.get("known_ids") or set()
     resume = {}
@@ -410,9 +449,12 @@ def collect_linkedin(cfg, log, state=None):
             fails_in_row = 0
         if idx >= len(first):
             done_rest += 1
+        elif task.get("prio"):
+            done_prio += 1
         if idx < len(order) - 1 and used < budget:
             _pause(*li["pause_between_queries"])
     state["offset"] = (offset + done_rest) % n if n else 0
+    state["poffset"] = (poff + done_prio) % np_ if np_ else 0
     state["requests"] = used
     if errors and not out:
         raise SourceError("; ".join(errors[:3]))

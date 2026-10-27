@@ -747,6 +747,7 @@ class Tracker:
         # Pas de pause après une limitation : chaque passage GitHub tourne sur une machine (et une adresse IP)
         # différente, une pause ne ferait que sauter des passages qui auraient pu aboutir.
         self.store.set_meta("li_offset", state.get("offset", 0))
+        self.store.set_meta("li_poffset", state.get("poffset", 0))
         if state.get("rate_limited"):
             self.li_blocked = True
 
@@ -770,6 +771,7 @@ class Tracker:
         tasks = []  # (nom, groupe, fonction réseau, fonction de fin ou None)
         if c["linkedin"]["enabled"]:
             st = {"offset": int(self.store.get_meta("li_offset", 0) or 0),
+                  "poffset": int(self.store.get_meta("li_poffset", 0) or 0),
                   "known_ids": {r[0] for r in self.store.db.execute(
                       "SELECT ext_id FROM offers WHERE source='LinkedIn' UNION "
                       "SELECT substr(uid, 10) FROM rejected WHERE uid LIKE 'LinkedIn:%'")}}
